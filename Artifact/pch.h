@@ -10,4 +10,16 @@
 // add headers that you want to pre-compile here
 #include "framework.h"
 
+
+// C RunTime Header Files
+#include <stdlib.h>
+#include <malloc.h>
+#include <memory.h>
+#include <tchar.h>
+
+// C++ Standard Libraries
+#include <vector>
+#include <string>
+#include <filesystem>
+
 #endif //PCH_H
