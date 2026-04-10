@@ -66,11 +66,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     {
         printf("Destroyed engine successfully.\n");
     }
-    else
-    {
-
-    }
-
+    
     engine = nullptr;
 
     return (int) msg.wParam;

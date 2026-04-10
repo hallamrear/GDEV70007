@@ -10,7 +10,6 @@
 // add headers that you want to pre-compile here
 #include "framework.h"
 
-
 // C RunTime Header Files
 #include <stdlib.h>
 #include <malloc.h>
@@ -21,5 +20,6 @@
 #include <vector>
 #include <string>
 #include <filesystem>
+#include <cassert>
 
 #endif //PCH_H

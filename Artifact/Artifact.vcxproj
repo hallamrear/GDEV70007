@@ -75,24 +75,28 @@
     <IntDir>$(SolutionDir)Intermediate\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
+    <ExternalIncludePath>$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\backends;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)Builds\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)Intermediate\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
+    <ExternalIncludePath>$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\backends;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)Builds\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)Intermediate\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
+    <ExternalIncludePath>$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\backends;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)Builds\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)Intermediate\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
+    <ExternalIncludePath>$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\backends;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -184,6 +188,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Artifact.h" />
+    <ClInclude Include="BVH.h" />
+    <ClInclude Include="Physics\BVH\BVH.h" />
+    <ClInclude Include="Physics\Colliders\Collider.h" />
+    <ClInclude Include="Physics\Rigidbody.h" />
+    <ClInclude Include="Physics\Colliders\SphereCollider.h" />
+    <ClInclude Include="World\Entity.h" />
+    <ClInclude Include="Physics\PhysicsWorld.h" />
+    <ClInclude Include="ServiceLocator.h" />
+    <ClInclude Include="System\ISubsystem.h" />
     <ClInclude Include="System\Engine.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="pch.h" />
@@ -192,6 +205,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Artifact.cpp" />
+    <ClCompile Include="BVH.cpp" />
+    <ClCompile Include="Physics\BVH\BVH.cpp" />
+    <ClCompile Include="Physics\Colliders\Collider.cpp" />
+    <ClCompile Include="Physics\Rigidbody.cpp" />
+    <ClCompile Include="Physics\Colliders\SphereCollider.cpp" />
+    <ClCompile Include="World\Entity.cpp" />
+    <ClCompile Include="Physics\PhysicsWorld.cpp" />
+    <ClCompile Include="ServiceLocator.cpp" />
+    <ClCompile Include="System\ISubsystem.cpp" />
     <ClCompile Include="System\Engine.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

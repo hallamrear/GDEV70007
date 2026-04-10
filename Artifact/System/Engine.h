@@ -3,11 +3,12 @@ class Engine
 {
 private:
 	static std::filesystem::path m_ContentFolderLocation;
+	bool m_IsInitialised;
 
 	Engine();
 	~Engine();
 
-	bool InitialiseSubSystems();
+	bool InitialiseSubsystems();
 
 public:
 	static Engine* CreateEngine(const std::filesystem::path& _contentFolderLocation);
