@@ -4,7 +4,9 @@
 class SphereCollider : public Collider
 {
 public:
-	SphereCollider(const Entity& entity);
+	SphereCollider(const Entity& entity, const float& radius);
 	~SphereCollider();
+
+	void Render();
 };
 

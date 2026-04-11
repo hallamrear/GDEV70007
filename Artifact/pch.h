@@ -22,4 +22,6 @@
 #include <filesystem>
 #include <cassert>
 
+#include <System/Types.h>
+
 #endif //PCH_H

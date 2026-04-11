@@ -59,7 +59,13 @@ bool Engine::DestroyEngine(Engine* _engine)
 
 void Engine::Update(const float& _deltaTime)
 {
-	
+	if (m_World != nullptr)
+	{
+		if (m_World->IsLoaded())
+		{
+
+		}
+	}
 }
 
 void Engine::Render()
