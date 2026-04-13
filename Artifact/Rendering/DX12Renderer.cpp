@@ -144,6 +144,8 @@ bool DX12Renderer::Initialise(HWND windowHandle)
     m_IsInitialised &= SUCCEEDED(hr);
     FAILED_RETURN(hr)
 
+    m_IsInitialised &= InitialiseIMGUI();
+
     if (IsInitialised() == false)
     {
         m_WindowHandle = NULL;
@@ -162,6 +164,54 @@ bool DX12Renderer::Initialise(HWND windowHandle)
     return m_IsInitialised;
 }
 
+bool DX12Renderer::InitialiseIMGUI()
+{
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+    ImGui::StyleColorsDark();
+
+    // Setup Platform/Renderer backends
+    bool win32Init = ImGui_ImplWin32_Init(m_WindowHandle);
+
+    ImGui_ImplDX12_InitInfo init_info = {};
+    init_info.Device = m_Device;
+    init_info.CommandQueue = m_CommandQueue;
+    init_info.NumFramesInFlight = m_SwapChainBufferCount;
+    init_info.RTVFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+    init_info.DSVFormat = DXGI_FORMAT_UNKNOWN;
+
+    init_info.SrvDescriptorHeap = m_CBVHeap;
+    /*init_info.SrvDescriptorAllocFn =
+    [](ImGui_ImplDX12_InitInfo*, D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu_handle)
+    { 
+
+        return g_pd3dSrvDescHeapAlloc.Alloc(out_cpu_handle, out_gpu_handle); 
+    };
+
+init_info.SrvDescriptorFreeFn = [](ImGui_ImplDX12_InitInfo*, D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE gpu_handle)
+    { 
+        return g_pd3dSrvDescHeapAlloc.Free(cpu_handle, gpu_handle);
+    };*/
+
+    bool dx12Init = ImGui_ImplDX12_Init(&init_info);
+
+    return (win32Init && dx12Init);
+}
+
+bool DX12Renderer::ShutdownIMGUI()
+{
+    // Cleanup
+    ImGui_ImplDX12_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
+    return true;
+}
+
 bool DX12Renderer::Shutdown()
 {
     if (!IsInitialised())
@@ -170,6 +220,7 @@ bool DX12Renderer::Shutdown()
         return false;
     }
 
+    ShutdownIMGUI();
     DestroyGraphicsPipelines();
     DestroyLoadedShaders();
     DestroyRootSignatureAndDescriptorTable();
@@ -712,7 +763,15 @@ HRESULT DX12Renderer::CreateConstantBufferHeap()
     heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     heapDesc.NodeMask = 0;
 
-    return m_Device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_CBVHeap));
+    HRESULT hr = m_Device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_CBVHeap));
+
+    if (SUCCEEDED(hr))
+    {
+        auto desc = m_CBVHeap->GetDesc();
+        printf("");
+    }
+
+    return hr;
 }
 
 void DX12Renderer::DestroyConstantBufferHeap()
@@ -968,6 +1027,14 @@ void DX12Renderer::ClearFrame()
 {
     assert(m_IsInitialised);
 
+    ImGui_ImplDX12_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+
+    ImGui::Begin("Test Window");
+    ImGui::Text("Test Label Text");
+    ImGui::End();
+
     if (FAILED(m_CommandAllocator->Reset()))
     {
         printf("Failed to reset command allocator.\n");
@@ -1009,6 +1076,9 @@ void DX12Renderer::ClearFrame()
 void DX12Renderer::PresentFrame()
 {
     assert(m_IsInitialised);
+
+    ImGui::Render();
+    ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_CommandList);
 
     D3D12_RESOURCE_BARRIER transition = CD3DX12_RESOURCE_BARRIER::Transition(m_SwapchainBuffers[m_CurrentBackbufferIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
     m_CommandList->ResourceBarrier(1, &transition);

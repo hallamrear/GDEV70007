@@ -15,6 +15,9 @@ const TEXTURE_FORMAT Renderer::m_DepthStencilBufferFormat = (TEXTURE_FORMAT)DXGI
 
 Renderer::Renderer()
 {
+	m_ClearColour = { 1.0f, 1.0f, 1.0f, 1.0f };
+	m_WindowWidth = 0;
+	m_WindowHeight = 0;
 	m_IsInitialised = false;
 	m_WindowHandle = NULL;
 }
@@ -43,6 +46,8 @@ Renderer* Renderer::CreateRenderer(HWND windowHandle)
 		delete renderer;
 		renderer = nullptr;
 	}
+
+	//ServiceLocator::Provide(renderer);
 
 	return renderer;
 }

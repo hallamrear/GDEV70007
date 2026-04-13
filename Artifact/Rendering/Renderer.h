@@ -22,7 +22,9 @@ protected:
 	virtual ~Renderer() = 0;
 
 	virtual bool Initialise(HWND windowHandle) = 0;
+	virtual bool InitialiseIMGUI() = 0;
 	virtual bool Shutdown() = 0;
+	virtual bool ShutdownIMGUI() = 0;
 
 	bool CreateTexture(Texture& texture, const std::string& textureLocation);
 	bool DestroyTexture(Texture& texture);

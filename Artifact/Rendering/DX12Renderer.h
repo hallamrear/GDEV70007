@@ -82,6 +82,9 @@ private:
 	HRESULT CreateGraphicsPipelines();
 	void DestroyGraphicsPipelines();
 
+	bool InitialiseIMGUI();
+	bool ShutdownIMGUI();
+
 protected:
 
 	bool Initialise(HWND windowHandle);

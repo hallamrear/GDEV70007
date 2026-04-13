@@ -75,28 +75,28 @@
     <IntDir>$(SolutionDir)Intermediate\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(SolutionDir)External\DirectX\include;$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\backends;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(SolutionDir)External\DirectX\include;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)Builds\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)Intermediate\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(SolutionDir)External\DirectX\include;$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\backends;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(SolutionDir)External\DirectX\include;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)Builds\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)Intermediate\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(SolutionDir)External\DirectX\include;$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\backends;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(SolutionDir)External\DirectX\include;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)Builds\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)Intermediate\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(SolutionDir)External\DirectX\include;$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\backends;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(SolutionDir)External\DirectX\include;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -197,6 +197,16 @@
     <ClInclude Include="Physics\Colliders\SphereCollider.h" />
     <ClInclude Include="Rendering\Geometry\Mesh.h" />
     <ClInclude Include="Rendering\Geometry\Model.h" />
+    <ClInclude Include="Rendering\IMGUIIncludes.h" />
+    <ClInclude Include="Rendering\imgui\backends\imgui_impl_dx11.h" />
+    <ClInclude Include="Rendering\imgui\backends\imgui_impl_dx12.h" />
+    <ClInclude Include="Rendering\imgui\backends\imgui_impl_win32.h" />
+    <ClInclude Include="Rendering\imgui\imconfig.h" />
+    <ClInclude Include="Rendering\imgui\imgui.h" />
+    <ClInclude Include="Rendering\imgui\imgui_internal.h" />
+    <ClInclude Include="Rendering\imgui\imstb_rectpack.h" />
+    <ClInclude Include="Rendering\imgui\imstb_textedit.h" />
+    <ClInclude Include="Rendering\imgui\imstb_truetype.h" />
     <ClInclude Include="Rendering\Renderer.h" />
     <ClInclude Include="Rendering\Texturing\Texture.h" />
     <ClInclude Include="Rendering\Vertex.h" />
@@ -221,6 +231,14 @@
     <ClCompile Include="Physics\Colliders\SphereCollider.cpp" />
     <ClCompile Include="Rendering\Geometry\Mesh.cpp" />
     <ClCompile Include="Rendering\Geometry\Model.cpp" />
+    <ClCompile Include="Rendering\imgui\backends\imgui_impl_dx11.cpp" />
+    <ClCompile Include="Rendering\imgui\backends\imgui_impl_dx12.cpp" />
+    <ClCompile Include="Rendering\imgui\backends\imgui_impl_win32.cpp" />
+    <ClCompile Include="Rendering\imgui\imgui.cpp" />
+    <ClCompile Include="Rendering\imgui\imgui_demo.cpp" />
+    <ClCompile Include="Rendering\imgui\imgui_draw.cpp" />
+    <ClCompile Include="Rendering\imgui\imgui_tables.cpp" />
+    <ClCompile Include="Rendering\imgui\imgui_widgets.cpp" />
     <ClCompile Include="Rendering\Renderer.cpp" />
     <ClCompile Include="Rendering\Texturing\Texture.cpp" />
     <ClCompile Include="Rendering\Vertex.cpp" />

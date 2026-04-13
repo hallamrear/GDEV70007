@@ -5,6 +5,7 @@
 #include "framework.h"
 #include "Artifact.h"
 #include "System/Engine.h"
+#include "Rendering/IMGUIIncludes.h"
 
 #define MAX_LOADSTRING 100
 
@@ -132,9 +133,15 @@ BOOL InitialiseWindowInstance(HINSTANCE instance, int nCmdShow)
    return TRUE;
 }
 
+// Forward declare message handler from imgui_impl_win32.cpp
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 //Generic WndProc
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
+        return true;
+
     switch (message)
     {
     case WM_COMMAND:

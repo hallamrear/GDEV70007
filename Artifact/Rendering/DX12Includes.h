@@ -15,3 +15,7 @@
 #include <winerror.h>
 #include <dxgi1_6.h>
 #include <DirectXMath.h>
+
+//DX12 IMGUI Libraries
+#include "Rendering/IMGUIIncludes.h"
+#include "Rendering/imgui/backends/imgui_impl_dx12.h"
