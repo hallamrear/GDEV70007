@@ -4,10 +4,18 @@
 class Entity;
 class Octree;
 
+struct GUIDHasher
+{
+	std::size_t operator()(const EntityID& guid) const
+	{
+		return UuidHash((GUID*)&guid, nullptr);
+	}
+};
+
 class World
 {
 private:
-	typedef std::unordered_map<EntityID, Entity*> EntityMap;
+	typedef std::unordered_map<EntityID, Entity*, GUIDHasher> EntityMap;
 
 	World();
 	~World();

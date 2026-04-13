@@ -21,7 +21,12 @@
 #include <string>
 #include <filesystem>
 #include <cassert>
+#include <fstream>
 
+//#define RENDERER_DX11
+#define RENDERER_DX12
+
+#include <System/Defines.h>
 #include <System/Types.h>
 
 #endif //PCH_H

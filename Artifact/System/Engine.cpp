@@ -3,6 +3,8 @@
 #include <Rendering/Renderer.h>
 #include <World/World.h>
 
+std::filesystem::path Engine::m_ContentFolderLocation = std::filesystem::path();
+
 Engine::Engine()
 {
 	m_ContentFolderLocation = std::filesystem::path();
@@ -13,11 +15,11 @@ Engine::Engine()
 
 Engine::~Engine()
 {
-	assert(m_IsInitialised);
+	assert(!m_IsInitialised);
 	m_ContentFolderLocation = std::filesystem::path();
 }
 
-bool Engine::InitialiseSubsystems(const std::filesystem::path& contentFolderLocation)
+bool Engine::InitialiseSubsystems(HWND windowHandle, const std::filesystem::path& contentFolderLocation)
 {
 	if (m_IsInitialised)
 	{
@@ -25,7 +27,7 @@ bool Engine::InitialiseSubsystems(const std::filesystem::path& contentFolderLoca
 		return true;
 	}
 
-	m_Renderer = Renderer::CreateRenderer();
+	m_Renderer = Renderer::CreateRenderer(windowHandle);
 
 	if (m_Renderer == nullptr)
 	{
@@ -51,11 +53,11 @@ bool Engine::InitialiseSubsystems(const std::filesystem::path& contentFolderLoca
 	return m_IsInitialised;
 }
 
-Engine* Engine::CreateEngine(const std::filesystem::path& contentFolderLocation)
+Engine* Engine::CreateEngine(HWND windowHandle, const std::filesystem::path& contentFolderLocation)
 {
 	Engine* engine = new Engine();
 
-	bool initialised = engine->InitialiseSubsystems(contentFolderLocation);
+	bool initialised = engine->InitialiseSubsystems(windowHandle, contentFolderLocation);
 
 	if (initialised == false)
 	{
@@ -81,13 +83,39 @@ bool Engine::DestroyEngine(Engine* engine)
 		assert(Renderer::DestroyRenderer(engine->m_Renderer));
 	}
 
+	engine->m_IsRunning = false;
 	return true;
+}
+
+void Engine::Start()
+{
+	m_IsRunning = true;
+}
+
+void Engine::Stop()
+{
+	m_IsRunning = false;
+}
+
+const bool& Engine::IsRunning() const
+{
+	return m_IsRunning;
 }
 
 void Engine::Update(const float& deltaTime)
 {
-	if (!m_IsInitialised)
+	if (!m_IsInitialised || !m_IsRunning)
 		return;
+
+	static float timeElapsed = 0.0f;
+	timeElapsed += deltaTime;
+
+	Vector4 clearColour = m_Renderer->GetClearColour();
+	clearColour.x = (sin(timeElapsed + 0) * 127 + 127) / 255.0f;
+	clearColour.y = (sin(timeElapsed + 2) * 127 + 127) / 255.0f;
+	clearColour.z = (sin(timeElapsed + 4) * 127 + 127) / 255.0f;
+	clearColour.w = 1.0f;
+	m_Renderer->SetClearColour(clearColour);
 
 	m_World->Update(deltaTime);
 
@@ -96,8 +124,12 @@ void Engine::Update(const float& deltaTime)
 
 void Engine::Render()
 {
-	if (!m_IsInitialised)
+	if (!m_IsInitialised || !m_IsRunning)
 		return;
 
+	m_Renderer->ClearFrame();
+
 	m_World->Render();
+
+	m_Renderer->PresentFrame();
 }

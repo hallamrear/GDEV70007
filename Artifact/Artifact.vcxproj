@@ -75,28 +75,28 @@
     <IntDir>$(SolutionDir)Intermediate\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\backends;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(SolutionDir)External\DirectX\include;$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\backends;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)Builds\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)Intermediate\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\backends;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(SolutionDir)External\DirectX\include;$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\backends;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)Builds\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)Intermediate\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\backends;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(SolutionDir)External\DirectX\include;$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\backends;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)Builds\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)Intermediate\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\backends;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(SolutionDir)External\DirectX\include;$(SolutionDir)External\imgui;$(SolutionDir)External\imgui\backends;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -188,11 +188,19 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Artifact.h" />
+    <ClInclude Include="Rendering\ConstantBuffer.h" />
+    <ClInclude Include="Rendering\DX12Includes.h" />
+    <ClInclude Include="Rendering\DX12Renderer.h" />
     <ClInclude Include="Physics\Optimisations\Octree.h" />
     <ClInclude Include="Physics\Colliders\Collider.h" />
     <ClInclude Include="Physics\Rigidbody.h" />
     <ClInclude Include="Physics\Colliders\SphereCollider.h" />
+    <ClInclude Include="Rendering\Geometry\Mesh.h" />
+    <ClInclude Include="Rendering\Geometry\Model.h" />
     <ClInclude Include="Rendering\Renderer.h" />
+    <ClInclude Include="Rendering\Texturing\Texture.h" />
+    <ClInclude Include="Rendering\Vertex.h" />
+    <ClInclude Include="System\Defines.h" />
     <ClInclude Include="System\Types.h" />
     <ClInclude Include="World\World.h" />
     <ClInclude Include="World\Entity.h" />
@@ -205,11 +213,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Artifact.cpp" />
+    <ClCompile Include="Rendering\ConstantBuffer.cpp" />
+    <ClCompile Include="Rendering\DX12Renderer.cpp" />
     <ClCompile Include="Physics\Optimisations\Octree.cpp" />
     <ClCompile Include="Physics\Colliders\Collider.cpp" />
     <ClCompile Include="Physics\Rigidbody.cpp" />
     <ClCompile Include="Physics\Colliders\SphereCollider.cpp" />
+    <ClCompile Include="Rendering\Geometry\Mesh.cpp" />
+    <ClCompile Include="Rendering\Geometry\Model.cpp" />
     <ClCompile Include="Rendering\Renderer.cpp" />
+    <ClCompile Include="Rendering\Texturing\Texture.cpp" />
+    <ClCompile Include="Rendering\Vertex.cpp" />
     <ClCompile Include="World\World.cpp" />
     <ClCompile Include="World\Entity.cpp" />
     <ClCompile Include="System\ServiceLocator.cpp" />
@@ -227,6 +241,31 @@
   <ItemGroup>
     <Image Include="Artifact.ico" />
     <Image Include="small.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Rendering\Shaders\PS_Standard.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.1</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.1</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Rendering\Shaders\VS_Standard.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.1</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.1</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Rendering\Shaders\Structures.hlsli" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -6,7 +6,6 @@ Entity::Entity()
 	m_ID = EntityID();
 	CoCreateGuid(&m_ID);
 	m_DisplayName = "Unnamed";
-
 }
 
 Entity::~Entity()
@@ -32,4 +31,19 @@ void Entity::SetDisplayName(const std::string& displayName)
 Rigidbody& Entity::GetRigidbody()
 {
 	return m_Rigidbody;
+}
+
+void Entity::Update(const float& deltaTime)
+{
+	UNREFERENCED_PARAMETER(deltaTime);
+}
+
+void Entity::PostUpdate(const float& deltaTime)
+{
+	UNREFERENCED_PARAMETER(deltaTime);
+}
+
+void Entity::Render()
+{
+
 }

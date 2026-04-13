@@ -71,3 +71,11 @@ I think there is potential for an additonal scripting 'thing' by compiling scrip
 
 - Floating Simulation
 	- Potentially out of scope but I don't think it'll be that hard to implement if the forces are setup correctly.
+
+
+
+
+# References
+
+64px Textures/Tilesheet
+https://thatguynm.itch.io/pixelated-textures

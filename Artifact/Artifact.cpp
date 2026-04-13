@@ -9,6 +9,8 @@
 #define MAX_LOADSTRING 100
 
 // Global Variables:
+static Engine* g_Engine = nullptr;
+HWND g_WindowHandle;
 HINSTANCE g_Instance;                               // current instance
 CHAR g_TitleStr[MAX_LOADSTRING];                    // The title bar text
 CHAR g_WindowClassStr[MAX_LOADSTRING];              // the main window class name
@@ -27,16 +29,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
-    Engine* engine = nullptr;
-
-    engine = Engine::CreateEngine("Content/");
-
-    if (engine == nullptr)
-    {
-        printf("Failed to create engine. Exitting WinMain.\n");
-        return -1;
-    }
-
     // Initialize global strings
     LoadString(hInstance, IDS_APP_TITLE, g_TitleStr, MAX_LOADSTRING);
     LoadString(hInstance, IDC_ARTIFACT, g_WindowClassStr, MAX_LOADSTRING);
@@ -48,26 +40,52 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return -1;
     }
 
+    g_Engine = Engine::CreateEngine(g_WindowHandle, "Content/");
+
+    if (g_Engine == nullptr)
+    {
+        printf("Failed to create engine. Exitting WinMain.\n");
+        return -1;
+    }
+
+    g_Engine->Start();
+
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ARTIFACT));
 
     MSG msg{};
 
-    // Main message loop:
-    while (GetMessage(&msg, nullptr, 0, 0))
+    auto lTime = std::chrono::steady_clock::now();
+    auto cTime = lTime;
+    std::chrono::duration<double> clockDelta = { };
+    float dTime = 0.0f;
+
+    while (g_Engine->IsRunning())
     {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+        while (PeekMessage(&msg, g_WindowHandle, 0, 0, PM_REMOVE))
         {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+            if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+            {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
         }
+
+        cTime = std::chrono::steady_clock::now();
+        clockDelta = std::chrono::duration_cast<std::chrono::milliseconds>(cTime - lTime);
+        dTime = (float)clockDelta.count();
+
+        g_Engine->Update(dTime);
+        g_Engine->Render();
+
+        lTime = cTime;
     }
  
-    if (Engine::DestroyEngine(engine) == true)
+    if (Engine::DestroyEngine(g_Engine) == true)
     {
         printf("Destroyed engine successfully.\n");
     }
     
-    engine = nullptr;
+    g_Engine = nullptr;
 
     return (int) msg.wParam;
 }
@@ -109,6 +127,8 @@ BOOL InitialiseWindowInstance(HINSTANCE instance, int nCmdShow)
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
 
+   g_WindowHandle = hWnd;
+
    return TRUE;
 }
 
@@ -134,15 +154,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
         break;
-    case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: Add any drawing code that uses hdc here...
-            EndPaint(hWnd, &ps);
-        }
-        break;
+
     case WM_DESTROY:
+        g_Engine->Stop();
         PostQuitMessage(0);
         break;
     default:

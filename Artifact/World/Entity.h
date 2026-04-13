@@ -4,7 +4,7 @@
 class Entity
 {
 private:
-
+	std::string m_DisplayName;
 	EntityID m_ID;
 	Rigidbody m_Rigidbody;
 
@@ -21,4 +21,3 @@ public:
 	void PostUpdate(const float& deltaTime);
 	void Render();
 };
-
