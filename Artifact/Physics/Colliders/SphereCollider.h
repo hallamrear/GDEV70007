@@ -3,6 +3,7 @@
 
 class SphereCollider : public Collider
 {
+
 public:
 	SphereCollider(const Entity& entity, const float& radius);
 	~SphereCollider();

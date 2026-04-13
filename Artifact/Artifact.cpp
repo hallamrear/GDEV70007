@@ -73,7 +73,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 }
 
 // Registers class window
-ATOM RegisterWindowClass(HINSTANCE _hInstance)
+ATOM RegisterWindowClass(HINSTANCE instance)
 {
     WNDCLASSEX wcex;
     memset(&wcex, 0, sizeof(WNDCLASSEX));
@@ -82,8 +82,8 @@ ATOM RegisterWindowClass(HINSTANCE _hInstance)
     wcex.lpfnWndProc    = WndProc;
     wcex.cbClsExtra     = 0;
     wcex.cbWndExtra     = 0;
-    wcex.hInstance      = _hInstance;
-    wcex.hIcon          = LoadIcon(_hInstance, MAKEINTRESOURCE(IDI_ARTIFACT));
+    wcex.hInstance      = instance;
+    wcex.hIcon          = LoadIcon(instance, MAKEINTRESOURCE(IDI_ARTIFACT));
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
     wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
     wcex.lpszMenuName   = MAKEINTRESOURCE(IDC_ARTIFACT);
@@ -94,19 +94,19 @@ ATOM RegisterWindowClass(HINSTANCE _hInstance)
 }
 
 //Initialises Window Instance and stores handle.
-BOOL InitialiseWindowInstance(HINSTANCE _hInstance, int _nCmdShow)
+BOOL InitialiseWindowInstance(HINSTANCE instance, int nCmdShow)
 {
-   g_Instance = _hInstance; // Store instance handle in our global variable
+   g_Instance = instance; // Store instance handle in our global variable
 
    HWND hWnd = CreateWindow(g_WindowClassStr, g_TitleStr, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, _hInstance, nullptr);
+      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, instance, nullptr);
 
    if (!hWnd)
    {
       return FALSE;
    }
 
-   ShowWindow(hWnd, _nCmdShow);
+   ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
 
    return TRUE;
@@ -152,10 +152,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 // Message handler for about box.
-INT_PTR CALLBACK AboutWndProc(HWND _hDlg, UINT _message, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK AboutWndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
-    switch (_message)
+    switch (message)
     {
     case WM_INITDIALOG:
         return (INT_PTR)TRUE;
@@ -163,7 +163,7 @@ INT_PTR CALLBACK AboutWndProc(HWND _hDlg, UINT _message, WPARAM wParam, LPARAM l
     case WM_COMMAND:
         if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
         {
-            EndDialog(_hDlg, LOWORD(wParam));
+            EndDialog(hDlg, LOWORD(wParam));
             return (INT_PTR)TRUE;
         }
         break;

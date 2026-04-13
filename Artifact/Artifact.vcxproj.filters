@@ -33,13 +33,7 @@
     <ClInclude Include="System\Engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="System\ISubsystem.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="System\ServiceLocator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Physics\PhysicsWorld.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="World\Entity.h">
@@ -54,16 +48,16 @@
     <ClInclude Include="Physics\Colliders\SphereCollider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Physics\BVH\BVH.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="System\Types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="World\World.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer.h">
+    <ClInclude Include="Rendering\Renderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Physics\Optimisations\Octree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -77,13 +71,7 @@
     <ClCompile Include="System\Engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="System\ISubsystem.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="System\ServiceLocator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Physics\PhysicsWorld.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="World\Entity.cpp">
@@ -98,13 +86,13 @@
     <ClCompile Include="Physics\Colliders\SphereCollider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Physics\BVH\BVH.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="World\World.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer.cpp">
+    <ClCompile Include="Rendering\Renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Physics\Optimisations\Octree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
