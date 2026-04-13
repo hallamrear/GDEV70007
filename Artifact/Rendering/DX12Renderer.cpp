@@ -2,15 +2,20 @@
 #include "DX12Renderer.h"
 #include <Rendering/ConstantBuffer.h>
 #include <Rendering/Vertex.h>
+#include <functional>
 
 #define FAILED_RETURN(hr) if(FAILED(hr)) return !FAILED(hr);
 
+
 DX12Renderer::DX12Renderer() : Renderer()
 {
-    m_CBVHeap = nullptr;
-    m_ClearColour = Vector4(0.0f, 0.0f, 0.0f, 1.0f);
+    m_NullTextureDescriptor = {};
+    m_PerObjectSRVHeap = nullptr;
+    m_MainSRVHeap = nullptr;
+    m_CBVHeaps = nullptr;
     m_DXGIFactory = nullptr;
     m_Device = nullptr;
+    m_InfoQueue = nullptr;
     m_Fence = nullptr;
     m_RTVDescriptorHeapSize = 0;
     m_DSVDescriptorHeapSize = 0;
@@ -24,65 +29,132 @@ DX12Renderer::DX12Renderer() : Renderer()
     m_RTVHeap = nullptr;
     m_DSVHeap = nullptr;
     m_CurrentFenceIndex = 0;
-    m_WindowHeight = 0;
-    m_WindowWidth = 0;
     m_SwapchainBuffers = nullptr;
     m_Viewport = { 0.0f, 0.0f, 0.0f, 0.0f };
     m_ScissorRect = {};
     m_DepthStencilBuffer = nullptr;
-    m_DefaultPipeline = nullptr;
     m_DefaultPixelShaderBlob = nullptr;
     m_DefaultVertexShaderBlob = nullptr;
+    m_DefaultPipeline = nullptr;
     m_RootSignature = nullptr;
+    m_PushConstants = nullptr;
+    m_CBVHeaps = new ID3D12DescriptorHeap * [m_SwapChainBufferCount];
+    m_ConstantBufferAddressArray = new char* [m_SwapChainBufferCount];
+    m_ConstantBufferGPUUploaderArray = new ID3D12Resource * [m_SwapChainBufferCount];
+    m_LightBufferAddressArray = new char* [m_SwapChainBufferCount];
+    m_LightBufferGPUUploaderArray = new ID3D12Resource * [m_SwapChainBufferCount];
 
-    for (size_t i = 0; i < MAX_NUM_ENTITIES; i++)
+    for (size_t i = 0; i < m_SwapChainBufferCount; i++)
     {
-        m_ConstantBufferArray[i] = { nullptr };
+        m_ConstantBufferGPUUploaderArray[i] = nullptr;
+        m_ConstantBufferAddressArray[i] = nullptr;
+        m_LightBufferAddressArray[i] = nullptr;
+        m_LightBufferGPUUploaderArray[i] = nullptr;
+        m_CBVHeaps[i] = nullptr;
     }
+
+    DirectX::XMStoreFloat4x4(&m_ProjectionMatrix, DirectX::XMMatrixIdentity());
 }
 
 DX12Renderer::~DX12Renderer()
 {
     assert(IsInitialised() == false);
+
+    if (m_ConstantBufferGPUUploaderArray != nullptr)
+    {
+        delete[] m_ConstantBufferGPUUploaderArray;
+        m_ConstantBufferGPUUploaderArray = nullptr;
+    }
+
+    if (m_ConstantBufferAddressArray != nullptr)
+    {
+        delete[] m_ConstantBufferAddressArray;
+        m_ConstantBufferAddressArray = nullptr;
+    }
+
+    if (m_LightBufferGPUUploaderArray != nullptr)
+    {
+        delete[] m_LightBufferGPUUploaderArray;
+        m_LightBufferGPUUploaderArray = nullptr;
+    }
+
+    if (m_LightBufferAddressArray != nullptr)
+    {
+        delete[] m_LightBufferAddressArray;
+        m_LightBufferAddressArray = nullptr;
+    }
+
+    if (m_CBVHeaps != nullptr)
+    {
+        delete[] m_CBVHeaps;
+        m_CBVHeaps = nullptr;
+    }
+
+    if (m_PushConstants != nullptr)
+    {
+        delete m_PushConstants;
+        m_PushConstants = nullptr;
+    }
 }
 
-const GraphicsDevice* DX12Renderer::GetDevice() const
+ID3D12CommandQueue* DX12Renderer::GetCommandQueue()
 {
-    assert(IsInitialised());
+    assert(m_IsInitialised);
+    return m_CommandQueue;
+}
+
+const ID3D12CommandQueue* DX12Renderer::GetCommandQueue() const
+{
+    assert(m_IsInitialised);
+    return m_CommandQueue;
+}
+
+HRESULT DX12Renderer::ResetCommandList()
+{
+    return m_CommandList->Reset(m_CommandAllocator, m_DefaultPipeline);
+}
+
+ID3D12GraphicsCommandList* DX12Renderer::GetCommandList()
+{
+    assert(m_IsInitialised);
+    return m_CommandList;
+}
+
+const ID3D12GraphicsCommandList* DX12Renderer::GetCommandList() const
+{
+    assert(m_IsInitialised);
+    return m_CommandList;
+}
+
+const ID3D12Device* DX12Renderer::GetDevice() const
+{
+    assert(m_IsInitialised);
     return m_Device;
 }
 
-GraphicsDevice* DX12Renderer::GetDevice()
+ID3D12Device* DX12Renderer::GetDevice()
 {
-    assert(IsInitialised());
+    assert(m_IsInitialised);
     return m_Device;
-}
-
-HRESULT DX12Renderer::CreateResource(ID3D12Resource& resource, const D3D12_RESOURCE_DESC& resDesc)
-{
-    UNREFERENCED_PARAMETER(resource);
-    UNREFERENCED_PARAMETER(resDesc);
-    return E_NOTIMPL;
 }
 
 bool DX12Renderer::Initialise(HWND windowHandle)
 {
     if (IsInitialised())
     {
-        printf("Calling initialise on a renderer object that already exists.\n");
+        printf("Calling initialise on a  object that already exists\n");
         return false;
     }
 
     if (windowHandle == NULL)
     {
-        printf("Passing an invalid window handle.\n");
+        printf("Passing an invalid window handle\n");
         return false;
     }
 
-    m_WindowHandle = windowHandle;
-
     HRESULT hr = S_OK;
     m_IsInitialised = true;
+    m_WindowHandle = windowHandle;
 
     hr = CreateDeviceAndFactory();
     m_IsInitialised &= SUCCEEDED(hr);
@@ -116,7 +188,7 @@ bool DX12Renderer::Initialise(HWND windowHandle)
     m_IsInitialised &= SUCCEEDED(hr);
     FAILED_RETURN(hr)
 
-    hr = SetupInitialViewportAndScissorRect();
+    hr = UpdateViewportAndScissorRect();
     m_IsInitialised &= SUCCEEDED(hr);
     FAILED_RETURN(hr)
 
@@ -144,8 +216,14 @@ bool DX12Renderer::Initialise(HWND windowHandle)
     m_IsInitialised &= SUCCEEDED(hr);
     FAILED_RETURN(hr)
 
-    m_IsInitialised &= InitialiseIMGUI();
+    hr = CreateNullDescriptors();
+    m_IsInitialised &= SUCCEEDED(hr);
+    FAILED_RETURN(hr)
 
+    m_PushConstants = new PushConstants();
+
+    m_IsInitialised &= InitialiseIMGUI();
+    
     if (IsInitialised() == false)
     {
         m_WindowHandle = NULL;
@@ -169,7 +247,7 @@ bool DX12Renderer::InitialiseIMGUI()
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
@@ -185,42 +263,78 @@ bool DX12Renderer::InitialiseIMGUI()
     init_info.RTVFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
     init_info.DSVFormat = DXGI_FORMAT_UNKNOWN;
 
-    init_info.SrvDescriptorHeap = m_CBVHeap;
-    /*init_info.SrvDescriptorAllocFn =
-    [](ImGui_ImplDX12_InitInfo*, D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu_handle)
-    { 
+    init_info.SrvDescriptorHeap = m_IMGUISRVHeap;
 
-        return g_pd3dSrvDescHeapAlloc.Alloc(out_cpu_handle, out_gpu_handle); 
-    };
+    init_info.SrvDescriptorAllocFn = IMGUISRVAllocator;
+    init_info.SrvDescriptorFreeFn = IMGUISRVDestructor;
 
-init_info.SrvDescriptorFreeFn = [](ImGui_ImplDX12_InitInfo*, D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE gpu_handle)
-    { 
-        return g_pd3dSrvDescHeapAlloc.Free(cpu_handle, gpu_handle);
-    };*/
+    init_info.SrvDescriptorAllocFn = IMGUISRVAllocatorWithInfo;
+    init_info.SrvDescriptorFreeFn = IMGUISRVDestructorWithInfo;
 
     bool dx12Init = ImGui_ImplDX12_Init(&init_info);
+
+
+
+    bool dx12Init = ImGui_ImplDX12_Init(m_Device, m_SwapChainBufferCount, DXGI_FORMAT_R8G8B8A8_UNORM, m_IMGUISRVHeap, m_IMGUISRVHeap->GetCPUDescriptorHandleForHeapStart(), m_IMGUISRVHeap->GetGPUDescriptorHandleForHeapStart());
 
     return (win32Init && dx12Init);
 }
 
-bool DX12Renderer::ShutdownIMGUI()
+void DX12Renderer::IMGUISRVAllocatorWithInfo(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle)
 {
-    // Cleanup
-    ImGui_ImplDX12_Shutdown();
-    ImGui_ImplWin32_Shutdown();
-    ImGui::DestroyContext();
-    return true;
+    auto cpuHeapStart = m_IMGUISRVHeap->GetCPUDescriptorHandleForHeapStart();
+    auto gpuHeapStart = m_IMGUISRVHeap->GetGPUDescriptorHandleForHeapStart();
+    cpuHandle->ptr = cpuHeapStart.ptr + (m_IMGUISRVIndex * m_CBVSRVDescriptorHeapSize);
+    gpuHandle->ptr = gpuHeapStart.ptr + (m_IMGUISRVIndex * m_CBVSRVDescriptorHeapSize);
+    m_IMGUISRVIndex++;
+}
+
+void DX12Renderer::IMGUISRVDestructorWithInfo(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle)
+{
+    UNREFERENCED_PARAMETER(cpuHandle);
+    UNREFERENCED_PARAMETER(gpuHandle);
+    //auto cpuHeapStart = m_IMGUISRVHeap->GetCPUDescriptorHandleForHeapStart();
+    //auto gpuHeapStart = m_IMGUISRVHeap->GetGPUDescriptorHandleForHeapStart();
+    //int cpu_idx = (int)((cpuHandle.ptr - cpuHeapStart.ptr) / m_CBVSRVDescriptorHeapSize);
+    //int gpu_idx = (int)((gpuHandle.ptr - gpuHeapStart.ptr) / m_CBVSRVDescriptorHeapSize);
+}
+
+void DX12Renderer::IMGUISRVAllocator(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle)
+{
+    auto cpuHeapStart = m_IMGUISRVHeap->GetCPUDescriptorHandleForHeapStart();
+    auto gpuHeapStart = m_IMGUISRVHeap->GetGPUDescriptorHandleForHeapStart();
+    cpuHandle->ptr = cpuHeapStart.ptr + (m_IMGUISRVIndex * m_CBVSRVDescriptorHeapSize);
+    gpuHandle->ptr = gpuHeapStart.ptr + (m_IMGUISRVIndex * m_CBVSRVDescriptorHeapSize);
+    m_IMGUISRVIndex++;
+}
+
+void DX12Renderer::IMGUISRVDestructor(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle)
+{
+    UNREFERENCED_PARAMETER(cpuHandle);
+    UNREFERENCED_PARAMETER(gpuHandle);
+    //auto cpuHeapStart = m_IMGUISRVHeap->GetCPUDescriptorHandleForHeapStart();
+    //auto gpuHeapStart = m_IMGUISRVHeap->GetGPUDescriptorHandleForHeapStart();
+    //int cpu_idx = (int)((cpuHandle.ptr - cpuHeapStart.ptr) / m_CBVSRVDescriptorHeapSize);
+    //int gpu_idx = (int)((gpuHandle.ptr - gpuHeapStart.ptr) / m_CBVSRVDescriptorHeapSize);
 }
 
 bool DX12Renderer::Shutdown()
 {
     if (!IsInitialised())
     {
-        printf("Calling shutdown on a renderer object that doesn't exist.");
+        printf("Calling shutdown on a DX12Renderer object that doesn't exist.");
         return false;
     }
 
     ShutdownIMGUI();
+
+    if (m_PushConstants != nullptr)
+    {
+        delete m_PushConstants;
+        m_PushConstants = nullptr;
+    }
+
+    DestroyNullDescriptors();
     DestroyGraphicsPipelines();
     DestroyLoadedShaders();
     DestroyRootSignatureAndDescriptorTable();
@@ -235,10 +349,140 @@ bool DX12Renderer::Shutdown()
     ClearMultisamplingDetails();
     DestroyFence();
     DestroyDeviceAndFactory();
+
     m_WindowHandle = NULL;
-    m_IsInitialised = false;
 
     return true;
+}
+
+bool DX12Renderer::ShutdownIMGUI()
+{
+    // Cleanup
+    ImGui_ImplDX12_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
+    return true;
+}
+
+const int& DX12Renderer::GetWindowWidth() const
+{
+    return m_WindowWidth;
+}
+
+const int& DX12Renderer::GetWindowHeight() const
+{
+    return m_WindowHeight;
+}
+
+const D3D12_CPU_DESCRIPTOR_HANDLE& DX12Renderer::GetNullTextureDescriptor() const
+{
+    return m_NullTextureDescriptor;
+}
+
+HRESULT DX12Renderer::AssignTextureToSlot(const int& index, Texture* texture)
+{
+    UNREFERENCED_PARAMETER(index);
+    UNREFERENCED_PARAMETER(texture);
+
+    printf("DX12Renderer::AssignTextureToSlot not implemented.");
+    return E_NOTIMPL;
+
+   /* CD3DX12_CPU_DESCRIPTOR_HANDLE destDescriptor(m_PerObjectSRVHeap->GetCPUDescriptorHandleForHeapStart());
+    destDescriptor.Offset(index * GetSRVDescriptorHeapSize());
+
+    if (m_PushConstants == nullptr)
+    {
+        printf("Trying to use an invalid push constant buffer.\n");
+        return E_POINTER;
+    }
+
+    m_PushConstants->TextureSlotEnabled[index] = false;
+
+    D3D12_CPU_DESCRIPTOR_HANDLE handle = GetNullTextureDescriptor();
+
+    if (texture != nullptr)
+    {
+        if (texture->IsLoaded())
+        {
+            handle = texture->GetCPUHandle();
+            m_PushConstants->TextureSlotEnabled[index] = true;
+        }
+    }
+
+    m_Device->CopyDescriptorsSimple(1, destDescriptor, handle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+    UploadPushConstants();
+
+    return S_OK;*/
+}
+
+const Matrix4x4& DX12Renderer::GetProjectionMatrix() const
+{
+    return m_ProjectionMatrix;
+}
+
+Matrix4x4& DX12Renderer::GetProjectionMatrix()
+{
+    return m_ProjectionMatrix;
+}
+
+const Matrix4x4 DX12Renderer::GetViewMatrix() const
+{
+    return m_Camera.GetViewMatrix();
+}
+
+HRESULT DX12Renderer::ResizeSwapchain(const int& newWidth, const int& newHeight)
+{
+    assert(m_IsInitialised);
+
+    if (m_SwapChain == nullptr)
+    {
+        printf("Swapchain is invalid for resizing.\n");
+        return E_FAIL;
+    }
+
+    DestroyRenderTargetViews();
+    DestroyDepthStencilBuffer();
+
+    //Passing unknown format to retain the same format as the current buffers.
+    HRESULT result = m_SwapChain->ResizeBuffers(m_SwapChainBufferCount, newWidth, newHeight, DXGI_FORMAT::DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG::DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
+
+    if (FAILED(result))
+    {
+        printf("Serious failure while resizing swapchain buffers\n");
+        return result;
+    }
+
+    m_WindowWidth = newWidth;
+    m_WindowHeight = newHeight;
+
+    result = CreateRenderTargetViews();
+
+    if (FAILED(result))
+    {
+        printf("Failed to recreate render target views after swapchain resizing.\n");
+        return result;
+    }
+
+    result = CreateDepthStencilBuffer();
+
+    if (FAILED(result))
+    {
+        printf("Failed to recreate depth stencil view after swapchain resizing.\n");
+        return result;
+    }
+
+    m_CurrentBackbufferIndex = 0;
+
+    result = UpdateViewportAndScissorRect();
+
+    if (FAILED(result))
+    {
+        printf("Failed to update viewport or scissor rect during swapchain resize.\n");
+        return result;
+    }
+
+    return result;
 }
 
 HRESULT DX12Renderer::CreateDeviceAndFactory()
@@ -267,6 +511,11 @@ HRESULT DX12Renderer::CreateDeviceAndFactory()
 #endif
 
     result = CreateDXGIFactory2(factoryFlags, IID_PPV_ARGS(&m_DXGIFactory));
+    if (FAILED(result))
+    {
+        printf("Failed to create D3D12 Factorys.\n");
+        return result;
+    }
 
     //Create hardware device
     result = D3D12CreateDevice(nullptr, featureLevel, IID_PPV_ARGS(&m_Device));
@@ -276,11 +525,31 @@ HRESULT DX12Renderer::CreateDeviceAndFactory()
         return result;
     }
 
+    m_Device->SetName(L"Graphics Device");
+
+#if defined(DEBUG) || defined(_DEBUG)
+    m_Device->QueryInterface(IID_PPV_ARGS(&m_InfoQueue));
+    m_InfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+    m_InfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
+    m_InfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, false);
+#endif
+
+    //Cache descriptor sizes for later.
+    m_RTVDescriptorHeapSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+    m_DSVDescriptorHeapSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+    m_CBVSRVDescriptorHeapSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
     return result;
 }
 
 void DX12Renderer::DestroyDeviceAndFactory()
 {
+    if (m_InfoQueue != nullptr)
+    {
+        m_InfoQueue->Release();
+        m_InfoQueue = nullptr;
+    }
+
     if (m_Device != nullptr)
     {
         m_Device->Release();
@@ -304,16 +573,13 @@ HRESULT DX12Renderer::CreateFence()
     D3D12_FENCE_FLAGS fenceFlag = D3D12_FENCE_FLAGS::D3D12_FENCE_FLAG_NONE;
     result = m_Device->CreateFence(0, fenceFlag, IID_PPV_ARGS(&m_Fence));
 
+    m_Fence->SetName(L"Default Fence");
+
     if (FAILED(result))
     {
         printf("Failed to create fence from ID3D12Device.\n");
         return result;
     }
-
-    //Cache descriptor sizes for later.
-    m_RTVDescriptorHeapSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-    m_DSVDescriptorHeapSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-    m_CBVSRVDescriptorHeapSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
     return result;
 }
@@ -338,8 +604,8 @@ HRESULT DX12Renderer::DetermineMultisamplingDetails()
     if (m_Device == nullptr)
         return E_POINTER;
 
-    D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS multisampleQualityLevels;
-    multisampleQualityLevels.Format = (DXGI_FORMAT)m_BackbufferFormat;
+    D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS multisampleQualityLevels{};
+    multisampleQualityLevels.Format = m_BackbufferFormat;
     multisampleQualityLevels.SampleCount = 4;
     multisampleQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVEL_FLAGS::D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
     multisampleQualityLevels.NumQualityLevels = 0;
@@ -381,6 +647,8 @@ HRESULT DX12Renderer::CreateCommandObjects()
         return result;
     }
 
+    m_CommandQueue->SetName(L"Command Queue");
+
     result = m_Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_CommandAllocator));
 
     if (FAILED(result))
@@ -389,6 +657,8 @@ HRESULT DX12Renderer::CreateCommandObjects()
         return result;
     }
 
+    m_CommandAllocator->SetName(L"Command Allocator");
+
     result = m_Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT, m_CommandAllocator, nullptr, IID_PPV_ARGS(&m_CommandList));
 
     if (FAILED(result))
@@ -396,6 +666,8 @@ HRESULT DX12Renderer::CreateCommandObjects()
         printf("Failed to create command list from ID3D12Device.\n");
         return result;
     }
+
+    m_CommandList->SetName(L"Command List");
 
     return result;
 }
@@ -499,6 +771,8 @@ HRESULT DX12Renderer::CreateDescriptorHeaps()
         return result;
     }
 
+    m_RTVHeap->SetName(L"Render Target Heap");
+
     D3D12_DESCRIPTOR_HEAP_DESC dsvDescriptorHeapDesc{};
     dsvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
     dsvDescriptorHeapDesc.NumDescriptors = 1;
@@ -511,6 +785,54 @@ HRESULT DX12Renderer::CreateDescriptorHeaps()
         printf("Failed to create DSV descriptor heap.\n");
         return result;
     }
+
+    m_DSVHeap->SetName(L"Depth Stencil Heap");
+
+    D3D12_DESCRIPTOR_HEAP_DESC mainSRVDescriptorHeapDesc{};
+    mainSRVDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+    mainSRVDescriptorHeapDesc.NumDescriptors = MAX_LOADABLE_TEXTURES;
+    mainSRVDescriptorHeapDesc.NodeMask = 0;
+    mainSRVDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+    m_Device->CreateDescriptorHeap(&mainSRVDescriptorHeapDesc, IID_PPV_ARGS(&m_MainSRVHeap));
+
+    if (FAILED(result))
+    {
+        printf("Failed to create main SRV descriptor heap.\n");
+        return result;
+    }
+
+    m_MainSRVHeap->SetName(L"Main CBV/SRV/UAV Heap");
+
+    D3D12_DESCRIPTOR_HEAP_DESC drawDescriptorHeapDesc{};
+    drawDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+    drawDescriptorHeapDesc.NumDescriptors = MAX_LOADABLE_TEXTURES;
+    drawDescriptorHeapDesc.NodeMask = 0;
+    drawDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+    m_Device->CreateDescriptorHeap(&drawDescriptorHeapDesc, IID_PPV_ARGS(&m_PerObjectSRVHeap));
+
+    if (FAILED(result))
+    {
+        printf("Failed to create per object SRV descriptor heap.\n");
+        return result;
+    }
+
+    m_PerObjectSRVHeap->SetName(L"Draw Call CBV/SRV/UAV Heap");
+
+    D3D12_DESCRIPTOR_HEAP_DESC imguiDescriptorHeapDesc{};
+    imguiDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+    imguiDescriptorHeapDesc.NumDescriptors = MAX_LOADABLE_TEXTURES;
+    imguiDescriptorHeapDesc.NodeMask = 0;
+    imguiDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+    m_Device->CreateDescriptorHeap(&imguiDescriptorHeapDesc, IID_PPV_ARGS(&m_IMGUISRVHeap));
+
+    if (FAILED(result))
+    {
+        printf("Failed to create imgui SRV descriptor heap.\n");
+        return result;
+    }
+
+    m_IMGUISRVHeap->SetName(L"IMGUI CBV/SRV/UAV Heap");
+    m_IMGUISRVIndex = 0;
 
     return result;
 }
@@ -527,6 +849,25 @@ void DX12Renderer::DestroyDescriptorHeaps()
     {
         m_DSVHeap->Release();
         m_DSVHeap = nullptr;
+    }
+
+    if (m_MainSRVHeap != nullptr)
+    {
+        m_MainSRVHeap->Release();
+        m_MainSRVHeap = nullptr;
+    }
+
+    if (m_PerObjectSRVHeap != nullptr)
+    {
+        m_PerObjectSRVHeap->Release();
+        m_PerObjectSRVHeap = nullptr;
+    }
+
+    if (m_IMGUISRVHeap != nullptr)
+    {
+        m_IMGUISRVHeap->Release();
+        m_IMGUISRVHeap = nullptr;
+        m_IMGUISRVIndex = 0;
     }
 }
 
@@ -570,11 +911,13 @@ HRESULT DX12Renderer::CreateRenderTargetViews()
 
         if (FAILED(result))
         {
-            printf("Failed to get swap chain buffer %i from swap chain.\n", (unsigned int)i);
+            printf("Failed to get swap chain buffer %ui from swap chain.\n", i);
             return result;
         }
 
         m_Device->CreateRenderTargetView(m_SwapchainBuffers[i], nullptr, rtvHandle);
+        std::wstring n = L"Swapchain Buffer" + std::to_wstring(i);
+        m_SwapchainBuffers[i]->SetName(n.c_str());
 
         rtvHandle.ptr += m_RTVDescriptorHeapSize;
     }
@@ -617,7 +960,7 @@ HRESULT DX12Renderer::CreateDepthStencilBuffer()
     depthStencilDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
     depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
-    D3D12_CLEAR_VALUE clearValue;
+    D3D12_CLEAR_VALUE clearValue{};
     clearValue.Color[0] = 1.0f;
     clearValue.Color[1] = 1.0f;
     clearValue.Color[2] = 1.0f;
@@ -637,8 +980,7 @@ HRESULT DX12Renderer::CreateDepthStencilBuffer()
 
     m_Device->CreateDepthStencilView(m_DepthStencilBuffer, nullptr, GetDepthStencilBufferView());
 
-    D3D12_RESOURCE_BARRIER resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition(m_DepthStencilBuffer, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_DEPTH_WRITE);
-    m_CommandList->ResourceBarrier(1, &resourceBarrier);
+    m_DepthStencilBuffer->SetName(L"Depth Stencil Buffer");
 
     return result;
 }
@@ -652,7 +994,7 @@ void DX12Renderer::DestroyDepthStencilBuffer()
     }
 }
 
-HRESULT DX12Renderer::SetupInitialViewportAndScissorRect()
+HRESULT DX12Renderer::UpdateViewportAndScissorRect()
 {
     if (m_CommandList == nullptr)
     {
@@ -667,13 +1009,12 @@ HRESULT DX12Renderer::SetupInitialViewportAndScissorRect()
     m_Viewport.MinDepth = 0.0f;
     m_Viewport.MaxDepth = 1.0f;
 
-    m_CommandList->RSSetViewports(1, &m_Viewport);
-
     m_ScissorRect.left = 0;
     m_ScissorRect.top = 0;
     m_ScissorRect.right = m_WindowWidth;
     m_ScissorRect.bottom = m_WindowHeight;
-    m_CommandList->RSSetScissorRects(1, &m_ScissorRect);
+
+    DirectX::XMStoreFloat4x4(&m_ProjectionMatrix, DirectX::XMMatrixTranspose(DirectX::XMMatrixPerspectiveFovLH(90.0f * (3.1415926535f / 180.0f), 1920.0f / 1080.0f, DEFAULT_NEAR_PLANE, DEFAULT_FAR_PLANE)));
 
     return S_OK;
 }
@@ -714,30 +1055,94 @@ HRESULT DX12Renderer::FlushCommandQueue()
 
 HRESULT DX12Renderer::CreateConstantBuffers()
 {
-    CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(ConstantBuffer));
     CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 
-    for (uint32_t i = 0; i < MAX_NUM_ENTITIES; i++)
+    ConstantBuffer emptyCb = ConstantBuffer();
+    LightBuffer emptyLb = LightBuffer();
+
+    HRESULT result = E_FAIL;
+
+    for (size_t i = 0; i < m_SwapChainBufferCount; i++)
     {
-        HRESULT result = m_Device->CreateCommittedResource(
-            &heapProperties,
+        //Creating GPU upload buffer.
+        CD3DX12_HEAP_PROPERTIES uploadHeapProperties = CD3DX12_HEAP_PROPERTIES::CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+        CD3DX12_RANGE readRange(0, 0);
+
+        //Creating per-frame Constant Buffer
+        CD3DX12_RESOURCE_DESC cbResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(ConstantBuffer));
+
+        result = m_Device->CreateCommittedResource(
+            &uploadHeapProperties,
             D3D12_HEAP_FLAG_NONE,
-            &resourceDesc,
-            D3D12_RESOURCE_STATE_GENERIC_READ,
+            &cbResourceDesc,
+            D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
             nullptr,
-            IID_PPV_ARGS(&m_ConstantBufferArray[i]));
+            IID_PPV_ARGS(&m_ConstantBufferGPUUploaderArray[i]));
 
         if (FAILED(result))
         {
-            printf("Failed during constant buffer array %ui creation.\n", i);
+            printf("Failed to create commited resource for constant buffer's GPU upload buffer.\n");
             return result;
         }
 
-        D3D12_GPU_VIRTUAL_ADDRESS bufferAddr = m_ConstantBufferArray[i]->GetGPUVirtualAddress();
+        std::wstring name = L"Constant Buffer GPU Upload Heap " + std::to_wstring(i);
+        m_ConstantBufferGPUUploaderArray[i]->SetName(name.c_str());
+
         D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc{};
-        cbvDesc.BufferLocation = bufferAddr;
-        cbvDesc.SizeInBytes = sizeof(ConstantBuffer);
-        m_Device->CreateConstantBufferView(&cbvDesc, m_CBVHeap->GetCPUDescriptorHandleForHeapStart());
+        cbvDesc.BufferLocation = m_ConstantBufferGPUUploaderArray[i]->GetGPUVirtualAddress();
+        cbvDesc.SizeInBytes = (sizeof(ConstantBuffer) + 255) & ~255;
+
+        m_Device->CreateConstantBufferView(&cbvDesc, m_CBVHeaps[i]->GetCPUDescriptorHandleForHeapStart());
+
+        result = m_ConstantBufferGPUUploaderArray[i]->Map(0, &readRange, reinterpret_cast<void**>(&m_ConstantBufferAddressArray[i]));
+
+        if (FAILED(result) || m_ConstantBufferAddressArray[i] == nullptr)
+        {
+            printf("Failed to map constant buffer's GPU upload heap address.\n");
+            return result;
+        }
+
+        memcpy(m_ConstantBufferAddressArray[i], &emptyCb, sizeof(ConstantBuffer));
+
+        //--------------------------------------------------------------------//
+
+        //Creating per-frame Light Buffer
+        CD3DX12_RESOURCE_DESC lbResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(LightBuffer));
+
+        result = m_Device->CreateCommittedResource(
+            &uploadHeapProperties,
+            D3D12_HEAP_FLAG_NONE,
+            &lbResourceDesc,
+            D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
+            nullptr,
+            IID_PPV_ARGS(&m_LightBufferGPUUploaderArray[i]));
+
+        if (FAILED(result))
+        {
+            printf("Failed to create committed resource for light buffer's GPU upload buffer.\n");
+            return result;
+        }
+
+        name = L"Light Buffer GPU Upload Heap " + std::to_wstring(i);
+        m_LightBufferGPUUploaderArray[i]->SetName(name.c_str());
+
+        D3D12_CONSTANT_BUFFER_VIEW_DESC lbvDesc{};
+        lbvDesc.BufferLocation = m_LightBufferGPUUploaderArray[i]->GetGPUVirtualAddress();
+        lbvDesc.SizeInBytes = (sizeof(LightBuffer) + 255) & ~255;
+
+        CD3DX12_CPU_DESCRIPTOR_HANDLE lbHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(m_CBVHeaps[i]->GetCPUDescriptorHandleForHeapStart());
+        lbHandle.Offset(1, m_CBVSRVDescriptorHeapSize);
+        m_Device->CreateConstantBufferView(&lbvDesc, lbHandle);
+
+        result = m_LightBufferGPUUploaderArray[i]->Map(0, &readRange, reinterpret_cast<void**>(&m_LightBufferAddressArray[i]));
+
+        if (FAILED(result) || m_LightBufferAddressArray[i] == nullptr)
+        {
+            printf("Failed to map light buffer's GPU upload heap address.\n");
+            return result;
+        }
+
+        memcpy(m_LightBufferAddressArray[i], &emptyLb, sizeof(LightBuffer));
     }
 
     return S_OK;
@@ -745,12 +1150,32 @@ HRESULT DX12Renderer::CreateConstantBuffers()
 
 void DX12Renderer::DestroyConstantBuffers()
 {
-    for (size_t i = 0; i < MAX_NUM_ENTITIES; i++)
+    CD3DX12_RANGE readRange(0, 0);
+
+    for (size_t i = 0; i < m_SwapChainBufferCount; i++)
     {
-        if (m_ConstantBufferArray[i] != nullptr)
+        if (m_ConstantBufferGPUUploaderArray[i] != nullptr)
         {
-            m_ConstantBufferArray[i]->Release();
-            m_ConstantBufferArray[i] = nullptr;
+            m_ConstantBufferGPUUploaderArray[i]->Unmap(0, &readRange);
+            m_ConstantBufferGPUUploaderArray[i]->Release();
+            m_ConstantBufferGPUUploaderArray[i] = nullptr;
+        }
+
+        if (m_ConstantBufferAddressArray[i] != nullptr)
+        {
+            m_ConstantBufferAddressArray[i] = nullptr;
+        }
+
+        if (m_LightBufferGPUUploaderArray[i] != nullptr)
+        {
+            m_LightBufferGPUUploaderArray[i]->Unmap(0, &readRange);
+            m_LightBufferGPUUploaderArray[i]->Release();
+            m_LightBufferGPUUploaderArray[i] = nullptr;
+        }
+
+        if (m_LightBufferAddressArray[i] != nullptr)
+        {
+            m_LightBufferAddressArray[i] = nullptr;
         }
     }
 }
@@ -758,42 +1183,111 @@ void DX12Renderer::DestroyConstantBuffers()
 HRESULT DX12Renderer::CreateConstantBufferHeap()
 {
     D3D12_DESCRIPTOR_HEAP_DESC heapDesc{};
-    heapDesc.NumDescriptors = 1;
+    heapDesc.NumDescriptors = 2;
     heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     heapDesc.NodeMask = 0;
 
-    HRESULT hr = m_Device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_CBVHeap));
+    HRESULT result = E_FAIL;
 
-    if (SUCCEEDED(hr))
+    for (size_t i = 0; i < m_SwapChainBufferCount; i++)
     {
-        auto desc = m_CBVHeap->GetDesc();
-        printf("");
+        result = m_Device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_CBVHeaps[i]));
+
+        if (FAILED(result))
+        {
+            printf("Failed to create a constant buffer descriptor heap.\n");
+            break;
+        }
+
+        std::wstring name = L"Constant Buffer Heap " + std::to_wstring(i);
+        m_CBVHeaps[i]->SetName(name.c_str());
     }
 
-    return hr;
+    return result;
 }
 
 void DX12Renderer::DestroyConstantBufferHeap()
 {
-    if (m_CBVHeap != nullptr)
+    for (size_t i = 0; i < m_SwapChainBufferCount; i++)
     {
-        m_CBVHeap->Release();
-        m_CBVHeap = nullptr;
+        if (m_CBVHeaps[i] != nullptr)
+        {
+            m_CBVHeaps[i]->Release();
+            m_CBVHeaps[i] = nullptr;
+        }
     }
 }
 
 HRESULT DX12Renderer::CreateRootSignatureAndDescriptorTable()
 {
-    CD3DX12_ROOT_PARAMETER slotRootParameter[1]{};
+    D3D12_ROOT_PARAMETER slotRootParameters[4]{};
 
-    //Create a descriptor table for cbv
-    CD3DX12_DESCRIPTOR_RANGE cbvTable{};
-    cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+    //CBV
+    D3D12_ROOT_DESCRIPTOR perFrameConstantBufferDescriptor{};
+    perFrameConstantBufferDescriptor.RegisterSpace = 0;
+    perFrameConstantBufferDescriptor.ShaderRegister = 0;
+    slotRootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+    slotRootParameters[0].Descriptor = perFrameConstantBufferDescriptor;
+    slotRootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY::D3D12_SHADER_VISIBILITY_ALL;
 
-    slotRootParameter->InitAsDescriptorTable(1, &cbvTable);
+    //Push Constants
+    D3D12_ROOT_CONSTANTS rootConstants{};
+    rootConstants.Num32BitValues = sizeof(PushConstants) / sizeof(UINT32);
+    rootConstants.RegisterSpace = 0;
+    rootConstants.ShaderRegister = 1;
+    D3D12_ROOT_DESCRIPTOR pushConstantDescriptor{};
+    pushConstantDescriptor.RegisterSpace = rootConstants.RegisterSpace;
+    pushConstantDescriptor.ShaderRegister = rootConstants.ShaderRegister;
+    slotRootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE::D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+    slotRootParameters[1].Descriptor = pushConstantDescriptor;
+    slotRootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY::D3D12_SHADER_VISIBILITY_ALL;
+    slotRootParameters[1].Constants = rootConstants;
 
-    CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc(1, slotRootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+    //Lighting Constant Buffer
+    D3D12_ROOT_DESCRIPTOR lightingConstantBufferDescriptor{};
+    lightingConstantBufferDescriptor.RegisterSpace = 0;
+    lightingConstantBufferDescriptor.ShaderRegister = 2;
+    slotRootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+    slotRootParameters[2].Descriptor = lightingConstantBufferDescriptor;
+    slotRootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY::D3D12_SHADER_VISIBILITY_ALL;
+
+    //SRV Table
+    D3D12_DESCRIPTOR_RANGE descriptorTableRange[1]{};
+    descriptorTableRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+    descriptorTableRange[0].NumDescriptors = 5;
+    descriptorTableRange[0].BaseShaderRegister = 0;
+    descriptorTableRange[0].RegisterSpace = 0;
+    descriptorTableRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+    D3D12_ROOT_DESCRIPTOR_TABLE descriptorTable{};
+    descriptorTable.NumDescriptorRanges = _countof(descriptorTableRange);
+    descriptorTable.pDescriptorRanges = &descriptorTableRange[0];
+    slotRootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+    slotRootParameters[3].DescriptorTable = descriptorTable;
+
+    D3D12_STATIC_SAMPLER_DESC staticSamplerDesc[1]{};
+    staticSamplerDesc[0].Filter = D3D12_FILTER::D3D12_FILTER_COMPARISON_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
+    staticSamplerDesc[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE::D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    staticSamplerDesc[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE::D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    staticSamplerDesc[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE::D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    staticSamplerDesc[0].MipLODBias = 0;
+    staticSamplerDesc[0].MaxAnisotropy = 0;
+    staticSamplerDesc[0].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+    staticSamplerDesc[0].BorderColor = D3D12_STATIC_BORDER_COLOR::D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+    staticSamplerDesc[0].MinLOD = 0.0f;
+    staticSamplerDesc[0].MaxLOD = FLT_MAX;
+    staticSamplerDesc[0].ShaderRegister = 0;
+    staticSamplerDesc[0].RegisterSpace = 0;
+    staticSamplerDesc[0].ShaderVisibility = D3D12_SHADER_VISIBILITY::D3D12_SHADER_VISIBILITY_PIXEL;
+
+    CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc{};
+    rootSignatureDesc.Init(
+        _countof(slotRootParameters), slotRootParameters,
+        _countof(staticSamplerDesc), &staticSamplerDesc[0],
+        D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+        D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
+        D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
+        D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS);
 
     ID3DBlob* rootSigBlob = nullptr;
     ID3DBlob* errorBlob = nullptr;
@@ -841,14 +1335,9 @@ HRESULT DX12Renderer::CreateRootSignatureAndDescriptorTable()
         rootSigBlob = nullptr;
     }
 
+    m_RootSignature->SetName(L"Root Signature");
+
     m_CommandList->SetGraphicsRootSignature(m_RootSignature);
-    ID3D12DescriptorHeap* heaps[] = { m_CBVHeap };
-
-    m_CommandList->SetDescriptorHeaps(_countof(heaps), heaps);
-
-    CD3DX12_GPU_DESCRIPTOR_HANDLE cbv(m_CBVHeap->GetGPUDescriptorHandleForHeapStart());
-    cbv.Offset(0, m_CBVSRVDescriptorHeapSize);
-    m_CommandList->SetGraphicsRootDescriptorTable(0, cbv);
 
     return S_OK;
 }
@@ -958,7 +1447,7 @@ HRESULT DX12Renderer::CreateGraphicsPipelines()
     HRESULT result = E_POINTER;
     if (m_DefaultVertexShaderBlob != nullptr && m_DefaultPixelShaderBlob != nullptr)
     {
-        pipelineStateDesc.InputLayout.NumElements = (uint32_t)m_DefaultInputLayout.size();
+        pipelineStateDesc.InputLayout.NumElements = (unsigned int)m_DefaultInputLayout.size();
         pipelineStateDesc.InputLayout.pInputElementDescs = m_DefaultInputLayout.data();
         pipelineStateDesc.VS.pShaderBytecode = m_DefaultVertexShaderBlob->GetBufferPointer();
         pipelineStateDesc.VS.BytecodeLength = m_DefaultVertexShaderBlob->GetBufferSize();
@@ -970,7 +1459,9 @@ HRESULT DX12Renderer::CreateGraphicsPipelines()
     if (FAILED(result))
     {
         printf("Failed to create default graphics pipeline state.\n");
+        return result;
     }
+    m_DefaultPipeline->SetName(L"Standard Graphics Pipeline");
 
     return result;
 }
@@ -984,6 +1475,159 @@ void DX12Renderer::DestroyGraphicsPipelines()
     }
 }
 
+HRESULT DX12Renderer::CreateNullDescriptors()
+{
+    const DXGI_FORMAT textureFormat = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
+    CD3DX12_SHADER_RESOURCE_VIEW_DESC srvDesc = CD3DX12_SHADER_RESOURCE_VIEW_DESC::Tex2D(textureFormat);
+    CD3DX12_CPU_DESCRIPTOR_HANDLE srvCpuHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(GetMainSRVDescriptorHeapStartCPU(), 0, GetSRVDescriptorHeapSize());
+
+    m_Device->CreateShaderResourceView(NULL, &srvDesc, srvCpuHandle);
+
+    HRESULT result = ExecuteAndResetCommandList();
+
+    if (FAILED(result))
+    {
+        printf("Failed to execute and reset command list during texture buffer creation.\n");
+        return result;
+    }
+
+    m_NullTextureDescriptor = srvCpuHandle;
+
+    return result;
+}
+
+void DX12Renderer::DestroyNullDescriptors()
+{
+    m_NullTextureDescriptor = {};
+}
+
+UINT DX12Renderer::GetSRVDescriptorHeapSize() const
+{
+    return m_CBVSRVDescriptorHeapSize;
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE DX12Renderer::GetDrawingSRVDescriptorHeapStartCPU() const
+{
+    assert((m_PerObjectSRVHeap != nullptr));
+    return m_PerObjectSRVHeap->GetCPUDescriptorHandleForHeapStart();
+}
+
+D3D12_GPU_DESCRIPTOR_HANDLE DX12Renderer::GetDrawingSRVDescriptorHeapStartGPU() const
+{
+    assert((m_PerObjectSRVHeap != nullptr));
+    return m_PerObjectSRVHeap->GetGPUDescriptorHandleForHeapStart();
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE DX12Renderer::GetMainSRVDescriptorHeapStartCPU() const
+{
+    assert((m_MainSRVHeap != nullptr));
+    return m_MainSRVHeap->GetCPUDescriptorHandleForHeapStart();
+}
+
+D3D12_GPU_DESCRIPTOR_HANDLE DX12Renderer::GetMainSRVDescriptorHeapStartGPU() const
+{
+    assert((m_MainSRVHeap != nullptr));
+    return m_MainSRVHeap->GetGPUDescriptorHandleForHeapStart();
+}
+
+HRESULT DX12Renderer::ExecuteAndResetCommandList()
+{
+    HRESULT result = E_FAIL;
+
+    result = m_CommandList->Close();
+    if (FAILED(result))
+    {
+        printf("Failed to close command list during default buffer creation.\n");
+        return result;
+    }
+
+    ID3D12CommandList* commandLists = { m_CommandList };
+    m_CommandQueue->ExecuteCommandLists(1, &commandLists);
+
+    result = FlushCommandQueue();
+    if (FAILED(result))
+    {
+        printf("Failed to flush command queue during default buffer creation.\n");
+        return result;
+    }
+
+    result = ResetCommandList();
+    if (FAILED(result))
+    {
+        printf("Failed to reset command list during default buffer creation.\n");
+        return result;
+    }
+
+    return result;
+}
+
+HRESULT DX12Renderer::CreateDefaultBuffer(ID3D12Resource*& defaultBuffer, ID3D12Resource*& gpuUploadBuffer, const void* data, const size_t& sizeBytes)
+{
+    assert((defaultBuffer == nullptr));
+    assert((gpuUploadBuffer == nullptr));
+    assert((data != nullptr));
+    assert(sizeBytes > 0);
+
+    CD3DX12_HEAP_PROPERTIES defaultHeapProperties = CD3DX12_HEAP_PROPERTIES::CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+    CD3DX12_RESOURCE_DESC defaultBufferResourceDesc = CD3DX12_RESOURCE_DESC::Buffer((UINT64)sizeBytes);
+
+    //Creating Default Buffer
+    HRESULT result = m_Device->CreateCommittedResource(
+        &defaultHeapProperties, D3D12_HEAP_FLAG_NONE,
+        &defaultBufferResourceDesc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON,
+        nullptr,
+        IID_PPV_ARGS(&defaultBuffer));
+
+    if (FAILED(result))
+    {
+        printf("Failed to create commited resource for default buffer.\n");
+        return result;
+    }
+
+    //Creating GPU upload buffer.
+    CD3DX12_HEAP_PROPERTIES uploadHeapProperties = CD3DX12_HEAP_PROPERTIES::CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+
+    result = m_Device->CreateCommittedResource(
+        &uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
+        &defaultBufferResourceDesc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
+        nullptr,
+        IID_PPV_ARGS(&gpuUploadBuffer));
+
+    if (FAILED(result))
+    {
+        printf("Failed to create commited resource for default buffer's GPU upload buffer.\n");
+        return result;
+    }
+
+    //Describe data for copy into buffer.
+    D3D12_SUBRESOURCE_DATA subresourceData{};
+    subresourceData.pData = data;
+    subresourceData.RowPitch = sizeBytes;
+    subresourceData.SlicePitch = sizeBytes;
+
+    //Scheduling copy to the default buffer.
+    //Copies CPU memory to immediate upload heap, then upload heap is copied into buffer by gpu.
+    CD3DX12_RESOURCE_BARRIER toCopyTransition = CD3DX12_RESOURCE_BARRIER::Transition(defaultBuffer, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
+    m_CommandList->ResourceBarrier(1, &toCopyTransition);
+
+    UpdateSubresources(m_CommandList,
+        defaultBuffer, gpuUploadBuffer, 0,
+        0, 1, &subresourceData);
+
+    CD3DX12_RESOURCE_BARRIER toReadTransition = CD3DX12_RESOURCE_BARRIER::Transition(defaultBuffer, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ);
+    m_CommandList->ResourceBarrier(1, &toReadTransition);
+
+    result = ExecuteAndResetCommandList();
+
+    if (FAILED(result))
+    {
+        printf("Failed to execute and reset command list during default buffer creation.\n");
+        return result;
+    }
+
+    return S_OK;
+}
+
 HRESULT DX12Renderer::CreateInputLayout()
 {
     Vertex::GetElementDescription(m_DefaultInputLayout);
@@ -995,32 +1639,45 @@ void DX12Renderer::DestroyInputLayout()
     m_DefaultInputLayout.clear();
 }
 
-HRESULT DX12Renderer::UpdateConstantBuffer(const int& entityIndex, ConstantBuffer& cb)
+void DX12Renderer::UploadPushConstants()
+{
+    m_CommandList->SetGraphicsRoot32BitConstants(1, sizeof(PushConstants) / sizeof(UINT32), m_PushConstants, 0);
+}
+
+HRESULT DX12Renderer::UpdateWorldMatrix(const Matrix4x4& worldMatrix)
+{
+    assert(m_IsInitialised);
+    m_PushConstants->World = worldMatrix;
+    UploadPushConstants();
+    return S_OK;
+}
+
+HRESULT DX12Renderer::UpdateLightingBuffer(const LightBuffer& lb)
 {
     assert(m_IsInitialised);
 
-    CD3DX12_GPU_DESCRIPTOR_HANDLE cbv(m_CBVHeap->GetGPUDescriptorHandleForHeapStart());
-    cbv.Offset(entityIndex, m_CBVSRVDescriptorHeapSize);
-    m_CommandList->SetGraphicsRootDescriptorTable(entityIndex, cbv);
-
-    BYTE* mappedData = nullptr;
-    HRESULT result = m_ConstantBufferArray[entityIndex]->Map(0, nullptr, reinterpret_cast<void**>(&mappedData));
-    if (FAILED(result))
+    if (m_LightBufferAddressArray[m_CurrentBackbufferIndex] != nullptr)
     {
-        printf("Failed to map constant buffer address for update.\n");
-        return result;
+        m_CommandList->SetGraphicsRootConstantBufferView(2, m_LightBufferGPUUploaderArray[m_CurrentBackbufferIndex]->GetGPUVirtualAddress());
+        memcpy(m_LightBufferAddressArray[m_CurrentBackbufferIndex], &lb, sizeof(LightBuffer));
+        return S_OK;
     }
 
-    memcpy(&mappedData, &cb, sizeof(ConstantBuffer));
+    return E_FAIL;
+}
 
-    if (m_ConstantBufferArray[entityIndex] != nullptr)
+HRESULT DX12Renderer::UpdateConstantBuffer(const ConstantBuffer& cb)
+{
+    assert(m_IsInitialised);
+
+    if (m_ConstantBufferAddressArray[m_CurrentBackbufferIndex] != nullptr)
     {
-        m_ConstantBufferArray[entityIndex]->Unmap(0, nullptr);
+        m_CommandList->SetGraphicsRootConstantBufferView(0, m_ConstantBufferGPUUploaderArray[m_CurrentBackbufferIndex]->GetGPUVirtualAddress());
+        memcpy(m_ConstantBufferAddressArray[m_CurrentBackbufferIndex], &cb, sizeof(ConstantBuffer));
+        return S_OK;
     }
 
-    mappedData = nullptr;
-
-    return S_OK;
+    return E_FAIL;
 }
 
 void DX12Renderer::ClearFrame()
@@ -1029,11 +1686,14 @@ void DX12Renderer::ClearFrame()
 
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplWin32_NewFrame();
+
     ImGui::NewFrame();
 
     ImGui::Begin("Test Window");
     ImGui::Text("Test Label Text");
     ImGui::End();
+
+    ImGui::ShowDemoWindow();
 
     if (FAILED(m_CommandAllocator->Reset()))
     {
@@ -1041,7 +1701,7 @@ void DX12Renderer::ClearFrame()
         return;
     }
 
-    if (FAILED(m_CommandList->Reset(m_CommandAllocator, m_DefaultPipeline)))
+    if (FAILED(ResetCommandList()))
     {
         printf("Failed to reset command allocator.\n");
         return;
@@ -1065,12 +1725,15 @@ void DX12Renderer::ClearFrame()
     m_CommandList->ClearRenderTargetView(backBufferHandle, Colour, 0, nullptr);
     m_CommandList->OMSetRenderTargets(1, &backBufferHandle, true, &dsvBufferHandle);
 
-    ID3D12DescriptorHeap* heaps[] = { m_CBVHeap };
     m_CommandList->SetGraphicsRootSignature(m_RootSignature);
+
+    ID3D12DescriptorHeap* heaps[] = { m_PerObjectSRVHeap };
     m_CommandList->SetDescriptorHeaps(_countof(heaps), heaps);
-    CD3DX12_GPU_DESCRIPTOR_HANDLE cbv(m_CBVHeap->GetGPUDescriptorHandleForHeapStart());
-    cbv.Offset(0, m_CBVSRVDescriptorHeapSize);
-    m_CommandList->SetGraphicsRootDescriptorTable(0, cbv);
+
+    CD3DX12_GPU_DESCRIPTOR_HANDLE srvHeap(heaps[0]->GetGPUDescriptorHandleForHeapStart());
+    m_CommandList->SetGraphicsRootDescriptorTable(3, srvHeap);
+
+    m_CommandList->SetPipelineState(m_DefaultPipeline);
 }
 
 void DX12Renderer::PresentFrame()
@@ -1096,10 +1759,10 @@ void DX12Renderer::PresentFrame()
     m_CommandQueue->ExecuteCommandLists(1, &commandLists);
 
     HRESULT hr = m_SwapChain->Present(0, 0);
+
     if (FAILED(hr))
     {
         HRESULT removalReason = m_Device->GetDeviceRemovedReason();
-
         printf("Failed to present swap chain. Removal reason: %i\n", (int)removalReason);
         return;
     }

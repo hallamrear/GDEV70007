@@ -188,6 +188,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Artifact.h" />
+    <ClInclude Include="Rendering\Camera.h" />
     <ClInclude Include="Rendering\ConstantBuffer.h" />
     <ClInclude Include="Rendering\DX12Includes.h" />
     <ClInclude Include="Rendering\DX12Renderer.h" />
@@ -223,6 +224,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Artifact.cpp" />
+    <ClCompile Include="Rendering\Camera.cpp" />
     <ClCompile Include="Rendering\ConstantBuffer.cpp" />
     <ClCompile Include="Rendering\DX12Renderer.cpp" />
     <ClCompile Include="Physics\Optimisations\Octree.cpp" />

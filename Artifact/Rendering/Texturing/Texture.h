@@ -1,4 +1,5 @@
 #pragma once
+#include <Rendering/DX12Includes.h>
 
 struct ID3D12Resource;
 
