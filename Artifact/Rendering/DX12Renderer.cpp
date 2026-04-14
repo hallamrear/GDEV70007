@@ -6,6 +6,9 @@
 
 #define FAILED_RETURN(hr) if(FAILED(hr)) return !FAILED(hr);
 
+ID3D12DescriptorHeap* DX12Renderer::m_IMGUISRVHeap = nullptr;
+int DX12Renderer::m_IMGUISRVIndex = 0;
+UINT DX12Renderer::m_IMGUISRVDescriptorHeapSize = 0;
 
 DX12Renderer::DX12Renderer() : Renderer()
 {
@@ -232,6 +235,7 @@ bool DX12Renderer::Initialise(HWND windowHandle)
     else
     {
         printf("Initialised renderer.");
+
         //Setting to closed as the first refernce to the command list will open it.
         if (m_CommandList)
         {
@@ -250,6 +254,9 @@ bool DX12Renderer::InitialiseIMGUI()
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    io.MouseDrawCursor = true;
+    io.DisplaySize.x = (float)m_WindowWidth;
+    io.DisplaySize.y = (float)m_WindowHeight;
 
     ImGui::StyleColorsDark();
 
@@ -264,52 +271,27 @@ bool DX12Renderer::InitialiseIMGUI()
     init_info.DSVFormat = DXGI_FORMAT_UNKNOWN;
 
     init_info.SrvDescriptorHeap = m_IMGUISRVHeap;
-
-    init_info.SrvDescriptorAllocFn = IMGUISRVAllocator;
-    init_info.SrvDescriptorFreeFn = IMGUISRVDestructor;
-
     init_info.SrvDescriptorAllocFn = IMGUISRVAllocatorWithInfo;
     init_info.SrvDescriptorFreeFn = IMGUISRVDestructorWithInfo;
 
     bool dx12Init = ImGui_ImplDX12_Init(&init_info);
-
-
-
-    bool dx12Init = ImGui_ImplDX12_Init(m_Device, m_SwapChainBufferCount, DXGI_FORMAT_R8G8B8A8_UNORM, m_IMGUISRVHeap, m_IMGUISRVHeap->GetCPUDescriptorHandleForHeapStart(), m_IMGUISRVHeap->GetGPUDescriptorHandleForHeapStart());
 
     return (win32Init && dx12Init);
 }
 
 void DX12Renderer::IMGUISRVAllocatorWithInfo(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle)
 {
+    UNREFERENCED_PARAMETER(info);
     auto cpuHeapStart = m_IMGUISRVHeap->GetCPUDescriptorHandleForHeapStart();
     auto gpuHeapStart = m_IMGUISRVHeap->GetGPUDescriptorHandleForHeapStart();
-    cpuHandle->ptr = cpuHeapStart.ptr + (m_IMGUISRVIndex * m_CBVSRVDescriptorHeapSize);
-    gpuHandle->ptr = gpuHeapStart.ptr + (m_IMGUISRVIndex * m_CBVSRVDescriptorHeapSize);
+    cpuHandle->ptr = cpuHeapStart.ptr + (m_IMGUISRVIndex * m_IMGUISRVDescriptorHeapSize);
+    gpuHandle->ptr = gpuHeapStart.ptr + (m_IMGUISRVIndex * m_IMGUISRVDescriptorHeapSize);
     m_IMGUISRVIndex++;
 }
 
 void DX12Renderer::IMGUISRVDestructorWithInfo(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle)
 {
-    UNREFERENCED_PARAMETER(cpuHandle);
-    UNREFERENCED_PARAMETER(gpuHandle);
-    //auto cpuHeapStart = m_IMGUISRVHeap->GetCPUDescriptorHandleForHeapStart();
-    //auto gpuHeapStart = m_IMGUISRVHeap->GetGPUDescriptorHandleForHeapStart();
-    //int cpu_idx = (int)((cpuHandle.ptr - cpuHeapStart.ptr) / m_CBVSRVDescriptorHeapSize);
-    //int gpu_idx = (int)((gpuHandle.ptr - gpuHeapStart.ptr) / m_CBVSRVDescriptorHeapSize);
-}
-
-void DX12Renderer::IMGUISRVAllocator(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle)
-{
-    auto cpuHeapStart = m_IMGUISRVHeap->GetCPUDescriptorHandleForHeapStart();
-    auto gpuHeapStart = m_IMGUISRVHeap->GetGPUDescriptorHandleForHeapStart();
-    cpuHandle->ptr = cpuHeapStart.ptr + (m_IMGUISRVIndex * m_CBVSRVDescriptorHeapSize);
-    gpuHandle->ptr = gpuHeapStart.ptr + (m_IMGUISRVIndex * m_CBVSRVDescriptorHeapSize);
-    m_IMGUISRVIndex++;
-}
-
-void DX12Renderer::IMGUISRVDestructor(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle)
-{
+    UNREFERENCED_PARAMETER(info);
     UNREFERENCED_PARAMETER(cpuHandle);
     UNREFERENCED_PARAMETER(gpuHandle);
     //auto cpuHeapStart = m_IMGUISRVHeap->GetCPUDescriptorHandleForHeapStart();
@@ -431,14 +413,14 @@ const Matrix4x4 DX12Renderer::GetViewMatrix() const
     return m_Camera.GetViewMatrix();
 }
 
-HRESULT DX12Renderer::ResizeSwapchain(const int& newWidth, const int& newHeight)
+bool DX12Renderer::ResizeSwapchain(const int& newWidth, const int& newHeight)
 {
     assert(m_IsInitialised);
 
     if (m_SwapChain == nullptr)
     {
         printf("Swapchain is invalid for resizing.\n");
-        return E_FAIL;
+        return SUCCEEDED(E_FAIL);
     }
 
     DestroyRenderTargetViews();
@@ -450,18 +432,20 @@ HRESULT DX12Renderer::ResizeSwapchain(const int& newWidth, const int& newHeight)
     if (FAILED(result))
     {
         printf("Serious failure while resizing swapchain buffers\n");
-        return result;
+        return SUCCEEDED(result);
     }
 
-    m_WindowWidth = newWidth;
-    m_WindowHeight = newHeight;
+    RECT rect{};
+    GetClientRect(m_WindowHandle, &rect);
+    m_WindowWidth = rect.right - rect.left;
+    m_WindowHeight = rect.bottom - rect.top;
 
     result = CreateRenderTargetViews();
 
     if (FAILED(result))
     {
         printf("Failed to recreate render target views after swapchain resizing.\n");
-        return result;
+        return SUCCEEDED(result);
     }
 
     result = CreateDepthStencilBuffer();
@@ -469,7 +453,7 @@ HRESULT DX12Renderer::ResizeSwapchain(const int& newWidth, const int& newHeight)
     if (FAILED(result))
     {
         printf("Failed to recreate depth stencil view after swapchain resizing.\n");
-        return result;
+        return SUCCEEDED(result);
     }
 
     m_CurrentBackbufferIndex = 0;
@@ -479,10 +463,14 @@ HRESULT DX12Renderer::ResizeSwapchain(const int& newWidth, const int& newHeight)
     if (FAILED(result))
     {
         printf("Failed to update viewport or scissor rect during swapchain resize.\n");
-        return result;
-    }
+        return SUCCEEDED(result);
+     }
 
-    return result;
+    ImGuiIO& io = ImGui::GetIO();
+    io.DisplaySize.x = (float)m_WindowWidth;
+    io.DisplaySize.y = (float)m_WindowHeight;
+
+    return SUCCEEDED(result);
 }
 
 HRESULT DX12Renderer::CreateDeviceAndFactory()
@@ -538,6 +526,7 @@ HRESULT DX12Renderer::CreateDeviceAndFactory()
     m_RTVDescriptorHeapSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
     m_DSVDescriptorHeapSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
     m_CBVSRVDescriptorHeapSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    m_IMGUISRVDescriptorHeapSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
     return result;
 }
@@ -702,17 +691,8 @@ HRESULT DX12Renderer::CreateSwapChain()
 
     DXGI_SWAP_CHAIN_FLAG swapChainFlags = DXGI_SWAP_CHAIN_FLAG::DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
-    DXGI_MODE_DESC bufferDesc{};
-    bufferDesc.Width = 0;
-    bufferDesc.Height = 0;
-    bufferDesc.RefreshRate.Numerator = 60;
-    bufferDesc.RefreshRate.Denominator = 1;
-    bufferDesc.Format = m_BackbufferFormat;
-    bufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER::DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-    bufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-
     RECT rect{};
-    GetWindowRect(m_WindowHandle, &rect);
+    GetClientRect(m_WindowHandle, &rect);
     m_WindowWidth = rect.right - rect.left;
     m_WindowHeight = rect.bottom - rect.top;
 
@@ -1740,6 +1720,7 @@ void DX12Renderer::PresentFrame()
 {
     assert(m_IsInitialised);
 
+    m_CommandList->SetDescriptorHeaps(1, &m_IMGUISRVHeap);
     ImGui::Render();
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_CommandList);
 

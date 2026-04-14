@@ -167,8 +167,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         PostQuitMessage(0);
         break;
     default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
+        if (g_Engine != nullptr)
+        {
+            return g_Engine->WndProc(hWnd, message, wParam, lParam);
+        }
+        else
+        {
+            return DefWindowProc(hWnd, message, wParam, lParam);
+        }
+        break;
     }
+
     return 0;
 }
 

@@ -26,6 +26,8 @@ public:
 	void Stop();
 	const bool& IsRunning() const;
 
+	LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+
 	void Update(const float& deltaTime);
 	void Render();
 };

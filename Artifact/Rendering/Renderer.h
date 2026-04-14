@@ -50,6 +50,8 @@ public:
 	const Vector4& GetClearColour() const;
 	void SetClearColour(const Vector4& newColour);
 
+	virtual bool ResizeSwapchain(const int& newWidth, const int& newHeight) = 0;
+
 	virtual void ClearFrame() = 0;
 	virtual void PresentFrame() = 0;
 };

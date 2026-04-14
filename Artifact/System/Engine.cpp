@@ -102,6 +102,31 @@ const bool& Engine::IsRunning() const
 	return m_IsRunning;
 }
 
+LRESULT Engine::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	UNREFERENCED_PARAMETER(hWnd);
+	UNREFERENCED_PARAMETER(wParam);
+
+	switch (message)
+	{
+		case WM_SIZE:
+		{
+			if (m_Renderer != nullptr)
+			{
+				if (m_Renderer->IsInitialised() == false)
+					break;
+
+				UINT width = LOWORD(lParam);
+				UINT height = HIWORD(lParam);
+				return m_Renderer->ResizeSwapchain(width, height);
+			}
+		}
+		break;
+	}
+
+	return DefWindowProc(hWnd, message, wParam, lParam);
+}
+
 void Engine::Update(const float& deltaTime)
 {
 	if (!m_IsInitialised || !m_IsRunning)

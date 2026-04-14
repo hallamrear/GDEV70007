@@ -46,8 +46,6 @@ private:
 	struct ID3D12DescriptorHeap* m_DSVHeap;
 	struct ID3D12DescriptorHeap* m_MainSRVHeap;
 	struct ID3D12DescriptorHeap* m_PerObjectSRVHeap;
-	struct ID3D12DescriptorHeap* m_IMGUISRVHeap;
-	int m_IMGUISRVIndex;
 	HRESULT CreateDescriptorHeaps();
 	void DestroyDescriptorHeaps();
 	struct D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentBackbufferView() const;
@@ -100,12 +98,11 @@ private:
 	HRESULT CreateNullDescriptors();
 	void DestroyNullDescriptors();
 
-	UINT m_IMGUISRVDescriptorHeapSize;
-
-	void IMGUISRVAllocatorWithInfo(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle);
-	void IMGUISRVDestructorWithInfo(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle);
-	void IMGUISRVAllocator(D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle);
-	void IMGUISRVDestructor(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle);
+	static struct ID3D12DescriptorHeap* m_IMGUISRVHeap;
+	static int m_IMGUISRVIndex;
+	static UINT m_IMGUISRVDescriptorHeapSize;
+	static void IMGUISRVAllocatorWithInfo(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle);
+	static void IMGUISRVDestructorWithInfo(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle);
 
 	PushConstants* m_PushConstants;
 	void UploadPushConstants();
@@ -154,7 +151,7 @@ public:
 	Matrix4x4& GetProjectionMatrix();
 	const Matrix4x4 GetViewMatrix() const;
 
-	HRESULT ResizeSwapchain(const int& newWidth, const int& newHeight);
+	bool ResizeSwapchain(const int& newWidth, const int& newHeight);
 
 	void ClearFrame();
 	HRESULT FlushCommandQueue();
