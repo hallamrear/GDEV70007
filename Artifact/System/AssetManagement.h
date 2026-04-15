@@ -46,5 +46,7 @@ public:
 	ModelRef GetModel(const std::string& path);
 
 	const bool& IsInitialised() const;
+	
+	void DebugDraw();
 };
 

@@ -235,12 +235,6 @@ bool DX12Renderer::Initialise(HWND windowHandle)
     else
     {
         printf("Initialised renderer.");
-
-        //Setting to closed as the first refernce to the command list will open it.
-        if (m_CommandList)
-        {
-            m_CommandList->Close();
-        }
     }
 
     return m_IsInitialised;
@@ -471,6 +465,16 @@ bool DX12Renderer::ResizeSwapchain(const int& newWidth, const int& newHeight)
     io.DisplaySize.y = (float)m_WindowHeight;
 
     return SUCCEEDED(result);
+}
+
+void DX12Renderer::PostAssetInitialisation()
+{ 
+    //Setting to closed as the first refernce to the command list will open it.
+    if (m_CommandList)
+    {
+        HRESULT hr = m_CommandList->Close();
+        assert(SUCCEEDED(hr));
+    }
 }
 
 HRESULT DX12Renderer::CreateDeviceAndFactory()
@@ -1235,10 +1239,11 @@ HRESULT DX12Renderer::CreateRootSignatureAndDescriptorTable()
     //SRV Table
     D3D12_DESCRIPTOR_RANGE descriptorTableRange[1]{};
     descriptorTableRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-    descriptorTableRange[0].NumDescriptors = 5;
+    descriptorTableRange[0].NumDescriptors = 1;
     descriptorTableRange[0].BaseShaderRegister = 0;
     descriptorTableRange[0].RegisterSpace = 0;
     descriptorTableRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
     D3D12_ROOT_DESCRIPTOR_TABLE descriptorTable{};
     descriptorTable.NumDescriptorRanges = _countof(descriptorTableRange);
     descriptorTable.pDescriptorRanges = &descriptorTableRange[0];
@@ -1660,6 +1665,99 @@ HRESULT DX12Renderer::UpdateConstantBuffer(const ConstantBuffer& cb)
     return E_FAIL;
 }
 
+TextureRef DX12Renderer::BindTextureData(const int& indexToBindTo, const void* data, const size_t& len, const Vector2& dimensions)
+{
+    if (data == nullptr || len <= 0)
+    {
+        printf("Failed to bind texture. Invalid data or buffer length.\n");
+        return nullptr;
+    }
+
+    int width = (int)dimensions.x;
+    int height = (int)dimensions.y;
+
+    if (width <= 0 || height <= 0)
+    {
+        printf("Failed to bind texture. Invalid texture size.\n");
+        return nullptr;
+    }
+
+    HRESULT result = S_OK;
+
+    ID3D12Resource* textureResource = nullptr;
+
+    D3D12_HEAP_PROPERTIES defaultHeap = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT);
+    CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, width, height);
+    result = m_Device->CreateCommittedResource(&defaultHeap, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&textureResource));
+
+    if (FAILED(result))
+    {
+        printf("Failed to create commited resource for texture.\n");
+        return nullptr;
+    }
+
+    ID3D12Resource* textureUploadHeap = nullptr;
+    D3D12_HEAP_PROPERTIES cpuUploadHeap = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD);
+    UINT64 uploadSize = GetRequiredIntermediateSize(textureResource, 0, 1);
+
+    CD3DX12_RESOURCE_DESC gpuUploadBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(uploadSize);
+
+    result = m_Device->CreateCommittedResource(
+        &cpuUploadHeap,
+        D3D12_HEAP_FLAG_NONE,
+        &gpuUploadBufferDesc,
+        D3D12_RESOURCE_STATE_GENERIC_READ,
+        nullptr,
+        IID_PPV_ARGS(&textureUploadHeap));
+
+    if (FAILED(result))
+    {
+        printf("Failed to create commited BPU resources (upload heap) for texture.\n");
+        return nullptr;
+    }
+
+    D3D12_SUBRESOURCE_DATA textureData = {};
+    textureData.pData = data;
+    textureData.RowPitch = (width * 4 + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u);
+    textureData.SlicePitch = textureData.RowPitch * height;
+
+    UpdateSubresources(m_CommandList, textureResource, textureUploadHeap, 0, 0, 1, &textureData);
+
+    CD3DX12_RESOURCE_BARRIER copyToSRVTransition = CD3DX12_RESOURCE_BARRIER::Transition(textureResource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    m_CommandList->ResourceBarrier(1, &copyToSRVTransition);
+
+    CD3DX12_SHADER_RESOURCE_VIEW_DESC srvDesc = CD3DX12_SHADER_RESOURCE_VIEW_DESC::Tex2D(DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM);
+
+    //Map Size + 1 to account for the null descriptor created by the renderer.
+    CD3DX12_CPU_DESCRIPTOR_HANDLE srvCpuHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(GetDrawingSRVDescriptorHeapStartCPU(), indexToBindTo + 1, GetSRVDescriptorHeapSize());
+    CD3DX12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(GetDrawingSRVDescriptorHeapStartGPU(), indexToBindTo + 1, GetSRVDescriptorHeapSize());
+
+    m_Device->CreateShaderResourceView(textureResource, &srvDesc, srvCpuHandle);
+
+    result = ExecuteAndResetCommandList();
+
+    if (FAILED(result))
+    {
+        printf("Failed to execute and reset command list during texture buffer creation.\n");
+        return nullptr;
+    }
+
+    TextureRef texture = nullptr;
+
+    if (textureResource != nullptr)
+    {
+        texture = std::make_shared<Texture>();
+        texture->m_Height = height;
+        texture->m_Width = width;
+        texture->m_IsLoaded = true;
+        texture->m_ID = indexToBindTo;
+        texture->m_CPUHandle = srvCpuHandle;
+        texture->m_GPUHandle = srvGpuHandle;
+    }
+
+    return texture;
+}
+
 void DX12Renderer::ClearFrame()
 {
     assert(m_IsInitialised);
@@ -1720,7 +1818,8 @@ void DX12Renderer::PresentFrame()
 {
     assert(m_IsInitialised);
 
-    m_CommandList->SetDescriptorHeaps(1, &m_IMGUISRVHeap);
+    ID3D12DescriptorHeap* heaps[] = { m_IMGUISRVHeap };
+    m_CommandList->SetDescriptorHeaps(_countof(heaps), heaps);
     ImGui::Render();
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_CommandList);
 

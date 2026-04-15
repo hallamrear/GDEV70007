@@ -1,9 +1,8 @@
 #include "pch.h"
-#include "AssetManagement.h"
-#include <System/Engine.h>
 #include "AssetLoader.h"
-#include <Rendering/Geometry/Model.h>
-#include <Rendering/Texturing/Texture.h>
+#include "AssetManagement.h"
+#include <Rendering/Geometry/Mesh.h>
+#include <System/Engine.h>
 
 AssetManager::AssetManager()
 {
@@ -20,6 +19,24 @@ AssetManager::~AssetManager()
 const bool& AssetManager::IsInitialised() const
 {
 	return m_IsInitialised;
+}
+
+#include <Rendering/Texturing/Texture.h>
+#include <Rendering/IMGUIIncludes.h>
+#include <Rendering/DX12Includes.h>
+void AssetManager::DebugDraw()
+{
+	ImGui::Begin("TEST DRAW");
+
+	TextureMap::iterator itr = m_TextureMap.begin();
+	while (itr != m_TextureMap.end())
+	{
+		TextureRef ref = GetTexture(itr->first);
+		ImGui::Image((ImTextureID)ref->GetGPUHandle().ptr, ImVec2(128.0f, 128.0f));
+		itr++;
+	}
+
+	ImGui::End();
 }
 
 AssetManager* AssetManager::CreateAssetDatabase()
@@ -43,7 +60,7 @@ AssetManager* AssetManager::CreateAssetDatabase()
 
 bool AssetManager::Initialise()
 {
-	ModelRef model = GetModel("Untitled.glb");
+	static ModelRef model = GetModel("Barrel.glb");
 	return true;
 }
 
@@ -113,7 +130,7 @@ TextureRef AssetManager::GetTexture(const std::string& path)
 
 	if (ref != nullptr)
 	{
-		m_TextureMap[path] = ref;
+		m_TextureMap[ref->GetDisplayName()] = ref;
 	}
 
 	return ref;
@@ -135,6 +152,14 @@ ModelRef AssetManager::GetModel(const std::string& path)
 
 	if (ref != nullptr)
 	{
+		for (auto& mesh : ref->GetMeshes())
+		{
+			for (auto& texture : mesh->GetTextures())
+			{
+				m_TextureMap[texture->GetDisplayName()] = texture;
+			}
+		}
+
 		m_ModelMap[path] = ref;
 	}
 

@@ -1,11 +1,12 @@
 #pragma once
+#include "Texturing/Texture.h"
 
-class Texture;
 struct GraphicsDevice;
 
 class Renderer
 {
 private:
+	friend class Texture;
 
 protected:
 	static const enum TEXTURE_FORMAT m_BackbufferFormat;
@@ -25,9 +26,6 @@ protected:
 	virtual bool InitialiseIMGUI() = 0;
 	virtual bool Shutdown() = 0;
 	virtual bool ShutdownIMGUI() = 0;
-
-	bool CreateTexture(Texture& texture, const std::string& textureLocation);
-	bool DestroyTexture(Texture& texture);
 
 public:
 	const HWND& GetWindowHandle() const;
@@ -50,8 +48,11 @@ public:
 	const Vector4& GetClearColour() const;
 	void SetClearColour(const Vector4& newColour);
 
+	virtual TextureRef BindTextureData(const int& indexToBindTo, const void* data, const size_t& len, const Vector2& dimensions) = 0;
+
 	virtual bool ResizeSwapchain(const int& newWidth, const int& newHeight) = 0;
 
+	virtual void PostAssetInitialisation() = 0;
 	virtual void ClearFrame() = 0;
 	virtual void PresentFrame() = 0;
 };

@@ -18,6 +18,8 @@ public:
 	~Model();
 
 	const bool IsLoaded() const;
+
+	const std::vector<Mesh*>& GetMeshes() const;
 };
 
 typedef std::shared_ptr<Model> ModelRef;

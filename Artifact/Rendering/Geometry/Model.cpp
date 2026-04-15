@@ -24,3 +24,8 @@ const bool Model::IsLoaded() const
 {
 	return (m_Meshes.size() != 0);
 }
+
+const std::vector<Mesh*>& Model::GetMeshes() const
+{
+	return m_Meshes;
+}

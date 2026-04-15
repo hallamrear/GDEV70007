@@ -1,4 +1,5 @@
 #pragma once
+#include <Rendering/Texturing/Texture.h>
 
 class Mesh
 {
@@ -10,6 +11,7 @@ private:
 	Matrix4x4 m_OffsetMatrix;
 
 	MESH_TOPOLOGY m_Topology;
+	std::vector<TextureRef> m_Textures;
 
 protected:
 
@@ -17,5 +19,6 @@ public:
 	Mesh();
 	~Mesh();
 
+	const std::vector<TextureRef> GetTextures() const;
 };
 

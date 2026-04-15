@@ -1,11 +1,18 @@
 
-cbuffer PerObjectBuffer : register(b0)
+cbuffer FrameConstantBuffer : register(b0)
 {
-    float4x4 World;
     float4x4 View;
     float4x4 Projection;
-    float4x4 Padding;
+    float4 CameraPosition;
+    float4 CameraDirection;
+    float4 FCBPadding[6];
 };
+
+cbuffer PushConstantBuffer : register(b1)
+{
+    float4x4 World;
+    float4x4 PCBPadding;
+}
 
 struct VS_STANDARD_VERTEX_INPUT
 {

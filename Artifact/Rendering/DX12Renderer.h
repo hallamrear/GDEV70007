@@ -136,6 +136,8 @@ public:
 	HRESULT UpdateLightingBuffer(const LightBuffer& lb);
 	HRESULT UpdateConstantBuffer(const ConstantBuffer& cb);
 
+	TextureRef BindTextureData(const int& indexToBindTo, const void* data, const size_t& len, const Vector2& dimensions);
+
 	bool Initialise(HWND windowHandle);
 	bool InitialiseIMGUI();
 	bool Shutdown();
@@ -152,6 +154,8 @@ public:
 	const Matrix4x4 GetViewMatrix() const;
 
 	bool ResizeSwapchain(const int& newWidth, const int& newHeight);
+
+	void PostAssetInitialisation();
 
 	void ClearFrame();
 	HRESULT FlushCommandQueue();

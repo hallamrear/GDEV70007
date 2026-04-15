@@ -12,6 +12,8 @@ Engine::Engine()
 	m_IsInitialised = false;
 	m_Renderer = nullptr;
 	m_World = nullptr;
+	m_AssetManager = nullptr;
+	m_IsRunning = false;
 }
 
 Engine::~Engine()
@@ -36,6 +38,8 @@ bool Engine::InitialiseSubsystems(HWND windowHandle, const std::filesystem::path
 		return false;
 	}
 
+	ServiceLocator::Provide(m_Renderer);
+
 	m_AssetManager = AssetManager::CreateAssetDatabase();
 
 	if (m_AssetManager == nullptr)
@@ -57,6 +61,7 @@ bool Engine::InitialiseSubsystems(HWND windowHandle, const std::filesystem::path
 	if (m_IsInitialised)
 	{
 		m_ContentFolderLocation = contentFolderLocation;
+		m_Renderer->PostAssetInitialisation();
 	}
 
 	return m_IsInitialised;
@@ -167,6 +172,8 @@ void Engine::Render()
 		return;
 
 	m_Renderer->ClearFrame();
+
+	m_AssetManager->DebugDraw();
 
 	m_World->Render();
 
