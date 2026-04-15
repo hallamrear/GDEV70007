@@ -1,7 +1,8 @@
 #pragma once
 
-class Renderer;
 class World;
+class Renderer;
+class AssetManager;
 
 class Engine
 {
@@ -10,6 +11,7 @@ private:
 	bool m_IsInitialised;
 	bool m_IsRunning;
 
+	AssetManager* m_AssetManager;
 	Renderer* m_Renderer;
 	World* m_World;
 
@@ -25,6 +27,8 @@ public:
 	void Start();
 	void Stop();
 	const bool& IsRunning() const;
+
+	static const std::filesystem::path& GetContentFolderLocation();
 
 	LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 

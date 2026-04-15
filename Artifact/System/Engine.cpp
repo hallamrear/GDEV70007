@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Engine.h"
 #include <Rendering/Renderer.h>
+#include <System/AssetManagement.h>
 #include <World/World.h>
 
 std::filesystem::path Engine::m_ContentFolderLocation = std::filesystem::path();
@@ -32,6 +33,14 @@ bool Engine::InitialiseSubsystems(HWND windowHandle, const std::filesystem::path
 	if (m_Renderer == nullptr)
 	{
 		printf("Failed to create renderer.");
+		return false;
+	}
+
+	m_AssetManager = AssetManager::CreateAssetDatabase();
+
+	if (m_AssetManager == nullptr)
+	{
+		printf("Failed to create asset manager.");
 		return false;
 	}
 
@@ -100,6 +109,11 @@ void Engine::Stop()
 const bool& Engine::IsRunning() const
 {
 	return m_IsRunning;
+}
+
+const std::filesystem::path& Engine::GetContentFolderLocation()
+{
+	return m_ContentFolderLocation;
 }
 
 LRESULT Engine::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)

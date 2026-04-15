@@ -10,19 +10,20 @@ Vertex::Vertex()
 	UV = { 0.0f, 0.0f };
 }
 
-Vertex::Vertex(const DirectX::XMFLOAT3& _position, const DirectX::XMFLOAT3& _normal, const DirectX::XMFLOAT3& _tangent, const DirectX::XMFLOAT2& _uv)
+Vertex::Vertex(const Vector3& position, const Vector3& normal, const Vector3& tangent, const Vector2& uv)
 {
-	Position = _position;
-	Normal = _normal;
-	Tangent = _tangent;
-	UV = _uv;
+	Position = position;
+	Normal = normal;
+	Tangent = tangent;
+	UV = uv;
+
 }
+
 
 Vertex::~Vertex()
 {
 	Position = { 0.0f, 0.0f, 0.0f };
 	Normal = { 0.0f, 0.0f, 0.0f };
-	Tangent = { 0.0f, 0.0f, 0.0f };
 	UV = { 0.0f, 0.0f };
 }
 
@@ -36,7 +37,7 @@ const UINT Vertex::GetOffset()
 	return 0;
 }
 
-void Vertex::GetElementDescription(std::vector<D3D12_INPUT_ELEMENT_DESC>& vectorToFill)
+void Vertex::GetElementDescription(std::vector<INPUT_LAYOUT_ELEMENT>& vectorToFill)
 {
 	vectorToFill.push_back({ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(Vertex, Position), D3D12_INPUT_CLASSIFICATION::D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
 	vectorToFill.push_back({ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(Vertex, Normal), D3D12_INPUT_CLASSIFICATION::D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });

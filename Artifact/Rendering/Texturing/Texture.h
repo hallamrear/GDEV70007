@@ -25,3 +25,6 @@ public:
 	const int& GetID() const;
 	const bool& IsLoaded() const;
 };
+
+typedef std::shared_ptr<class Texture> TextureRef;
+typedef std::weak_ptr<class Texture> TexturePtr;

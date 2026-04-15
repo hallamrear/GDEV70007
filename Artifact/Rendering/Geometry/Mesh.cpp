@@ -3,10 +3,18 @@
 
 Mesh::Mesh()
 {
-
+	m_DisplayName = "Unnamed Mesh";
+	m_MaxVertex = Vector3(0.0f, 0.0f, 0.0f);
+	m_MinVertex = Vector3(0.0f, 0.0f, 0.0f);
+	m_OffsetMatrix = Matrix4x4();
+	m_Topology = MESH_TOPOLOGY::MESH_TOPOLOGY_UNDEFINED;
 }
 
 Mesh::~Mesh()
 {
-
+	m_DisplayName = "";
+	m_MaxVertex = Vector3();
+	m_MinVertex = Vector3();
+	m_OffsetMatrix = Matrix4x4();
+	m_Topology = MESH_TOPOLOGY::MESH_TOPOLOGY_UNDEFINED;
 }

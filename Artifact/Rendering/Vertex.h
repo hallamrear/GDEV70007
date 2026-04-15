@@ -1,7 +1,4 @@
 #pragma once
-#include <DirectXMath.h>
-
-struct D3D12_INPUT_ELEMENT_DESC;
 
 struct Vertex
 {
@@ -11,11 +8,11 @@ struct Vertex
 	Vector2 UV;
 
 	Vertex();
-	Vertex(const DirectX::XMFLOAT3& _position, const DirectX::XMFLOAT3& _normal, const DirectX::XMFLOAT3& _tangent, const DirectX::XMFLOAT2& _uv);
+	Vertex(const Vector3& position, const Vector3& normal, const Vector3& _tangent, const Vector2& uv);
 	~Vertex();
 
 	static const UINT GetStride();
 	static const UINT GetOffset();
-	static void GetElementDescription(std::vector<D3D12_INPUT_ELEMENT_DESC>& vectorToFill);
+	static void GetElementDescription(std::vector<INPUT_LAYOUT_ELEMENT>& vectorToFill);
 };
 

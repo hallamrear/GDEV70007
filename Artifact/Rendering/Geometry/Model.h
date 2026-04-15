@@ -6,10 +6,10 @@ class Mesh;
 class Model
 {
 private:
-	friend class GeometryLoader;
-	std::string m_Name;
+	friend class AssetLoader;
+	std::string m_DisplayName;
+	std::string m_FileLocation;
 	std::vector<Mesh*> m_Meshes;
-	std::vector<ID3D12Resource*> m_Textures;
 
 protected:
 
@@ -17,5 +17,8 @@ public:
 	Model();
 	~Model();
 
+	const bool IsLoaded() const;
 };
 
+typedef std::shared_ptr<Model> ModelRef;
+typedef std::weak_ptr<Model> ModelPtr;

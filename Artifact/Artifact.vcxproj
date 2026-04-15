@@ -188,6 +188,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Artifact.h" />
+    <ClInclude Include="System\AssetLoader.h" />
+    <ClInclude Include="System\AssetManagement.h" />
     <ClInclude Include="Rendering\Camera.h" />
     <ClInclude Include="Rendering\ConstantBuffer.h" />
     <ClInclude Include="Rendering\DX12Includes.h" />
@@ -224,6 +226,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Artifact.cpp" />
+    <ClCompile Include="System\AssetLoader.cpp" />
+    <ClCompile Include="System\AssetManagement.cpp" />
     <ClCompile Include="Rendering\Camera.cpp" />
     <ClCompile Include="Rendering\ConstantBuffer.cpp" />
     <ClCompile Include="Rendering\DX12Renderer.cpp" />
