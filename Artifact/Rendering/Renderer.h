@@ -1,6 +1,10 @@
 #pragma once
 #include "Texturing/Texture.h"
 
+class Model;
+class GenericBuffer;
+class VertexBuffer;
+class IndexBuffer;
 struct GraphicsDevice;
 
 class Renderer
@@ -48,6 +52,10 @@ public:
 	const Vector4& GetClearColour() const;
 	void SetClearColour(const Vector4& newColour);
 
+	virtual bool BindVertexData(VertexBuffer& vertexBuffer, const void* buffer, const size_t& bufferLength) = 0;
+	virtual bool BindIndexData(IndexBuffer& vertexBuffer, const void* buffer, const size_t& bufferLength, const bool& isShortIndex = false) = 0;
+	virtual bool BindGenericBufferData(GenericBuffer& genericBuffer, const void* buffer, const size_t& bufferLength) = 0;
+
 	virtual TextureRef BindTextureData(const int& indexToBindTo, const void* data, const size_t& len, const Vector2& dimensions) = 0;
 
 	virtual bool ResizeSwapchain(const int& newWidth, const int& newHeight) = 0;
@@ -55,5 +63,6 @@ public:
 	virtual void PostAssetInitialisation() = 0;
 	virtual void ClearFrame() = 0;
 	virtual void PresentFrame() = 0;
+	virtual void Render(const Model& model, const Matrix4x4& worldMatrix) = 0;
 };
 

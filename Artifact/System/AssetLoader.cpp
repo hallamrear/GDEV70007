@@ -257,6 +257,14 @@ ModelRef AssetLoader::CreateModelRefFromGLTF(const tinygltf::Model& gltfModel)
 			if(GetVertexDataFromGLTFPrimitive(*mesh, gltfModel, meshIndex, (int)primitiveIndex))
 			{
 				myModel->m_Meshes.push_back(mesh);
+
+				bool usesIndices = GetIndexDataFromGLTFPrimitive(*mesh, gltfModel, meshIndex, (int)primitiveIndex);
+
+				if (!usesIndices)
+				{
+					printf("Model loaded with indices.\n");
+				}
+
 				SetMeshMatrixFromFile(mesh->m_OffsetMatrix, node);
 				LoadTexturesFromGLTFPrimitive(*mesh, gltfModel, meshIndex, (int)primitiveIndex);
 			}
@@ -350,8 +358,111 @@ bool AssetLoader::GetElementDataFromGLTFBuffer(const std::string& attributeName,
 	return hasAttribute;
 }
 
+bool AssetLoader::GetIndexDataFromGLTFPrimitive(Mesh& mesh, const tinygltf::Model& gltfModel, const int& meshIndex, const int& primitiveIndex)
+{
+	Renderer* renderer = ServiceLocator::Locate<Renderer>();
+
+	if (renderer == nullptr)
+	{
+		printf("Failed to load vertex data due to invalid renderer reference.\n");
+		return false;
+	}
+
+	const tinygltf::Mesh& gltfMesh = gltfModel.meshes[meshIndex];
+	const tinygltf::Primitive& primitive = gltfMesh.primitives[primitiveIndex];
+
+	if (primitive.attributes.size() <= 0)
+	{
+		printf("No primitivate attribute data in gltf file.\n");
+		return false;
+	}
+
+	int indicesAttributor = primitive.indices;
+	const tinygltf::Accessor& indicesAccessor = gltfModel.accessors[indicesAttributor];
+
+	bool isShortIndex = false;
+
+	switch (indicesAccessor.componentType)
+	{
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+		isShortIndex = true;
+		break;
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+		break;
+
+	default:
+		printf("Undefined index format in gltf file.\n");
+		return false;
+		break;
+	}
+
+	int indexCount = (int)indicesAccessor.count;
+	const tinygltf::BufferView& indexBufferView = gltfModel.bufferViews[indicesAccessor.bufferView];
+	const tinygltf::Buffer& indexBuffer = gltfModel.buffers[indexBufferView.buffer];
+	int indicesByteStride = indicesAccessor.ByteStride(indexBufferView);
+
+	if (indicesByteStride == -1)
+	{
+		printf("Failed to get buffer view stride.\n");
+		return false;
+	}
+
+	if (isShortIndex)
+	{
+		if (indicesByteStride != sizeof(unsigned short))
+		{
+			printf("ByteStride from buffer view and expected index size do not match.\n");
+			return false;
+		}
+	}
+	else
+	{
+		if (indicesByteStride != sizeof(unsigned int))
+		{
+			printf("ByteStride from buffer view and expected index size do not match.\n");
+			return false;
+		}
+	}
+
+	size_t elementSize = tinygltf::GetComponentSizeInBytes(indicesAccessor.componentType) * tinygltf::GetNumComponentsInType(indicesAccessor.type);
+
+	if (elementSize <= 0)
+	{
+		printf("Index data elemet size evaluated to zero.\n");
+		return false;
+	}
+
+	const void* src = indexBuffer.data.data() + indexBufferView.byteOffset + indicesAccessor.byteOffset;
+
+	size_t indexDataSize = indexCount * elementSize;
+	std::vector<byte> indexData = std::vector<byte>();
+	indexData.resize(indexDataSize);
+	memcpy(indexData.data(), src, indexDataSize);
+
+	bool boundIndexData = renderer->BindIndexData(mesh.m_IndexBuffer, indexData.data(), indexDataSize, isShortIndex);
+
+	if (boundIndexData == false)
+	{
+		printf("Failed to bind index data during model loading.");
+		return false;
+	}
+
+	std::wstring indexBufferName = std::wstring(gltfMesh.name.begin(), gltfMesh.name.end()) + L" Index Buffer";
+	mesh.m_IndexBuffer.GetResource()->SetName(indexBufferName.c_str());
+
+	return true;
+}
+
 bool AssetLoader::GetVertexDataFromGLTFPrimitive(Mesh& mesh, const tinygltf::Model& gltfModel, const int& meshIndex, const int& primitiveIndex)
 {
+	Renderer* renderer = ServiceLocator::Locate<Renderer>();
+
+	if (renderer == nullptr)
+	{
+		printf("Failed to load vertex data due to invalid renderer reference.\n");
+		return false;
+	}
+
 	const tinygltf::Mesh& gltfMesh = gltfModel.meshes[meshIndex];
 	const tinygltf::Primitive& primitive = gltfMesh.primitives[primitiveIndex];
 
@@ -402,7 +513,26 @@ bool AssetLoader::GetVertexDataFromGLTFPrimitive(Mesh& mesh, const tinygltf::Mod
 		vertices[v].Normal =	hasNormals	 ? *(Vector3*)(  normalData + (sizeof(Vector3) * v)) : Vector3();
 		vertices[v].Tangent =	hasTangents  ? *(Vector3*)( tangentData + (sizeof(Vector3) * v)) : Vector3();
 		vertices[v].UV =		hasTexCoords ? *(Vector2*)(texCoordData + (sizeof(Vector2) * v)) : Vector2();
+	}	
+
+	size_t vertexBufferLength = sizeof(Vertex) * vertices.size();
+	
+	bool boundVertexData = renderer->BindVertexData(mesh.m_VertexBuffer, vertices.data(), vertexBufferLength);
+
+	if (boundVertexData == false)
+	{
+		printf("Failed to bind vertex data during model loading.");
+		return false;
 	}
+
+	if (mesh.m_VertexBuffer.GetResource() == nullptr)
+	{
+		printf("Failed to create vertex buffer resource during model loading.");
+		return false;
+	}
+
+	std::wstring vertexBufferName = std::wstring(gltfMesh.name.begin(), gltfMesh.name.end()) + L" Vertex Buffer";
+	mesh.m_VertexBuffer.GetResource()->SetName(vertexBufferName.c_str());
 
 	mesh.m_MaxVertex = Vector3((float)positions.maxValues[0], (float)positions.maxValues[1], (float)positions.maxValues[2]);
 	mesh.m_MinVertex = Vector3((float)positions.minValues[0], (float)positions.minValues[1], (float)positions.minValues[2]);

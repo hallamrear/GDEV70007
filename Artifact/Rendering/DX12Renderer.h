@@ -7,6 +7,10 @@ struct PushConstants;
 class ConstantBuffer;
 class LightBuffer;
 class Texture;
+class GenericBuffer;
+class VertexBuffer;
+class IndexBuffer;
+class Mesh;
 
 class DX12Renderer : public Renderer
 {
@@ -45,7 +49,9 @@ private:
 	struct ID3D12DescriptorHeap* m_RTVHeap;
 	struct ID3D12DescriptorHeap* m_DSVHeap;
 	static struct ID3D12DescriptorHeap* m_MainSRVHeap;
-	static int m_SRVHeapDescriptorEndIndex;
+	//static struct ID3D12DescriptorHeap* m_DrawSRVHeap;
+	static int m_MainSRVHeapDescriptorEndIndex;
+	static int m_DrawSRVHeapDescriptorEndIndex;
 	static void GetNewDescriptorHandleFromSRVHeap(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle);
 	static void IMGUISRVDestructorWithInfo(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle);
 	HRESULT CreateDescriptorHeaps();
@@ -103,6 +109,8 @@ private:
 	PushConstants* m_PushConstants;
 	void UploadPushConstants();
 
+	HRESULT CreateDefaultBuffer(ID3D12Resource*& defaultBuffer, ID3D12Resource*& gpuUploadBuffer, const void* data, const size_t& sizeBytes);
+
 protected:
 
 public:
@@ -124,11 +132,13 @@ public:
 	struct D3D12_CPU_DESCRIPTOR_HANDLE GetMainSRVDescriptorHeapStartCPU() const;
 	struct D3D12_GPU_DESCRIPTOR_HANDLE GetMainSRVDescriptorHeapStartGPU() const;
 
-	HRESULT CreateDefaultBuffer(ID3D12Resource*& defaultBuffer, ID3D12Resource*& gpuUploadBuffer, const void* data, const size_t& sizeBytes);
-
 	HRESULT UpdateWorldMatrix(const Matrix4x4& worldMatrix);
 	HRESULT UpdateLightingBuffer(const LightBuffer& lb);
 	HRESULT UpdateConstantBuffer(const ConstantBuffer& cb);
+
+	bool BindGenericBufferData(GenericBuffer& genericBuffer, const void* buffer, const size_t& bufferLength);
+	bool BindVertexData(VertexBuffer& vertexBuffer, const void* buffer, const size_t& bufferLength);
+	bool BindIndexData(IndexBuffer& vertexBuffer, const void* buffer, const size_t& bufferLength, const bool& isShortIndex = false);
 
 	TextureRef BindTextureData(const int& indexToBindTo, const void* data, const size_t& len, const Vector2& dimensions);
 
@@ -150,6 +160,8 @@ public:
 	bool ResizeSwapchain(const int& newWidth, const int& newHeight);
 
 	void PostAssetInitialisation();
+
+	void Render(const Model& mesh, const Matrix4x4& worldMatrix);
 
 	void ClearFrame();
 	HRESULT FlushCommandQueue();

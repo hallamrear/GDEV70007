@@ -21,6 +21,7 @@ private:
 	static ModelRef CreateModelRefFromGLTF(const tinygltf::Model& gltfModel);
 	static bool SetMeshMatrixFromFile(Matrix4x4& offsetMatrix, const tinygltf::Node& node);
 	static bool GetElementDataFromGLTFBuffer(const std::string& attributeName, byte*& data, const tinygltf::Model& model, const tinygltf::Primitive& primitive);
+	static bool GetIndexDataFromGLTFPrimitive(Mesh& mesh, const tinygltf::Model& gltfModel, const int& meshIndex, const int& primitiveIndex);
 	static bool GetVertexDataFromGLTFPrimitive(Mesh& mesh, const tinygltf::Model& gltfModel, const int& meshIndex, const int& primitiveIndex);
 
 public:

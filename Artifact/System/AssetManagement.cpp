@@ -21,6 +21,8 @@ const bool& AssetManager::IsInitialised() const
 	return m_IsInitialised;
 }
 
+static ModelRef testModel = nullptr;
+#include <Rendering/Renderer.h>
 #include <Rendering/Texturing/Texture.h>
 #include <Rendering/IMGUIIncludes.h>
 #include <Rendering/DX12Includes.h>
@@ -37,6 +39,17 @@ void AssetManager::DebugDraw()
 	}
 
 	ImGui::End();
+
+	Matrix4x4 identity;
+	XMStoreFloat4x4(&identity, DirectX::XMMatrixIdentity());
+	Model* model = testModel.get();
+	ServiceLocator::Locate<Renderer>()->Render(*model, identity);
+}
+
+bool AssetManager::Initialise()
+{
+	testModel = GetModel("Barrel.glb");
+	return true;
 }
 
 AssetManager* AssetManager::CreateAssetDatabase()
@@ -57,12 +70,6 @@ AssetManager* AssetManager::CreateAssetDatabase()
 
 	return am;
 }	
-
-bool AssetManager::Initialise()
-{
-	static ModelRef model = GetModel("Barrel.glb");
-	return true;
-}
 
 bool AssetManager::Shutdown()
 {

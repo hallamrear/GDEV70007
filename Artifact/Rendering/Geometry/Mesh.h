@@ -1,5 +1,7 @@
 #pragma once
 #include <Rendering/Texturing/Texture.h>
+#include <Rendering/VertexBuffer.h>
+#include <Rendering/IndexBuffer.h>
 
 class Mesh
 {
@@ -13,12 +15,19 @@ private:
 	MESH_TOPOLOGY m_Topology;
 	std::vector<TextureRef> m_Textures;
 
+	VertexBuffer m_VertexBuffer;
+	IndexBuffer m_IndexBuffer;
+
 protected:
 
 public:
 	Mesh();
 	~Mesh();
 
+	const Matrix4x4& GetOffsetMatrix() const;
+	const IndexBuffer& GetIndexBuffer() const;
+	const VertexBuffer& GetVertexBuffer() const;
 	const std::vector<TextureRef> GetTextures() const;
+	const MESH_TOPOLOGY& GetTopologyType() const;
 };
 

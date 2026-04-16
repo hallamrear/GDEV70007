@@ -188,6 +188,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Artifact.h" />
+    <ClInclude Include="Rendering\IndexBuffer.h" />
+    <ClInclude Include="Rendering\GenericBuffer.h" />
     <ClInclude Include="System\AssetLoader.h" />
     <ClInclude Include="System\AssetManagement.h" />
     <ClInclude Include="Rendering\Camera.h" />
@@ -215,7 +217,7 @@
     <ClInclude Include="Rendering\Vertex.h" />
     <ClInclude Include="System\Defines.h" />
     <ClInclude Include="System\Types.h" />
-    <ClInclude Include="VertexBuffer.h" />
+    <ClInclude Include="Rendering\VertexBuffer.h" />
     <ClInclude Include="World\World.h" />
     <ClInclude Include="World\Entity.h" />
     <ClInclude Include="System\ServiceLocator.h" />
@@ -227,6 +229,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Artifact.cpp" />
+    <ClCompile Include="Rendering\IndexBuffer.cpp" />
+    <ClCompile Include="Rendering\GenericBuffer.cpp" />
     <ClCompile Include="System\AssetLoader.cpp" />
     <ClCompile Include="System\AssetManagement.cpp" />
     <ClCompile Include="Rendering\Camera.cpp" />
@@ -249,7 +253,7 @@
     <ClCompile Include="Rendering\Renderer.cpp" />
     <ClCompile Include="Rendering\Texturing\Texture.cpp" />
     <ClCompile Include="Rendering\Vertex.cpp" />
-    <ClCompile Include="VertexBuffer.cpp" />
+    <ClCompile Include="Rendering\VertexBuffer.cpp" />
     <ClCompile Include="World\World.cpp" />
     <ClCompile Include="World\Entity.cpp" />
     <ClCompile Include="System\ServiceLocator.cpp" />
