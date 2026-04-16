@@ -6,14 +6,15 @@
 
 #define FAILED_RETURN(hr) if(FAILED(hr)) return !FAILED(hr);
 
-ID3D12DescriptorHeap* DX12Renderer::m_IMGUISRVHeap = nullptr;
-int DX12Renderer::m_IMGUISRVIndex = 0;
-UINT DX12Renderer::m_IMGUISRVDescriptorHeapSize = 0;
+ID3D12DescriptorHeap* DX12Renderer::m_MainSRVHeap = nullptr;
+UINT DX12Renderer::m_RTVDescriptorHeapSize;
+UINT DX12Renderer::m_DSVDescriptorHeapSize;
+UINT DX12Renderer::m_CBVSRVDescriptorHeapSize;
+int DX12Renderer::m_SRVHeapDescriptorEndIndex = 0;
 
 DX12Renderer::DX12Renderer() : Renderer()
 {
     m_NullTextureDescriptor = {};
-    m_PerObjectSRVHeap = nullptr;
     m_MainSRVHeap = nullptr;
     m_CBVHeaps = nullptr;
     m_DXGIFactory = nullptr;
@@ -264,8 +265,8 @@ bool DX12Renderer::InitialiseIMGUI()
     init_info.RTVFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
     init_info.DSVFormat = DXGI_FORMAT_UNKNOWN;
 
-    init_info.SrvDescriptorHeap = m_IMGUISRVHeap;
-    init_info.SrvDescriptorAllocFn = IMGUISRVAllocatorWithInfo;
+    init_info.SrvDescriptorHeap = m_MainSRVHeap;
+    init_info.SrvDescriptorAllocFn = GetNewDescriptorHandleFromSRVHeap;
     init_info.SrvDescriptorFreeFn = IMGUISRVDestructorWithInfo;
 
     bool dx12Init = ImGui_ImplDX12_Init(&init_info);
@@ -273,14 +274,22 @@ bool DX12Renderer::InitialiseIMGUI()
     return (win32Init && dx12Init);
 }
 
-void DX12Renderer::IMGUISRVAllocatorWithInfo(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle)
+void DX12Renderer::GetNewDescriptorHandleFromSRVHeap(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle)
 {
     UNREFERENCED_PARAMETER(info);
-    auto cpuHeapStart = m_IMGUISRVHeap->GetCPUDescriptorHandleForHeapStart();
-    auto gpuHeapStart = m_IMGUISRVHeap->GetGPUDescriptorHandleForHeapStart();
-    cpuHandle->ptr = cpuHeapStart.ptr + (m_IMGUISRVIndex * m_IMGUISRVDescriptorHeapSize);
-    gpuHandle->ptr = gpuHeapStart.ptr + (m_IMGUISRVIndex * m_IMGUISRVDescriptorHeapSize);
-    m_IMGUISRVIndex++;
+
+
+    if (cpuHandle)
+    {
+        cpuHandle->ptr = m_MainSRVHeap->GetCPUDescriptorHandleForHeapStart().ptr + (UINT64(m_SRVHeapDescriptorEndIndex) * UINT64(m_CBVSRVDescriptorHeapSize));
+    }
+
+    if (gpuHandle)
+    {
+        gpuHandle->ptr = m_MainSRVHeap->GetGPUDescriptorHandleForHeapStart().ptr + (UINT64(m_SRVHeapDescriptorEndIndex) * UINT64(m_CBVSRVDescriptorHeapSize));
+    }
+
+    m_SRVHeapDescriptorEndIndex++;
 }
 
 void DX12Renderer::IMGUISRVDestructorWithInfo(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle)
@@ -288,9 +297,9 @@ void DX12Renderer::IMGUISRVDestructorWithInfo(ImGui_ImplDX12_InitInfo* info, D3D
     UNREFERENCED_PARAMETER(info);
     UNREFERENCED_PARAMETER(cpuHandle);
     UNREFERENCED_PARAMETER(gpuHandle);
-    //auto cpuHeapStart = m_IMGUISRVHeap->GetCPUDescriptorHandleForHeapStart();
+    //auto cpuHeapHandle = m_IMGUISRVHeap->GetCPUDescriptorHandleForHeapStart();
     //auto gpuHeapStart = m_IMGUISRVHeap->GetGPUDescriptorHandleForHeapStart();
-    //int cpu_idx = (int)((cpuHandle.ptr - cpuHeapStart.ptr) / m_CBVSRVDescriptorHeapSize);
+    //int cpu_idx = (int)((cpuHandle.ptr - cpuHeapHandle.ptr) / m_CBVSRVDescriptorHeapSize);
     //int gpu_idx = (int)((gpuHandle.ptr - gpuHeapStart.ptr) / m_CBVSRVDescriptorHeapSize);
 }
 
@@ -530,7 +539,6 @@ HRESULT DX12Renderer::CreateDeviceAndFactory()
     m_RTVDescriptorHeapSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
     m_DSVDescriptorHeapSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
     m_CBVSRVDescriptorHeapSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-    m_IMGUISRVDescriptorHeapSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
     return result;
 }
@@ -776,8 +784,8 @@ HRESULT DX12Renderer::CreateDescriptorHeaps()
     mainSRVDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     mainSRVDescriptorHeapDesc.NumDescriptors = MAX_LOADABLE_TEXTURES;
     mainSRVDescriptorHeapDesc.NodeMask = 0;
-    mainSRVDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-    m_Device->CreateDescriptorHeap(&mainSRVDescriptorHeapDesc, IID_PPV_ARGS(&m_MainSRVHeap));
+    mainSRVDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+    result = m_Device->CreateDescriptorHeap(&mainSRVDescriptorHeapDesc, IID_PPV_ARGS(&m_MainSRVHeap));
 
     if (FAILED(result))
     {
@@ -787,7 +795,7 @@ HRESULT DX12Renderer::CreateDescriptorHeaps()
 
     m_MainSRVHeap->SetName(L"Main CBV/SRV/UAV Heap");
 
-    D3D12_DESCRIPTOR_HEAP_DESC drawDescriptorHeapDesc{};
+    /*D3D12_DESCRIPTOR_HEAP_DESC drawDescriptorHeapDesc{};
     drawDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     drawDescriptorHeapDesc.NumDescriptors = MAX_LOADABLE_TEXTURES;
     drawDescriptorHeapDesc.NodeMask = 0;
@@ -800,23 +808,9 @@ HRESULT DX12Renderer::CreateDescriptorHeaps()
         return result;
     }
 
-    m_PerObjectSRVHeap->SetName(L"Draw Call CBV/SRV/UAV Heap");
+    m_PerObjectSRVHeap->SetName(L"Draw Call CBV/SRV/UAV Heap");*/
 
-    D3D12_DESCRIPTOR_HEAP_DESC imguiDescriptorHeapDesc{};
-    imguiDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-    imguiDescriptorHeapDesc.NumDescriptors = MAX_LOADABLE_TEXTURES;
-    imguiDescriptorHeapDesc.NodeMask = 0;
-    imguiDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    m_Device->CreateDescriptorHeap(&imguiDescriptorHeapDesc, IID_PPV_ARGS(&m_IMGUISRVHeap));
-
-    if (FAILED(result))
-    {
-        printf("Failed to create imgui SRV descriptor heap.\n");
-        return result;
-    }
-
-    m_IMGUISRVHeap->SetName(L"IMGUI CBV/SRV/UAV Heap");
-    m_IMGUISRVIndex = 0;
+    m_SRVHeapDescriptorEndIndex = 0;
 
     return result;
 }
@@ -839,20 +833,20 @@ void DX12Renderer::DestroyDescriptorHeaps()
     {
         m_MainSRVHeap->Release();
         m_MainSRVHeap = nullptr;
+        m_SRVHeapDescriptorEndIndex = 0;
     }
 
-    if (m_PerObjectSRVHeap != nullptr)
+    /*if (m_PerObjectSRVHeap != nullptr)
     {
         m_PerObjectSRVHeap->Release();
         m_PerObjectSRVHeap = nullptr;
-    }
+    }*/
 
-    if (m_IMGUISRVHeap != nullptr)
-    {
-        m_IMGUISRVHeap->Release();
-        m_IMGUISRVHeap = nullptr;
-        m_IMGUISRVIndex = 0;
-    }
+    //if (m_IMGUISRVHeap != nullptr)
+    //{
+    //    m_IMGUISRVHeap->Release();
+    //    m_IMGUISRVHeap = nullptr;
+    //}
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12Renderer::GetCurrentBackbufferView() const
@@ -1464,7 +1458,11 @@ HRESULT DX12Renderer::CreateNullDescriptors()
 {
     const DXGI_FORMAT textureFormat = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
     CD3DX12_SHADER_RESOURCE_VIEW_DESC srvDesc = CD3DX12_SHADER_RESOURCE_VIEW_DESC::Tex2D(textureFormat);
-    CD3DX12_CPU_DESCRIPTOR_HANDLE srvCpuHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(GetMainSRVDescriptorHeapStartCPU(), 0, GetSRVDescriptorHeapSize());
+    //CD3DX12_CPU_DESCRIPTOR_HANDLE srvCpuHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(GetMainSRVDescriptorHeapStartCPU(), 0, GetSRVDescriptorHeapSize());
+    CD3DX12_CPU_DESCRIPTOR_HANDLE srvCpuHandle = {};
+    CD3DX12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = {};
+
+    GetNewDescriptorHandleFromSRVHeap(nullptr, &srvCpuHandle, &srvGpuHandle);
 
     m_Device->CreateShaderResourceView(NULL, &srvDesc, srvCpuHandle);
 
@@ -1489,18 +1487,6 @@ void DX12Renderer::DestroyNullDescriptors()
 UINT DX12Renderer::GetSRVDescriptorHeapSize() const
 {
     return m_CBVSRVDescriptorHeapSize;
-}
-
-D3D12_CPU_DESCRIPTOR_HANDLE DX12Renderer::GetDrawingSRVDescriptorHeapStartCPU() const
-{
-    assert((m_PerObjectSRVHeap != nullptr));
-    return m_PerObjectSRVHeap->GetCPUDescriptorHandleForHeapStart();
-}
-
-D3D12_GPU_DESCRIPTOR_HANDLE DX12Renderer::GetDrawingSRVDescriptorHeapStartGPU() const
-{
-    assert((m_PerObjectSRVHeap != nullptr));
-    return m_PerObjectSRVHeap->GetGPUDescriptorHandleForHeapStart();
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12Renderer::GetMainSRVDescriptorHeapStartCPU() const
@@ -1729,8 +1715,12 @@ TextureRef DX12Renderer::BindTextureData(const int& indexToBindTo, const void* d
     CD3DX12_SHADER_RESOURCE_VIEW_DESC srvDesc = CD3DX12_SHADER_RESOURCE_VIEW_DESC::Tex2D(DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM);
 
     //Map Size + 1 to account for the null descriptor created by the renderer.
-    CD3DX12_CPU_DESCRIPTOR_HANDLE srvCpuHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(GetDrawingSRVDescriptorHeapStartCPU(), indexToBindTo + 1, GetSRVDescriptorHeapSize());
-    CD3DX12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(GetDrawingSRVDescriptorHeapStartGPU(), indexToBindTo + 1, GetSRVDescriptorHeapSize());
+    //CD3DX12_CPU_DESCRIPTOR_HANDLE srvCpuHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(GetDrawingSRVDescriptorHeapStartCPU(), indexToBindTo + 1, GetSRVDescriptorHeapSize());
+    //CD3DX12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(GetDrawingSRVDescriptorHeapStartGPU(), indexToBindTo + 1, GetSRVDescriptorHeapSize());
+    D3D12_CPU_DESCRIPTOR_HANDLE srvCpuHandle = {};
+    D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = {};
+
+    DX12Renderer::GetNewDescriptorHandleFromSRVHeap(nullptr, &srvCpuHandle, &srvGpuHandle);
 
     m_Device->CreateShaderResourceView(textureResource, &srvDesc, srvCpuHandle);
 
@@ -1753,6 +1743,7 @@ TextureRef DX12Renderer::BindTextureData(const int& indexToBindTo, const void* d
         texture->m_ID = indexToBindTo;
         texture->m_CPUHandle = srvCpuHandle;
         texture->m_GPUHandle = srvGpuHandle;
+        texture->m_Resource = textureResource;
     }
 
     return texture;
@@ -1805,7 +1796,7 @@ void DX12Renderer::ClearFrame()
 
     m_CommandList->SetGraphicsRootSignature(m_RootSignature);
 
-    ID3D12DescriptorHeap* heaps[] = { m_PerObjectSRVHeap };
+    ID3D12DescriptorHeap* heaps[] = { m_MainSRVHeap };
     m_CommandList->SetDescriptorHeaps(_countof(heaps), heaps);
 
     CD3DX12_GPU_DESCRIPTOR_HANDLE srvHeap(heaps[0]->GetGPUDescriptorHandleForHeapStart());
@@ -1818,7 +1809,7 @@ void DX12Renderer::PresentFrame()
 {
     assert(m_IsInitialised);
 
-    ID3D12DescriptorHeap* heaps[] = { m_IMGUISRVHeap };
+    ID3D12DescriptorHeap* heaps[] = { m_MainSRVHeap };
     m_CommandList->SetDescriptorHeaps(_countof(heaps), heaps);
     ImGui::Render();
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_CommandList);

@@ -19,9 +19,9 @@ private:
 	HRESULT CreateDeviceAndFactory();
 	void DestroyDeviceAndFactory();
 
-	UINT m_RTVDescriptorHeapSize;
-	UINT m_DSVDescriptorHeapSize;
-	UINT m_CBVSRVDescriptorHeapSize;
+	static UINT m_RTVDescriptorHeapSize;
+	static UINT m_DSVDescriptorHeapSize;
+	static UINT m_CBVSRVDescriptorHeapSize;
 	int m_CurrentFenceIndex;
 	struct ID3D12Fence* m_Fence;
 	HRESULT CreateFence();
@@ -44,8 +44,10 @@ private:
 
 	struct ID3D12DescriptorHeap* m_RTVHeap;
 	struct ID3D12DescriptorHeap* m_DSVHeap;
-	struct ID3D12DescriptorHeap* m_MainSRVHeap;
-	struct ID3D12DescriptorHeap* m_PerObjectSRVHeap;
+	static struct ID3D12DescriptorHeap* m_MainSRVHeap;
+	static int m_SRVHeapDescriptorEndIndex;
+	static void GetNewDescriptorHandleFromSRVHeap(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle);
+	static void IMGUISRVDestructorWithInfo(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle);
 	HRESULT CreateDescriptorHeaps();
 	void DestroyDescriptorHeaps();
 	struct D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentBackbufferView() const;
@@ -98,12 +100,6 @@ private:
 	HRESULT CreateNullDescriptors();
 	void DestroyNullDescriptors();
 
-	static struct ID3D12DescriptorHeap* m_IMGUISRVHeap;
-	static int m_IMGUISRVIndex;
-	static UINT m_IMGUISRVDescriptorHeapSize;
-	static void IMGUISRVAllocatorWithInfo(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle);
-	static void IMGUISRVDestructorWithInfo(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle);
-
 	PushConstants* m_PushConstants;
 	void UploadPushConstants();
 
@@ -127,8 +123,6 @@ public:
 	UINT GetSRVDescriptorHeapSize() const;
 	struct D3D12_CPU_DESCRIPTOR_HANDLE GetMainSRVDescriptorHeapStartCPU() const;
 	struct D3D12_GPU_DESCRIPTOR_HANDLE GetMainSRVDescriptorHeapStartGPU() const;
-	struct D3D12_CPU_DESCRIPTOR_HANDLE GetDrawingSRVDescriptorHeapStartCPU() const;
-	struct D3D12_GPU_DESCRIPTOR_HANDLE GetDrawingSRVDescriptorHeapStartGPU() const;
 
 	HRESULT CreateDefaultBuffer(ID3D12Resource*& defaultBuffer, ID3D12Resource*& gpuUploadBuffer, const void* data, const size_t& sizeBytes);
 

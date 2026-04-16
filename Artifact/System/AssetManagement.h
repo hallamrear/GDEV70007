@@ -18,7 +18,7 @@ public:
 
 	void AddTexture(TextureRef textureRef)
 	{
-
+		UNREFERENCED_PARAMETER(textureRef);
 	}
 };
 
