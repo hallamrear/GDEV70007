@@ -48,6 +48,8 @@ bool Engine::InitialiseSubsystems(HWND windowHandle, const std::filesystem::path
 		return false;
 	}
 
+	ServiceLocator::Provide(m_AssetManager);
+
 	m_World = World::CreateWorld();
 
 	if (m_World == nullptr)
@@ -55,6 +57,8 @@ bool Engine::InitialiseSubsystems(HWND windowHandle, const std::filesystem::path
 		printf("Failed to create world.");
 		return false;
 	}
+
+	ServiceLocator::Provide(m_World);
 
 	m_IsInitialised = (m_World != nullptr) && (m_Renderer != nullptr);
 

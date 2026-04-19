@@ -2,45 +2,39 @@
 #include <map>
 
 class Renderer;
-
-class Service
-{
-
-};
+class AssetManager;
+class World;
 
 class ServiceLocator
 {
 private:
-	//static std::map<Service, Service*> m_ServiceMap;
-
 	static Renderer* m_RendererService;
+	static AssetManager* m_AssetManager;
+	static World* m_World;
 
 public:
 	static void Provide(Renderer* renderer);
+	static void Provide(AssetManager* assetManager);
+	static void Provide(World* world);
 
 	template<class T>
 	static T* Locate();
-
-	/*template<class T*>
-	static bool Provide(T* service);
-
-	template<class T>
-	static T* Locate<>();*/
 };
-//
-//template<>
-//inline bool ServiceLocator::Provide<T>(T* service)
-//{
-//	Service* castedService = dynamic_cast<Service*>(service)
-//
-//	if (castedService != nullptr)
-//	{
-//		m_ServiceMap.insert({ T, service });
-//	}
-//}
 
 template<>
 inline Renderer* ServiceLocator::Locate<>()
 {
 	return m_RendererService;
+}
+
+template<>
+inline AssetManager* ServiceLocator::Locate<>()
+{
+	return m_AssetManager;
+}
+
+template<>
+inline World* ServiceLocator::Locate<>()
+{
+	return m_World;
 }

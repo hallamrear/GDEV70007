@@ -493,6 +493,12 @@ void DX12Renderer::PostAssetInitialisation()
 
 void DX12Renderer::Render(const Model& model, const Matrix4x4& worldMatrix)
 {
+    if (model.IsLoaded() == false)
+    {
+        printf("Trying to draw a model that isn't loaded.\n");
+        return;
+    }
+
     for (auto& mesh : model.GetMeshes())
     {
         DirectX::XMStoreFloat4x4(&m_PushConstants->World, DirectX::XMMatrixMultiply(DirectX::XMLoadFloat4x4(&worldMatrix), DirectX::XMLoadFloat4x4(&mesh->GetOffsetMatrix())));
