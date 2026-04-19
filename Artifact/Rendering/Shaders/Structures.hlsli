@@ -1,18 +1,20 @@
 
 cbuffer FrameConstantBuffer : register(b0)
 {
-    float4x4 View;
-    float4x4 Projection;
-    float4 CameraPosition;
-    float4 CameraDirection;
-    float4 FCBPadding[6];
+	float4x4 View;
+	float4x4 Projection;
+	float4 CameraPosition;
+	float4 CameraDirection;
+	float DeltaTime;
+	float3 PaddingThree;
+	float4 Padding[5];
 };
 
 cbuffer PushConstantBuffer : register(b1)
 {
     float4x4 World;
     float4x4 PCBPadding;
-}
+};
 
 struct VS_STANDARD_VERTEX_INPUT
 {

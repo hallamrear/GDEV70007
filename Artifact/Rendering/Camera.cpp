@@ -17,6 +17,21 @@ Camera::~Camera()
 
 }
 
+const Vector3& Camera::GetForwardVector() const
+{
+	return m_ForwardVector;
+}
+
+const Vector3& Camera::GetRightVector() const
+{
+	return m_RightVector;
+}
+
+const Vector3& Camera::GetUpVector() const
+{
+	return m_UpVector;
+}
+
 void Camera::UpdateTransformMatrix()
 {
 	m_Rotation.x = fmodf(m_Rotation.x, 360.0f);

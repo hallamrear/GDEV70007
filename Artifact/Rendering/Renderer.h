@@ -1,5 +1,6 @@
 #pragma once
 #include "Texturing/Texture.h"
+#include <Rendering/Camera.h>
 
 class Model;
 class GenericBuffer;
@@ -13,6 +14,8 @@ private:
 	friend class Texture;
 
 protected:
+	Camera m_Camera;
+
 	static const enum TEXTURE_FORMAT m_BackbufferFormat;
 	static const enum TEXTURE_FORMAT m_DepthStencilBufferFormat;
 	static const int m_SwapChainBufferCount;
@@ -32,6 +35,13 @@ protected:
 	virtual bool ShutdownIMGUI() = 0;
 
 public:
+	enum TEXTURE_TYPE_SLOT : int
+	{
+		TEXTURE_TYPE_DIFFUSE = 0,
+		TEXTURE_TYPE_NORMAL = 1,
+		TEXTURE_TYPE_COUNT = 2
+	};
+
 	const HWND& GetWindowHandle() const;
 	HWND& GetWindowHandle();
 	const int& GetWindowWidth() const;
@@ -57,6 +67,7 @@ public:
 	virtual bool BindGenericBufferData(GenericBuffer& genericBuffer, const void* buffer, const size_t& bufferLength) = 0;
 
 	virtual TextureRef BindTextureData(const int& indexToBindTo, const void* data, const size_t& len, const Vector2& dimensions) = 0;
+	virtual	bool AssignTextureToTextureSlot(const TEXTURE_TYPE_SLOT& textureSlot, const TextureRef& texture) = 0;
 
 	virtual bool ResizeSwapchain(const int& newWidth, const int& newHeight) = 0;
 
@@ -64,5 +75,7 @@ public:
 	virtual void ClearFrame() = 0;
 	virtual void PresentFrame() = 0;
 	virtual void Render(const Model& model, const Matrix4x4& worldMatrix) = 0;
+
+	Camera& GetCamera();
 };
 

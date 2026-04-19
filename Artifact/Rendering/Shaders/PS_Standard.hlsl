@@ -5,5 +5,5 @@ SamplerState LinearSampler : register(s0);
 
 float4 main(VS_STANDARD_VERTEX_OUTPUT input) : SV_TARGET
 {
-    return DiffuseTexture.Sample(LinearSampler, input.UV);
+    return DiffuseTexture.SampleLevel(LinearSampler, input.UV, 0);
 }

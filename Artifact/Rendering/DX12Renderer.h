@@ -1,7 +1,6 @@
 #pragma once
 #include <Rendering/DX12Includes.h>
 #include <Rendering/Renderer.h>
-#include <Rendering/Camera.h>
 
 struct PushConstants;
 class ConstantBuffer;
@@ -15,8 +14,6 @@ class Mesh;
 class DX12Renderer : public Renderer
 {
 private:
-	Camera m_Camera;
-
 	struct IDXGIFactory2* m_DXGIFactory;
 	struct ID3D12Device* m_Device;
 	struct ID3D12InfoQueue* m_InfoQueue;
@@ -48,9 +45,9 @@ private:
 
 	struct ID3D12DescriptorHeap* m_RTVHeap;
 	struct ID3D12DescriptorHeap* m_DSVHeap;
-	static struct ID3D12DescriptorHeap* m_MainSRVHeap;
-	//static struct ID3D12DescriptorHeap* m_DrawSRVHeap;
-	static int m_MainSRVHeapDescriptorEndIndex;
+	static struct ID3D12DescriptorHeap* m_MainStorageSRVHeap;
+	static struct ID3D12DescriptorHeap* m_DrawCopySRVHeap;
+	static int m_MainStorageSRVHeapDescriptorEndIndex;
 	static int m_DrawSRVHeapDescriptorEndIndex;
 	static void GetNewDescriptorHandleFromSRVHeap(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle);
 	static void IMGUISRVDestructorWithInfo(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle);
@@ -151,7 +148,7 @@ public:
 	const int& GetWindowHeight() const;
 
 	const D3D12_CPU_DESCRIPTOR_HANDLE& GetNullTextureDescriptor() const;
-	HRESULT AssignTextureToSlot(const int& index, Texture* texture);
+	bool AssignTextureToTextureSlot(const TEXTURE_TYPE_SLOT& textureSlot, const TextureRef& texture);
 
 	const Matrix4x4& GetProjectionMatrix() const;
 	Matrix4x4& GetProjectionMatrix();

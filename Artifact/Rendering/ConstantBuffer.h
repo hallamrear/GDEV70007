@@ -11,7 +11,9 @@ public:
 	Matrix4x4 Projection;
 	Vector4 CameraPosition;
 	Vector4 CameraDirection;
-	Vector4 Padding[6];
+	float DeltaTime;
+	Vector3 PaddingThree;
+	Vector4 Padding[5];
 
 	ConstantBuffer();
 	~ConstantBuffer();

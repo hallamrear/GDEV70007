@@ -10,17 +10,18 @@
 
 #define FAILED_RETURN(hr) if(FAILED(hr)) return !FAILED(hr);
 
-ID3D12DescriptorHeap* DX12Renderer::m_MainSRVHeap = nullptr;
+ID3D12DescriptorHeap* DX12Renderer::m_MainStorageSRVHeap = nullptr;
+ID3D12DescriptorHeap* DX12Renderer::m_DrawCopySRVHeap = nullptr;
 UINT DX12Renderer::m_RTVDescriptorHeapSize;
 UINT DX12Renderer::m_DSVDescriptorHeapSize;
 UINT DX12Renderer::m_CBVSRVDescriptorHeapSize;
-int DX12Renderer::m_MainSRVHeapDescriptorEndIndex = 0;
+int DX12Renderer::m_MainStorageSRVHeapDescriptorEndIndex = 0;
 int DX12Renderer::m_DrawSRVHeapDescriptorEndIndex = 0;
 
 DX12Renderer::DX12Renderer() : Renderer()
 {
     m_NullTextureDescriptor = {};
-    m_MainSRVHeap = nullptr;
+    m_MainStorageSRVHeap = nullptr;
     m_CBVHeaps = nullptr;
     m_DXGIFactory = nullptr;
     m_Device = nullptr;
@@ -270,7 +271,7 @@ bool DX12Renderer::InitialiseIMGUI()
     init_info.RTVFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
     init_info.DSVFormat = DXGI_FORMAT_UNKNOWN;
 
-    init_info.SrvDescriptorHeap = m_MainSRVHeap;
+    init_info.SrvDescriptorHeap = m_MainStorageSRVHeap;
     init_info.SrvDescriptorAllocFn = GetNewDescriptorHandleFromSRVHeap;
     init_info.SrvDescriptorFreeFn = IMGUISRVDestructorWithInfo;
 
@@ -285,15 +286,15 @@ void DX12Renderer::GetNewDescriptorHandleFromSRVHeap(ImGui_ImplDX12_InitInfo* in
 
     if (cpuHandle)
     {
-        cpuHandle->ptr = m_MainSRVHeap->GetCPUDescriptorHandleForHeapStart().ptr + (UINT64(m_MainSRVHeapDescriptorEndIndex) * UINT64(m_CBVSRVDescriptorHeapSize));
+        cpuHandle->ptr = m_MainStorageSRVHeap->GetCPUDescriptorHandleForHeapStart().ptr + (UINT64(m_MainStorageSRVHeapDescriptorEndIndex) * UINT64(m_CBVSRVDescriptorHeapSize));
     }
 
     if (gpuHandle)
     {
-        gpuHandle->ptr = m_MainSRVHeap->GetGPUDescriptorHandleForHeapStart().ptr + (UINT64(m_MainSRVHeapDescriptorEndIndex) * UINT64(m_CBVSRVDescriptorHeapSize));
+        gpuHandle->ptr = m_MainStorageSRVHeap->GetGPUDescriptorHandleForHeapStart().ptr + (UINT64(m_MainStorageSRVHeapDescriptorEndIndex) * UINT64(m_CBVSRVDescriptorHeapSize));
     }
 
-    m_MainSRVHeapDescriptorEndIndex++;
+    m_MainStorageSRVHeapDescriptorEndIndex++;
 }
 
 void DX12Renderer::IMGUISRVDestructorWithInfo(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle)
@@ -368,24 +369,23 @@ const D3D12_CPU_DESCRIPTOR_HANDLE& DX12Renderer::GetNullTextureDescriptor() cons
     return m_NullTextureDescriptor;
 }
 
-HRESULT DX12Renderer::AssignTextureToSlot(const int& index, Texture* texture)
+bool DX12Renderer::AssignTextureToTextureSlot(const TEXTURE_TYPE_SLOT& textureSlot, const TextureRef& texture)
 {
-    UNREFERENCED_PARAMETER(index);
-    UNREFERENCED_PARAMETER(texture);
+    int slotIndex = (int)textureSlot;
+    if (slotIndex < 0 || slotIndex >= TEXTURE_TYPE_SLOT::TEXTURE_TYPE_COUNT)
+    {
+        printf("Trying to assign a texture to an invalid slot.");
+        return false;
+    }
 
-    printf("DX12Renderer::AssignTextureToSlot not implemented.");
-    return E_NOTIMPL;
-
-   /* CD3DX12_CPU_DESCRIPTOR_HANDLE destDescriptor(m_PerObjectSRVHeap->GetCPUDescriptorHandleForHeapStart());
-    destDescriptor.Offset(index * GetSRVDescriptorHeapSize());
+    CD3DX12_CPU_DESCRIPTOR_HANDLE destDescriptor(m_DrawCopySRVHeap->GetCPUDescriptorHandleForHeapStart());
+    destDescriptor.Offset(slotIndex * GetSRVDescriptorHeapSize());
 
     if (m_PushConstants == nullptr)
     {
         printf("Trying to use an invalid push constant buffer.\n");
-        return E_POINTER;
+        return false;
     }
-
-    m_PushConstants->TextureSlotEnabled[index] = false;
 
     D3D12_CPU_DESCRIPTOR_HANDLE handle = GetNullTextureDescriptor();
 
@@ -394,7 +394,6 @@ HRESULT DX12Renderer::AssignTextureToSlot(const int& index, Texture* texture)
         if (texture->IsLoaded())
         {
             handle = texture->GetCPUHandle();
-            m_PushConstants->TextureSlotEnabled[index] = true;
         }
     }
 
@@ -402,7 +401,7 @@ HRESULT DX12Renderer::AssignTextureToSlot(const int& index, Texture* texture)
 
     UploadPushConstants();
 
-    return S_OK;*/
+    return true;
 }
 
 const Matrix4x4& DX12Renderer::GetProjectionMatrix() const
@@ -498,6 +497,11 @@ void DX12Renderer::Render(const Model& model, const Matrix4x4& worldMatrix)
     {
         DirectX::XMStoreFloat4x4(&m_PushConstants->World, DirectX::XMMatrixMultiply(DirectX::XMLoadFloat4x4(&worldMatrix), DirectX::XMLoadFloat4x4(&mesh->GetOffsetMatrix())));
         UploadPushConstants();
+
+        for (auto& texture : mesh->GetTextures())
+        {
+            AssignTextureToTextureSlot(TEXTURE_TYPE_DIFFUSE, texture);
+        }
 
         GetCommandList()->IASetVertexBuffers(0, 1, &mesh->GetVertexBuffer().GetBufferView());
 
@@ -821,8 +825,8 @@ HRESULT DX12Renderer::CreateDescriptorHeaps()
     mainSRVDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     mainSRVDescriptorHeapDesc.NumDescriptors = MAX_LOADABLE_TEXTURES;
     mainSRVDescriptorHeapDesc.NodeMask = 0;
-    mainSRVDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    result = m_Device->CreateDescriptorHeap(&mainSRVDescriptorHeapDesc, IID_PPV_ARGS(&m_MainSRVHeap));
+    mainSRVDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+    result = m_Device->CreateDescriptorHeap(&mainSRVDescriptorHeapDesc, IID_PPV_ARGS(&m_MainStorageSRVHeap));
 
     if (FAILED(result))
     {
@@ -830,14 +834,14 @@ HRESULT DX12Renderer::CreateDescriptorHeaps()
         return result;
     }
 
-    m_MainSRVHeap->SetName(L"Main CBV/SRV/UAV Heap");
+    m_MainStorageSRVHeap->SetName(L"Main CBV/SRV/UAV Heap");
 
     D3D12_DESCRIPTOR_HEAP_DESC drawDescriptorHeapDesc{};
     drawDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     drawDescriptorHeapDesc.NumDescriptors = MAX_LOADABLE_TEXTURES;
     drawDescriptorHeapDesc.NodeMask = 0;
     drawDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    //m_Device->CreateDescriptorHeap(&drawDescriptorHeapDesc, IID_PPV_ARGS(&m_DrawSRVHeap));
+    m_Device->CreateDescriptorHeap(&drawDescriptorHeapDesc, IID_PPV_ARGS(&m_DrawCopySRVHeap));
 
     if (FAILED(result))
     {
@@ -845,10 +849,10 @@ HRESULT DX12Renderer::CreateDescriptorHeaps()
         return result;
     }
 
-    //m_DrawSRVHeap->SetName(L"Draw Call CBV/SRV/UAV Heap");
-    m_DrawSRVHeapDescriptorEndIndex = 0;
+    m_DrawCopySRVHeap->SetName(L"Draw Call CBV/SRV/UAV Heap");
 
-    m_MainSRVHeapDescriptorEndIndex = 0;
+    m_DrawSRVHeapDescriptorEndIndex = 0;
+    m_MainStorageSRVHeapDescriptorEndIndex = 0;
 
     return result;
 }
@@ -867,24 +871,19 @@ void DX12Renderer::DestroyDescriptorHeaps()
         m_DSVHeap = nullptr;
     }
 
-    if (m_MainSRVHeap != nullptr)
+    if (m_MainStorageSRVHeap != nullptr)
     {
-        m_MainSRVHeap->Release();
-        m_MainSRVHeap = nullptr;
-        m_MainSRVHeapDescriptorEndIndex = 0;
+        m_MainStorageSRVHeap->Release();
+        m_MainStorageSRVHeap = nullptr;
+        m_MainStorageSRVHeapDescriptorEndIndex = 0;
     }
 
-    /*if (m_PerObjectSRVHeap != nullptr)
+    if (m_DrawCopySRVHeap != nullptr)
     {
-        m_PerObjectSRVHeap->Release();
-        m_PerObjectSRVHeap = nullptr;
-    }*/
-
-    //if (m_IMGUISRVHeap != nullptr)
-    //{
-    //    m_IMGUISRVHeap->Release();
-    //    m_IMGUISRVHeap = nullptr;
-    //}
+        m_DrawCopySRVHeap->Release();
+        m_DrawCopySRVHeap = nullptr;
+        m_DrawSRVHeapDescriptorEndIndex = 0;
+    }
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12Renderer::GetCurrentBackbufferView() const
@@ -1460,6 +1459,7 @@ HRESULT DX12Renderer::CreateGraphicsPipelines()
     pipelineStateDesc.DSVFormat = m_DepthStencilBufferFormat;
     pipelineStateDesc.SampleDesc.Count = 1;
     pipelineStateDesc.SampleDesc.Quality = 0;
+    pipelineStateDesc.Flags = D3D12_PIPELINE_STATE_FLAGS::D3D12_PIPELINE_STATE_FLAG_NONE;
 
     HRESULT result = E_POINTER;
     if (m_DefaultVertexShaderBlob != nullptr && m_DefaultPixelShaderBlob != nullptr)
@@ -1529,14 +1529,14 @@ UINT DX12Renderer::GetSRVDescriptorHeapSize() const
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12Renderer::GetMainSRVDescriptorHeapStartCPU() const
 {
-    assert((m_MainSRVHeap != nullptr));
-    return m_MainSRVHeap->GetCPUDescriptorHandleForHeapStart();
+    assert((m_MainStorageSRVHeap != nullptr));
+    return m_MainStorageSRVHeap->GetCPUDescriptorHandleForHeapStart();
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE DX12Renderer::GetMainSRVDescriptorHeapStartGPU() const
 {
-    assert((m_MainSRVHeap != nullptr));
-    return m_MainSRVHeap->GetGPUDescriptorHandleForHeapStart();
+    assert((m_MainStorageSRVHeap != nullptr));
+    return m_MainStorageSRVHeap->GetGPUDescriptorHandleForHeapStart();
 }
 
 HRESULT DX12Renderer::ExecuteAndResetCommandList()
@@ -1866,16 +1866,16 @@ void DX12Renderer::ClearFrame()
 {
     assert(m_IsInitialised);
 
-    ImGui_ImplDX12_NewFrame();
-    ImGui_ImplWin32_NewFrame();
-
-    ImGui::NewFrame();
-
-    ImGui::Begin("Test Window");
-    ImGui::Text("Test Label Text");
-    ImGui::End();
-
-    ImGui::ShowDemoWindow();
+    //ImGui_ImplDX12_NewFrame();
+    //ImGui_ImplWin32_NewFrame();
+    //
+    //ImGui::NewFrame();
+    //
+    //ImGui::Begin("Test Window");
+    //ImGui::Text("Test Label Text");
+    //ImGui::End();
+    //
+    //ImGui::ShowDemoWindow();
 
     if (FAILED(m_CommandAllocator->Reset()))
     {
@@ -1909,7 +1909,7 @@ void DX12Renderer::ClearFrame()
 
     m_CommandList->SetGraphicsRootSignature(m_RootSignature);
 
-    ID3D12DescriptorHeap* heaps[] = { m_MainSRVHeap };
+    ID3D12DescriptorHeap* heaps[] = { m_DrawCopySRVHeap };
     m_CommandList->SetDescriptorHeaps(_countof(heaps), heaps);
 
     CD3DX12_GPU_DESCRIPTOR_HANDLE srvHeap(heaps[0]->GetGPUDescriptorHandleForHeapStart());
@@ -1917,12 +1917,9 @@ void DX12Renderer::ClearFrame()
 
     m_CommandList->SetPipelineState(m_DefaultPipeline);
 
-    ConstantBuffer cb;
-    DirectX::XMStoreFloat4x4(&cb.Projection, DirectX::XMMatrixPerspectiveLH(1280, 720, 0.001f, 10000.0f));
-    Vector3 zero = { 0.0f, 1.0f, 0.0f };
-    Vector3 pos = { 0.0f, 1.0f, -5.0f };
-    DirectX::XMStoreFloat4x4(&cb.View, DirectX::XMMatrixLookAtLH(XMLoadFloat3(&pos), XMLoadFloat3(&zero), XMLoadFloat3(&zero)));
-
+    static ConstantBuffer cb = {};
+    cb.Projection = m_ProjectionMatrix;
+    cb.View = m_Camera.GetViewMatrix();
     UpdateConstantBuffer(cb);
 }
 
@@ -1930,10 +1927,10 @@ void DX12Renderer::PresentFrame()
 {
     assert(m_IsInitialised);
 
-    ID3D12DescriptorHeap* heaps[] = { m_MainSRVHeap };
-    m_CommandList->SetDescriptorHeaps(_countof(heaps), heaps);
-    ImGui::Render();
-    ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_CommandList);
+    //ID3D12DescriptorHeap* heaps[] = { m_MainStorageSRVHeap };
+    //m_CommandList->SetDescriptorHeaps(_countof(heaps), heaps);
+    //ImGui::Render();
+    //ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_CommandList);
 
     D3D12_RESOURCE_BARRIER transition = CD3DX12_RESOURCE_BARRIER::Transition(m_SwapchainBuffers[m_CurrentBackbufferIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
     m_CommandList->ResourceBarrier(1, &transition);

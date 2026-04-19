@@ -7,10 +7,10 @@ ConstantBuffer::ConstantBuffer()
 	Projection = Matrix4x4();
 	CameraPosition = Vector4();
 	CameraDirection = Vector4();
-	for (size_t i = 0; i < 6; i++)
-	{
-		Padding[i] = Vector4();
-	}	
+	DeltaTime = 0.0f;
+	PaddingThree = Vector3();
+
+	memset(&Padding, 0, sizeof(Padding));
 }
 
 ConstantBuffer::~ConstantBuffer()

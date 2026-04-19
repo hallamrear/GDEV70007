@@ -28,20 +28,22 @@ static ModelRef testModel = nullptr;
 #include <Rendering/DX12Includes.h>
 void AssetManager::DebugDraw()
 {
-	ImGui::Begin("TEST DRAW");
+	//ImGui::Begin("TEST DRAW");
 
 	TextureMap::iterator itr = m_TextureMap.begin();
 	while (itr != m_TextureMap.end())
 	{
 		TextureRef ref = GetTexture(itr->first);
-		ImGui::Image((ImTextureID)ref->GetGPUHandle().ptr, ImVec2(128.0f, 128.0f));
+		//ImGui::Image((ImTextureID)ref->GetGPUHandle().ptr, ImVec2(128.0f, 128.0f));
 		itr++;
 	}
 
-	ImGui::End();
+	//ImGui::End();
 
-	Matrix4x4 identity;
-	XMStoreFloat4x4(&identity, DirectX::XMMatrixIdentity());
+	static Matrix4x4 identity = {};
+	static float i = 0.0f;
+	i += 0.0016f;
+	XMStoreFloat4x4(&identity, DirectX::XMMatrixIdentity() * DirectX::XMMatrixRotationRollPitchYaw(i, i + 60, i + 130));
 	Model* model = testModel.get();
 	ServiceLocator::Locate<Renderer>()->Render(*model, identity);
 }
