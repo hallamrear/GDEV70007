@@ -98,7 +98,7 @@ void AssetManager::DebugIMGUIDraw()
 					for (size_t m = 0; m < meshCount; m++)
 					{
 						int textureCount = (int)ref->GetMeshes()[m]->GetTextures().size();
-						ImGui::Text("Mesh %i : Textures %i\n", m, textureCount);
+						ImGui::Text("Mesh %i [ %i Texture%s]\n", m, textureCount, (textureCount != 1) ? "s " : " ");
 
 						for (size_t tc = 0; tc < textureCount; tc++)
 						{
