@@ -48,5 +48,6 @@ public:
 	const bool& IsInitialised() const;
 	
 	void DebugDraw();
+	void DebugIMGUIDraw();
 };
 

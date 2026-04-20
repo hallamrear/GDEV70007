@@ -15,7 +15,7 @@ class DX12Renderer : public Renderer
 {
 private:
 	struct IDXGIFactory2* m_DXGIFactory;
-	struct ID3D12Device* m_Device;
+	static struct ID3D12Device* m_Device;
 	struct ID3D12InfoQueue* m_InfoQueue;
 	HRESULT CreateDeviceAndFactory();
 	void DestroyDeviceAndFactory();
@@ -28,6 +28,7 @@ private:
 	HRESULT CreateFence();
 	void DestroyFence();
 
+	bool m_UseMultisampling;
 	UINT m_m4xMSAAQuality;
 	HRESULT DetermineMultisamplingDetails();
 	void ClearMultisamplingDetails();
@@ -47,9 +48,12 @@ private:
 	struct ID3D12DescriptorHeap* m_DSVHeap;
 	static struct ID3D12DescriptorHeap* m_MainStorageSRVHeap;
 	static struct ID3D12DescriptorHeap* m_DrawCopySRVHeap;
+	static struct ID3D12DescriptorHeap* m_IMGUISRVHeap;
 	static int m_MainStorageSRVHeapDescriptorEndIndex;
 	static int m_DrawSRVHeapDescriptorEndIndex;
-	static void GetNewDescriptorHandleFromSRVHeap(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle);
+	static int m_IMGUISRVHeapDescriptorEndIndex;
+	static void GetNewDescriptorHandleFromMainSRVHeap(D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle);
+	static void IMGUISRVConstructorWithInfo(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle);
 	static void IMGUISRVDestructorWithInfo(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle);
 	HRESULT CreateDescriptorHeaps();
 	void DestroyDescriptorHeaps();
@@ -108,6 +112,7 @@ private:
 
 	HRESULT CreateDefaultBuffer(ID3D12Resource*& defaultBuffer, ID3D12Resource*& gpuUploadBuffer, const void* data, const size_t& sizeBytes);
 
+	void PrepareDefaultModelRender();
 protected:
 
 public:
@@ -155,12 +160,14 @@ public:
 	const Matrix4x4 GetViewMatrix() const;
 
 	bool ResizeSwapchain(const int& newWidth, const int& newHeight);
-
 	void PostAssetInitialisation();
+
 
 	void Render(const Model& mesh, const Matrix4x4& worldMatrix);
 
 	void ClearFrame();
 	HRESULT FlushCommandQueue();
 	void PresentFrame();
+	void BeginIMGUIFrame();
+	void EndIMGUIFrame();
 };

@@ -75,6 +75,8 @@ public:
 	virtual void ClearFrame() = 0;
 	virtual void PresentFrame() = 0;
 	virtual void Render(const Model& model, const Matrix4x4& worldMatrix) = 0;
+	virtual void BeginIMGUIFrame() = 0;
+	virtual void EndIMGUIFrame() = 0;
 
 	Camera& GetCamera();
 };

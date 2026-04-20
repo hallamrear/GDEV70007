@@ -29,3 +29,8 @@ const std::vector<Mesh*>& Model::GetMeshes() const
 {
 	return m_Meshes;
 }
+
+const std::string& Model::GetDisplayName() const
+{
+	return m_DisplayName;
+}

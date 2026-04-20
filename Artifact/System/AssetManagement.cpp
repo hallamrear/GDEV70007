@@ -22,35 +22,118 @@ const bool& AssetManager::IsInitialised() const
 }
 
 static ModelRef testModel = nullptr;
-#include <Rendering/Renderer.h>
+static ModelRef testModelTwo = nullptr;
+#include <Rendering/DX12Renderer.h>
 #include <Rendering/Texturing/Texture.h>
 #include <Rendering/IMGUIIncludes.h>
 #include <Rendering/DX12Includes.h>
 void AssetManager::DebugDraw()
 {
-	//ImGui::Begin("TEST DRAW");
-
-	TextureMap::iterator itr = m_TextureMap.begin();
-	while (itr != m_TextureMap.end())
-	{
-		TextureRef ref = GetTexture(itr->first);
-		//ImGui::Image((ImTextureID)ref->GetGPUHandle().ptr, ImVec2(128.0f, 128.0f));
-		itr++;
-	}
-
-	//ImGui::End();
-
 	static Matrix4x4 identity = {};
 	static float i = 0.0f;
-	i += 0.0016f;
-	XMStoreFloat4x4(&identity, DirectX::XMMatrixIdentity() * DirectX::XMMatrixRotationRollPitchYaw(i, i + 60, i + 130));
-	Model* model = testModel.get();
-	ServiceLocator::Locate<Renderer>()->Render(*model, identity);
+	i += 0.000016f;
+	XMStoreFloat4x4(&identity, DirectX::XMMatrixTranspose(DirectX::XMMatrixIdentity() * DirectX::XMMatrixTranslation(-5.0f, 0.0f, 0.0f) * DirectX::XMMatrixRotationRollPitchYaw(i, i + 60, i + 130)));
+	ServiceLocator::Locate<Renderer>()->Render(*testModel.get(), identity);
+
+	XMStoreFloat4x4(&identity, DirectX::XMMatrixTranspose(DirectX::XMMatrixIdentity() * DirectX::XMMatrixTranslation(5.0f, 0.0f, 0.0f) * DirectX::XMMatrixRotationRollPitchYaw(i, i + 20, i + 250)));
+	ServiceLocator::Locate<Renderer>()->Render(*testModelTwo.get(), identity);
+}
+
+void AssetManager::DebugIMGUIDraw()
+{
+	ImGui::Begin("Asset Manager");
+
+	ImGui::SeparatorText("Loaded Textures");
+
+	TextureMap::iterator textureItr = m_TextureMap.begin();
+	while (textureItr != m_TextureMap.end())
+	{
+		TextureRef ref = GetTexture(textureItr->first);
+
+		if (textureItr->second.expired())
+		{
+			printf("Invalid texture reference in the map.\n");
+			textureItr++;
+			continue;
+		}
+
+		const char* name = ref->GetDisplayName().c_str();
+
+		float imageSize = ImGui::CalcTextSize(name).y;
+		ImGui::ImageWithBg((ImTextureID)ref->GetGPUHandle().ptr, ImVec2(imageSize, imageSize));
+		ImGui::SameLine();
+		ImGui::Text(name);
+
+		if (ImGui::BeginItemTooltip())
+		{
+			ImGui::ImageWithBg((ImTextureID)ref->GetGPUHandle().ptr, ImVec2(256, 256));
+			ImGui::EndTooltip();
+		}
+
+		textureItr++;
+	}
+
+
+	ImGui::SeparatorText("Loaded Models");
+
+	if (m_ModelMap.size() > 0)
+	{
+		if (ImGui::BeginTable("Model Data Set", 3))
+		{
+			ModelMap::iterator modelItr = m_ModelMap.begin();
+
+			while (modelItr != m_ModelMap.end())
+			{
+				ModelRef ref = GetModel(modelItr->first);
+				int meshCount = (int)ref->GetMeshes().size();
+
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+				ImGui::Text(ref->GetDisplayName().c_str());
+				ImGui::TableSetColumnIndex(1);
+				ImGui::Text("Mesh Count: %i\n", meshCount);
+
+				if (ImGui::BeginItemTooltip())
+				{
+					for (size_t m = 0; m < meshCount; m++)
+					{
+						int textureCount = (int)ref->GetMeshes()[m]->GetTextures().size();
+						ImGui::Text("Mesh %i : Textures %i\n", m, textureCount);
+
+						for (size_t tc = 0; tc < textureCount; tc++)
+						{
+							TextureRef tex = ref->GetMeshes()[m]->GetTextures()[tc];
+							ImGui::ImageWithBg((ImTextureID)tex->GetGPUHandle().ptr, ImVec2(64, 64));
+
+							if(tc + 1 != textureCount)
+								ImGui::SameLine();
+						}
+					}
+
+					ImGui::EndTooltip();
+				}
+
+				modelItr++;
+			}
+
+			ImGui::EndTable();
+		}
+
+		
+	}
+	else
+	{
+		ImGui::Text("No models loaded.\n");
+	}
+
+
+	ImGui::End();
 }
 
 bool AssetManager::Initialise()
 {
 	testModel = GetModel("Barrel.glb");
+	testModelTwo = GetModel("TestBox.glb");
 	return true;
 }
 

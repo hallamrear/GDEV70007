@@ -20,6 +20,7 @@ public:
 	const bool IsLoaded() const;
 
 	const std::vector<Mesh*>& GetMeshes() const;
+	const std::string& GetDisplayName() const;
 };
 
 typedef std::shared_ptr<Model> ModelRef;

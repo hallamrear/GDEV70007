@@ -175,11 +175,17 @@ void Engine::Render()
 	if (!m_IsInitialised || !m_IsRunning)
 		return;
 
+
 	m_Renderer->ClearFrame();
 
 	m_AssetManager->DebugDraw();
 
 	m_World->Render();
 
+	m_Renderer->BeginIMGUIFrame();
+	m_AssetManager->DebugIMGUIDraw();
+	m_Renderer->EndIMGUIFrame();
+
 	m_Renderer->PresentFrame();
+
 }

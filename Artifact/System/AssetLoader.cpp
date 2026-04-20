@@ -88,7 +88,7 @@ TextureRef AssetLoader::LoadTexture(const std::string& assetLocation)
 	int componentCount = 0;
 
 	stbi_uc* pixelBuffer = stbi_load(assetLocation.c_str(), &w, &h, &componentCount, 4);
-	size_t pixelBufferSize = sizeof(char) * w * h * componentCount; //??
+	size_t pixelBufferSize = sizeof(char) * w * h * componentCount;
 
 	if (pixelBuffer == nullptr)
 	{

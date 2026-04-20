@@ -47,8 +47,6 @@ Renderer* Renderer::CreateRenderer(HWND windowHandle)
 		renderer = nullptr;
 	}
 
-	//ServiceLocator::Provide(renderer);
-
 	return renderer;
 }
 
