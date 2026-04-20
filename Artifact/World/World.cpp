@@ -135,9 +135,12 @@ void World::IMGUIRender()
 
 void World::RenderEntityDetails(Entity& entity)
 {
-	std::string imguiHash = entity.GetDisplayName() + "###" + entity.GetIDString();
+	std::string imguiHash = "###" + entity.GetIDString();
+	
+	ImGui::PushID(imguiHash.c_str());
+	std::string headerHash = entity.GetDisplayName() + imguiHash;
 
-	if (ImGui::CollapsingHeader(imguiHash.c_str()))
+	if (ImGui::CollapsingHeader(headerHash.c_str()))
 	{
 		ImGui::Text("GUID: %s", entity.GetIDString().c_str());
 		
@@ -148,6 +151,8 @@ void World::RenderEntityDetails(Entity& entity)
 			entity.SetDisplayName(buffer);
 		}
 	}
+
+	ImGui::PopID();
 }
 
 void World::Render(Renderer& renderer)
