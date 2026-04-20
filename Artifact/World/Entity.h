@@ -1,23 +1,43 @@
 #pragma once
 #include <Physics/Rigidbody.h>
+#include <Rendering/Geometry/Model.h>
 
 class Entity
 {
 private:
 	std::string m_DisplayName;
 	EntityID m_ID;
+	std::string m_IDString;
 	Rigidbody m_Rigidbody;
+	ModelRef m_Model;
+	Matrix4x4 m_WorldMatrix;
+
+	Vector3 m_Scale;
+	Vector3 m_Translation;
+	Vector3 m_RotationEuler;
+
+	void UpdateWorldMatrix();
 
 public:
 	Entity();
 	~Entity();
 
 	const EntityID GetID() const;
+	const std::string& GetIDString() const;
 	const std::string& GetDisplayName() const;
 	void SetDisplayName(const std::string& displayName);
 	Rigidbody& GetRigidbody();
-	
+
+	void SetPosition(const Vector3& position);
+	void Translate(const Vector3& translation);
+	const Vector3& GetPosition() const;
+
+	void SetWorldMatrix(const Matrix4x4& worldMatrix);
+	const Matrix4x4& GetWorldMatrix() const;
+
+	void SetModel(ModelRef& model);
+
 	void Update(const float& deltaTime);
 	void PostUpdate(const float& deltaTime);
-	void Render();
+	void Render(Renderer& renderer);
 };

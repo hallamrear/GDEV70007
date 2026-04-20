@@ -1,5 +1,6 @@
 #pragma once
 #include <unordered_map>
+#include <rpc.h>
 
 class Entity;
 class Octree;
@@ -8,7 +9,8 @@ struct GUIDHasher
 {
 	std::size_t operator()(const EntityID& guid) const
 	{
-		return UuidHash((GUID*)&guid, nullptr);
+		RPC_STATUS status = {};
+		return UuidHash((GUID*)&guid, &status);
 	}
 };
 
@@ -27,14 +29,19 @@ private:
 	bool Initialise();
 	bool Shutdown();
 
+	void RenderEntityDetails(Entity& entity);
+
 public:
 	const bool& IsInitialised() const;
 
 	static World* CreateWorld();
 	static bool DestroyWorld(World* world);
 
+	Entity* CreateEntity(const std::string& displayName);
+
 	void Update(const float& deltaTime);
 	void PostUpdate(const float& deltaTime);
-	void Render();
+	void IMGUIRender();
+	void Render(Renderer& renderer);
 };
 

@@ -23,6 +23,8 @@ int DX12Renderer::m_IMGUISRVHeapDescriptorEndIndex = 0;
 
 DX12Renderer::DX12Renderer() : Renderer()
 {
+    m_UseMultisampling = false;
+    m_ProjectionFOV = 90.0f;
     m_NullTextureDescriptor = {};
     m_MainStorageSRVHeap = nullptr;
     m_CBVHeaps = nullptr;
@@ -258,6 +260,13 @@ bool DX12Renderer::InitialiseIMGUI()
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+    io.WantCaptureKeyboard = true;
+    io.WantCaptureMouse = true;
+    io.ConfigDockingWithShift = true;
+    io.ConfigDockingTransparentPayload = true;
+
     io.MouseDrawCursor = true;
     io.DisplaySize.x = (float)m_WindowWidth;
     io.DisplaySize.y = (float)m_WindowHeight;
@@ -531,9 +540,9 @@ void DX12Renderer::PrepareDefaultModelRender()
     UpdateConstantBuffer(cb);
 }
 
-void DX12Renderer::Render(const Model& model, const Matrix4x4& worldMatrix)
+void DX12Renderer::Render(const ModelRef& model, const Matrix4x4& worldMatrix)
 {
-    if (model.IsLoaded() == false)
+    if (model->IsLoaded() == false)
     {
         printf("Trying to draw a model that isn't loaded.\n");
         return;
@@ -541,9 +550,11 @@ void DX12Renderer::Render(const Model& model, const Matrix4x4& worldMatrix)
 
     PrepareDefaultModelRender();
 
-    for (auto& mesh : model.GetMeshes())
+    for (auto& mesh : model->GetMeshes())
     {
-        DirectX::XMStoreFloat4x4(&m_PushConstants->World, DirectX::XMMatrixMultiply(DirectX::XMLoadFloat4x4(&worldMatrix), DirectX::XMLoadFloat4x4(&mesh->GetOffsetMatrix())));
+        Matrix4x4 finalWorld{};
+        DirectX::XMStoreFloat4x4(&finalWorld, DirectX::XMMatrixMultiply(DirectX::XMLoadFloat4x4(&worldMatrix), DirectX::XMLoadFloat4x4(&mesh->GetOffsetMatrix())));
+        DirectX::XMStoreFloat4x4(&m_PushConstants->World, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&finalWorld)));
         UploadPushConstants();
 
         for (auto& texture : mesh->GetTextures())
@@ -587,8 +598,9 @@ void DX12Renderer::BeginIMGUIFrame()
 
     ImGui_ImplWin32_NewFrame();
     ImGui_ImplDX12_NewFrame();
-    
+
     ImGui::NewFrame();
+    ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_::ImGuiDockNodeFlags_PassthruCentralNode);
 }
 
 void DX12Renderer::EndIMGUIFrame()
@@ -1134,7 +1146,9 @@ HRESULT DX12Renderer::UpdateViewportAndScissorRect()
     m_ScissorRect.right = m_WindowWidth;
     m_ScissorRect.bottom = m_WindowHeight;
 
-    DirectX::XMStoreFloat4x4(&m_ProjectionMatrix, DirectX::XMMatrixTranspose(DirectX::XMMatrixPerspectiveFovLH(90.0f * (3.1415926535f / 180.0f), 1920.0f / 1080.0f, DEFAULT_NEAR_PLANE, DEFAULT_FAR_PLANE)));
+    float aspectRatio = (float)m_WindowWidth / (float)m_WindowHeight;    
+    float fovRadians = m_ProjectionFOV * DEGREES_TO_RADIANS;
+    DirectX::XMStoreFloat4x4(&m_ProjectionMatrix, DirectX::XMMatrixTranspose(DirectX::XMMatrixPerspectiveFovLH(fovRadians, aspectRatio, DEFAULT_NEAR_PLANE, DEFAULT_FAR_PLANE)));
 
     return S_OK;
 }
@@ -2027,6 +2041,14 @@ void DX12Renderer::PresentFrame()
 
     ID3D12CommandList* commandLists = { m_CommandList };
     m_CommandQueue->ExecuteCommandLists(1, &commandLists);
+
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        // Update and Render additional Platform Windows
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
 
     HRESULT hr = m_SwapChain->Present(0, 0);
 

@@ -2,6 +2,7 @@
 #include "AssetLoader.h"
 #include "AssetManagement.h"
 #include <Rendering/Geometry/Mesh.h>
+#include <Rendering/IMGUIIncludes.h>
 #include <System/Engine.h>
 
 AssetManager::AssetManager()
@@ -21,25 +22,7 @@ const bool& AssetManager::IsInitialised() const
 	return m_IsInitialised;
 }
 
-static ModelRef testModel = nullptr;
-static ModelRef testModelTwo = nullptr;
-#include <Rendering/DX12Renderer.h>
-#include <Rendering/Texturing/Texture.h>
-#include <Rendering/IMGUIIncludes.h>
-#include <Rendering/DX12Includes.h>
-void AssetManager::DebugDraw()
-{
-	static Matrix4x4 identity = {};
-	static float i = 0.0f;
-	i += 0.000016f;
-	XMStoreFloat4x4(&identity, DirectX::XMMatrixTranspose(DirectX::XMMatrixIdentity() * DirectX::XMMatrixTranslation(-5.0f, 0.0f, 0.0f) * DirectX::XMMatrixRotationRollPitchYaw(i, i + 60, i + 130)));
-	ServiceLocator::Locate<Renderer>()->Render(*testModel.get(), identity);
-
-	XMStoreFloat4x4(&identity, DirectX::XMMatrixTranspose(DirectX::XMMatrixIdentity() * DirectX::XMMatrixTranslation(5.0f, 0.0f, 0.0f) * DirectX::XMMatrixRotationRollPitchYaw(i, i + 20, i + 250)));
-	ServiceLocator::Locate<Renderer>()->Render(*testModelTwo.get(), identity);
-}
-
-void AssetManager::DebugIMGUIDraw()
+void AssetManager::IMGUIRender()
 {
 	ImGui::Begin("Asset Manager");
 
@@ -72,7 +55,6 @@ void AssetManager::DebugIMGUIDraw()
 
 		textureItr++;
 	}
-
 
 	ImGui::SeparatorText("Loaded Models");
 
@@ -132,8 +114,6 @@ void AssetManager::DebugIMGUIDraw()
 
 bool AssetManager::Initialise()
 {
-	testModel = GetModel("Barrel.glb");
-	testModelTwo = GetModel("TestBox.glb");
 	return true;
 }
 

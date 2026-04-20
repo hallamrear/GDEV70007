@@ -113,6 +113,9 @@ private:
 	HRESULT CreateDefaultBuffer(ID3D12Resource*& defaultBuffer, ID3D12Resource*& gpuUploadBuffer, const void* data, const size_t& sizeBytes);
 
 	void PrepareDefaultModelRender();
+
+	float m_ProjectionFOV;
+
 protected:
 
 public:
@@ -163,7 +166,7 @@ public:
 	void PostAssetInitialisation();
 
 
-	void Render(const Model& mesh, const Matrix4x4& worldMatrix);
+	void Render(const ModelRef& mesh, const Matrix4x4& worldMatrix);
 
 	void ClearFrame();
 	HRESULT FlushCommandQueue();

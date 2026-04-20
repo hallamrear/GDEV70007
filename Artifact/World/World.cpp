@@ -1,6 +1,9 @@
 #include "pch.h"
 #include "World/World.h"
 #include "World/Entity.h"
+#include <System/ServiceLocator.h>
+#include <System/AssetManagement.h>
+#include <Rendering/IMGUIIncludes.h>
 
 const bool& World::IsInitialised() const
 {
@@ -22,8 +25,13 @@ bool World::Initialise()
 {
 	for (size_t i = 0; i < 10; i++)
 	{
-		Entity* entity = new Entity();
-		entity->SetDisplayName("Entity: " + std::to_string(i));
+		Entity* entity = CreateEntity("Entity: " + std::to_string(i));
+
+		Matrix4x4 translation;
+		DirectX::XMStoreFloat4x4(&translation, DirectX::XMMatrixTranslation(i * -5.0f, 0.0f, 0.0f));
+		entity->SetWorldMatrix(translation);
+
+		m_EntityMap.insert(std::make_pair(entity->GetID(), entity));
 	}
 
 	return true;
@@ -79,6 +87,16 @@ bool World::DestroyWorld(World* world)
 	return true;
 }
 
+Entity* World::CreateEntity(const std::string& displayName)
+{
+	Entity* entity = new Entity();
+	entity->SetDisplayName(displayName);
+	ModelRef ref = ServiceLocator::Locate<AssetManager>()->GetModel("Barrel.glb");
+	entity->SetModel(ref);
+
+	return entity;
+}
+
 void World::Update(const float& deltaTime)
 {
 	for (auto& entity : m_EntityMap)
@@ -101,13 +119,44 @@ void World::PostUpdate(const float& deltaTime)
 	}
 }
 
-void World::Render()
+void World::IMGUIRender()
+{
+	ImGui::Begin("World");
+	for (auto& entity : m_EntityMap)
+	{
+		if (entity.second != nullptr)
+		{
+			RenderEntityDetails(*entity.second);
+		}
+
+	}
+	ImGui::End();
+}
+
+void World::RenderEntityDetails(Entity& entity)
+{
+	std::string imguiHash = entity.GetDisplayName() + "###" + entity.GetIDString();
+
+	if (ImGui::CollapsingHeader(imguiHash.c_str()))
+	{
+		ImGui::Text("GUID: %s", entity.GetIDString().c_str());
+		
+		char buffer[MAX_DISPLAY_NAME_SIZE] = { 0 };
+		strcpy_s(&buffer[0], MAX_DISPLAY_NAME_SIZE, entity.GetDisplayName().c_str());
+		if (ImGui::InputText("Display Name: ", &buffer[0], MAX_DISPLAY_NAME_SIZE))
+		{
+			entity.SetDisplayName(buffer);
+		}
+	}
+}
+
+void World::Render(Renderer& renderer)
 {
 	for (auto& entity : m_EntityMap)
 	{
 		if (entity.second != nullptr)
 		{
-			entity.second->Render();
+			entity.second->Render(renderer);
 		}
 	}
 }

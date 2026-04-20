@@ -166,7 +166,6 @@ void Engine::Update(const float& deltaTime)
 	m_Renderer->SetClearColour(clearColour);
 
 	m_World->Update(deltaTime);
-
 	m_World->PostUpdate(deltaTime);
 }
 
@@ -175,15 +174,13 @@ void Engine::Render()
 	if (!m_IsInitialised || !m_IsRunning)
 		return;
 
-
 	m_Renderer->ClearFrame();
 
-	m_AssetManager->DebugDraw();
-
-	m_World->Render();
+	m_World->Render(*m_Renderer);
 
 	m_Renderer->BeginIMGUIFrame();
-	m_AssetManager->DebugIMGUIDraw();
+	m_AssetManager->IMGUIRender();
+	m_World->IMGUIRender();
 	m_Renderer->EndIMGUIFrame();
 
 	m_Renderer->PresentFrame();
