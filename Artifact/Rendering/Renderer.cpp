@@ -34,7 +34,7 @@ Renderer* Renderer::CreateRenderer(HWND windowHandle)
 #elif defined RENDERER_DX11
 	DX11Renderer* renderer = new DX11Renderer();
 #else
-	printf("No rendering API defined.");
+	printf("No rendering API defined.\n");
 	return nullptr;
 #endif
 
@@ -42,7 +42,7 @@ Renderer* Renderer::CreateRenderer(HWND windowHandle)
 
 	if (initialised == false)
 	{
-		printf("Failed to initialise renderer.");
+		printf("Failed to initialise renderer.\n");
 		delete renderer;
 		renderer = nullptr;
 	}
@@ -54,13 +54,13 @@ bool Renderer::DestroyRenderer(Renderer* renderer)
 {
 	if (renderer == nullptr)
 	{
-		printf("Trying to destroy a renderer that doesn't exist.");
+		printf("Trying to destroy a renderer that doesn't exist.\n");
 		return false;
 	}
 
 	if (renderer->IsInitialised() == false)
 	{
-		printf("Trying to destroy a renderer that doesn't exist.");
+		printf("Trying to destroy a renderer that doesn't exist.\n");
 		return false;
 	}
 

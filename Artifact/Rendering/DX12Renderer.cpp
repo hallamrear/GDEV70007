@@ -25,7 +25,7 @@ DX12Renderer::DX12Renderer() : Renderer()
 {
     m_UseMultisampling = false;
     m_ProjectionFOV = 90.0f;
-    m_NullTextureDescriptor = {};
+    m_NullTextureDescriptorCPUHandle = {};
     m_MainStorageSRVHeap = nullptr;
     m_CBVHeaps = nullptr;
     m_DXGIFactory = nullptr;
@@ -242,11 +242,11 @@ bool DX12Renderer::Initialise(HWND windowHandle)
     if (IsInitialised() == false)
     {
         m_WindowHandle = NULL;
-        printf("Failed to initialise \n");
+        printf("Failed to initialise renderer.\n");
     }
     else
     {
-        printf("Initialised renderer.");
+        printf("Initialised renderer.\n");
     }
 
     return m_IsInitialised;
@@ -345,7 +345,7 @@ bool DX12Renderer::Shutdown()
 {
     if (!IsInitialised())
     {
-        printf("Calling shutdown on a DX12Renderer object that doesn't exist.");
+        printf("Calling shutdown on a DX12Renderer object that doesn't exist.\n");
         return false;
     }
 
@@ -397,9 +397,14 @@ const int& DX12Renderer::GetWindowHeight() const
     return m_WindowHeight;
 }
 
-const D3D12_CPU_DESCRIPTOR_HANDLE& DX12Renderer::GetNullTextureDescriptor() const
+const D3D12_CPU_DESCRIPTOR_HANDLE& DX12Renderer::GetNullTextureDescriptorCPUHandle() const
 {
-    return m_NullTextureDescriptor;
+    return m_NullTextureDescriptorCPUHandle;
+}
+
+const D3D12_GPU_DESCRIPTOR_HANDLE& DX12Renderer::GetNullTextureDescriptorGPUHandle() const
+{
+    return m_NullTextureDescriptorGPUHandle;
 }
 
 bool DX12Renderer::AssignTextureToTextureSlot(const TEXTURE_TYPE_SLOT& textureSlot, const TextureRef& texture)
@@ -407,7 +412,7 @@ bool DX12Renderer::AssignTextureToTextureSlot(const TEXTURE_TYPE_SLOT& textureSl
     int slotIndex = (int)textureSlot;
     if (slotIndex < 0 || slotIndex >= TEXTURE_TYPE_SLOT::TEXTURE_TYPE_COUNT)
     {
-        printf("Trying to assign a texture to an invalid slot.");
+        printf("Trying to assign a texture to an invalid slot.\n");
         return false;
     }
 
@@ -420,7 +425,7 @@ bool DX12Renderer::AssignTextureToTextureSlot(const TEXTURE_TYPE_SLOT& textureSl
         return false;
     }
 
-    D3D12_CPU_DESCRIPTOR_HANDLE handle = GetNullTextureDescriptor();
+    D3D12_CPU_DESCRIPTOR_HANDLE handle = GetNullTextureDescriptorCPUHandle();
 
     if (texture != nullptr)
     {
@@ -430,7 +435,17 @@ bool DX12Renderer::AssignTextureToTextureSlot(const TEXTURE_TYPE_SLOT& textureSl
         }
     }
 
-    m_CommandList->SetGraphicsRootDescriptorTable(3, texture->GetGPUHandle());
+    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = GetNullTextureDescriptorGPUHandle();
+
+    if (texture != nullptr)
+    {
+        if (texture->IsLoaded())
+        {
+            gpuHandle = texture->GetGPUHandle();
+        }
+    }
+
+    m_CommandList->SetGraphicsRootDescriptorTable(3, gpuHandle);
     //m_Device->CopyDescriptorsSimple(1, destDescriptor, handle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
     UploadPushConstants();
@@ -532,8 +547,6 @@ void DX12Renderer::PrepareDefaultModelRender()
     ID3D12DescriptorHeap* heaps[] = { m_MainStorageSRVHeap };
     m_CommandList->SetDescriptorHeaps(_countof(heaps), heaps);
 
-    m_CommandList->SetPipelineState(m_DefaultPipeline);
-
     static ConstantBuffer cb = {};
     cb.Projection = m_ProjectionMatrix;
     cb.View = m_Camera.GetViewMatrix();
@@ -613,6 +626,11 @@ void DX12Renderer::EndIMGUIFrame()
 
     ImGui::Render();
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_CommandList);
+}
+
+Camera& Renderer::GetCamera()
+{
+    return m_Camera;
 }
 
 HRESULT DX12Renderer::CreateDeviceAndFactory()
@@ -1100,7 +1118,7 @@ HRESULT DX12Renderer::CreateDepthStencilBuffer()
 
     if (FAILED(result))
     {
-        printf("Failed to create commited device resource for depth stencil buffer\n.");
+        printf("Failed to create commited device resource for depth stencil buffer.\n");
         return result;
     }
 
@@ -1599,6 +1617,17 @@ HRESULT DX12Renderer::CreateGraphicsPipelines()
     }
     m_DefaultPipeline->SetName(L"Standard Graphics Pipeline");
 
+    pipelineStateDesc.RasterizerState.FillMode = D3D12_FILL_MODE::D3D12_FILL_MODE_WIREFRAME;
+    pipelineStateDesc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_NONE;
+    result = m_Device->CreateGraphicsPipelineState(&pipelineStateDesc, IID_PPV_ARGS(&m_DebugDrawPipeline));
+
+    if (FAILED(result))
+    {
+        printf("Failed to create debug graphics pipeline state.\n");
+        return result;
+    }
+    m_DebugDrawPipeline->SetName(L"Debug Drawing Graphics Pipeline");
+
     return result;
 }
 
@@ -1630,14 +1659,15 @@ HRESULT DX12Renderer::CreateNullDescriptors()
         return result;
     }
 
-    m_NullTextureDescriptor = srvCpuHandle;
+    m_NullTextureDescriptorCPUHandle = srvCpuHandle;
+    m_NullTextureDescriptorGPUHandle = srvGpuHandle;
 
     return result;
 }
 
 void DX12Renderer::DestroyNullDescriptors()
 {
-    m_NullTextureDescriptor = {};
+    m_NullTextureDescriptorCPUHandle = {};
 }
 
 UINT DX12Renderer::GetSRVDescriptorHeapSize() const
@@ -1655,6 +1685,32 @@ D3D12_GPU_DESCRIPTOR_HANDLE DX12Renderer::GetMainSRVDescriptorHeapStartGPU() con
 {
     assert((m_MainStorageSRVHeap != nullptr));
     return m_MainStorageSRVHeap->GetGPUDescriptorHandleForHeapStart();
+}
+
+bool DX12Renderer::SetDebugDrawMode()
+{
+    if (m_DebugDrawPipeline == nullptr || m_CommandList == nullptr)
+    {
+        printf("Error setting debug draw mode. Parameter invalid.\n");
+        return false;
+    }
+
+    m_CommandList->SetPipelineState(m_DebugDrawPipeline);
+
+    return true;
+}
+
+bool DX12Renderer::SetDefaultDrawMode()
+{
+    if (m_DefaultPipeline == nullptr || m_CommandList == nullptr)
+    {
+        printf("Error setting default draw mode. Parameter invalid.\n");
+        return false;
+    }
+
+    m_CommandList->SetPipelineState(m_DefaultPipeline);
+
+    return true;
 }
 
 HRESULT DX12Renderer::ExecuteAndResetCommandList()
@@ -1815,7 +1871,7 @@ bool DX12Renderer::BindGenericBufferData(GenericBuffer& genericBuffer, const voi
 
     if (FAILED(hr) || genericBuffer.IsLoaded() == false)
     {
-        printf("Failed to bind data to a buffer.");
+        printf("Failed to bind data to a buffer.\n");
 
         if (genericBuffer.m_Resource != nullptr)
         {
@@ -1841,7 +1897,7 @@ bool DX12Renderer::BindVertexData(VertexBuffer& vertexBuffer, const void* buffer
 
     if (boundDataAsGeneric == false)
     {
-        printf("Failed to bind vertex buffer data. Error during generic buffer binding stage.");
+        printf("Failed to bind vertex buffer data. Error during generic buffer binding stage.\n");
         return false;
     }
 
@@ -1863,7 +1919,7 @@ bool DX12Renderer::BindIndexData(IndexBuffer& indexBuffer, const void* buffer, c
 
     if (boundDataAsGeneric == false)
     {
-        printf("Failed to bind index buffer data. Error during generic buffer binding stage.");
+        printf("Failed to bind index buffer data. Error during generic buffer binding stage.\n");
         return false;
     }
 

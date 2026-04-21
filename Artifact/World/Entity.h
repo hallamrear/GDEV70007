@@ -2,6 +2,8 @@
 #include <Physics/Rigidbody.h>
 #include <Rendering/Geometry/Model.h>
 
+class Collider;
+
 class Entity
 {
 private:
@@ -15,6 +17,8 @@ private:
 	Vector3 m_Scale;
 	Vector3 m_Translation;
 	Vector3 m_RotationEuler;
+
+	Collider* m_Collider;
 
 	void UpdateWorldMatrix();
 
@@ -36,6 +40,7 @@ public:
 	const Matrix4x4& GetWorldMatrix() const;
 
 	void SetModel(ModelRef& model);
+	const ModelRef& GetModel() const;
 
 	void Update(const float& deltaTime);
 	void PostUpdate(const float& deltaTime);

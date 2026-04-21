@@ -22,9 +22,9 @@ BOOL                InitialiseWindowInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    AboutWndProc(HWND, UINT, WPARAM, LPARAM);
 
-int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
+int APIENTRY WinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
-                     _In_ LPWSTR    lpCmdLine,
+                     _In_ LPSTR    lpCmdLine,
                      _In_ int       nCmdShow)
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
@@ -53,7 +53,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return -1;
     }
 
-    g_Engine = Engine::CreateEngine(g_WindowHandle, "..//");
+    std::string contentFolderPath = "Content\\";
+    g_Engine = Engine::CreateEngine(g_WindowHandle, contentFolderPath);
 
     if (g_Engine == nullptr)
     {

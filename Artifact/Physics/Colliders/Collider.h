@@ -1,4 +1,7 @@
 #pragma once
+#include <Rendering/Geometry/Model.h>
+#include <System/ServiceLocator.h>
+#include <Rendering/Renderer.h>
 
 class Entity;
 
@@ -17,6 +20,7 @@ private:
 	COLLIDER_TYPE m_Type;
 	const Entity& m_AttachedEntity;
 	Matrix4x4 m_OffsetMatrix;
+	ModelRef m_ColliderModel;
 
 protected:
 	Collider(const COLLIDER_TYPE& colliderType, const Entity& entity);
@@ -26,6 +30,8 @@ public:
 	Matrix4x4& GetOffsetMatrix();
 	const Entity& GetAttachedEntity() const;
 
-	virtual void Render() = 0;
+	void SetColliderModel(const COLLIDER_TYPE& colliderType);
+
+	void Render(Renderer& renderer);
 };
 

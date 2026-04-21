@@ -98,12 +98,14 @@ private:
 	void DestroyLoadedShaders();
 
 	ID3D12PipelineState* m_DefaultPipeline;
+	ID3D12PipelineState* m_DebugDrawPipeline;
 	HRESULT CreateGraphicsPipelines();
 	void DestroyGraphicsPipelines();
 
 	Matrix4x4 m_ProjectionMatrix;
 
-	D3D12_CPU_DESCRIPTOR_HANDLE m_NullTextureDescriptor;
+	D3D12_CPU_DESCRIPTOR_HANDLE m_NullTextureDescriptorCPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE m_NullTextureDescriptorGPUHandle;
 	HRESULT CreateNullDescriptors();
 	void DestroyNullDescriptors();
 
@@ -137,6 +139,9 @@ public:
 	struct D3D12_CPU_DESCRIPTOR_HANDLE GetMainSRVDescriptorHeapStartCPU() const;
 	struct D3D12_GPU_DESCRIPTOR_HANDLE GetMainSRVDescriptorHeapStartGPU() const;
 
+	bool SetDebugDrawMode();
+	bool SetDefaultDrawMode();
+
 	HRESULT UpdateWorldMatrix(const Matrix4x4& worldMatrix);
 	HRESULT UpdateLightingBuffer(const LightBuffer& lb);
 	HRESULT UpdateConstantBuffer(const ConstantBuffer& cb);
@@ -155,7 +160,8 @@ public:
 	const int& GetWindowWidth() const;
 	const int& GetWindowHeight() const;
 
-	const D3D12_CPU_DESCRIPTOR_HANDLE& GetNullTextureDescriptor() const;
+	const D3D12_CPU_DESCRIPTOR_HANDLE& GetNullTextureDescriptorCPUHandle() const;
+	const D3D12_GPU_DESCRIPTOR_HANDLE& GetNullTextureDescriptorGPUHandle() const;
 	bool AssignTextureToTextureSlot(const TEXTURE_TYPE_SLOT& textureSlot, const TextureRef& texture);
 
 	const Matrix4x4& GetProjectionMatrix() const;
@@ -164,7 +170,6 @@ public:
 
 	bool ResizeSwapchain(const int& newWidth, const int& newHeight);
 	void PostAssetInitialisation();
-
 
 	void Render(const ModelRef& mesh, const Matrix4x4& worldMatrix);
 

@@ -5,10 +5,12 @@
 #include <World/World.h>
 
 std::filesystem::path Engine::m_ContentFolderLocation = std::filesystem::path();
+std::filesystem::path Engine::m_ExecutableLocation = std::filesystem::path();
 
 Engine::Engine()
 {
 	m_ContentFolderLocation = std::filesystem::path();
+	m_ExecutableLocation = std::filesystem::path();
 	m_IsInitialised = false;
 	m_Renderer = nullptr;
 	m_World = nullptr;
@@ -24,11 +26,24 @@ Engine::~Engine()
 
 bool Engine::InitialiseSubsystems(HWND windowHandle, const std::filesystem::path& contentFolderLocation)
 {
-	m_ContentFolderLocation = contentFolderLocation;
+
+	char execLocationBuffer[256];
+	bool foundExecLocation = (GetModuleFileName(NULL, execLocationBuffer, 256) != 0);
+
+	if (foundExecLocation == false)
+	{
+		printf("Failed to find executable's file location for content folder.\n");
+		return false;
+	}
+
+	m_ExecutableLocation = execLocationBuffer;
+	m_ExecutableLocation.remove_filename();
+
+	m_ContentFolderLocation = m_ExecutableLocation / contentFolderLocation;
 
 	if (m_IsInitialised)
 	{
-		printf("Engine is already initialised.");
+		printf("Engine is already initialised.\n");
 		return true;
 	}
 
@@ -36,7 +51,7 @@ bool Engine::InitialiseSubsystems(HWND windowHandle, const std::filesystem::path
 
 	if (m_Renderer == nullptr)
 	{
-		printf("Failed to create renderer.");
+		printf("Failed to create renderer.\n");
 		return false;
 	}
 
@@ -46,19 +61,19 @@ bool Engine::InitialiseSubsystems(HWND windowHandle, const std::filesystem::path
 
 	if (m_AssetManager == nullptr)
 	{
-		printf("Failed to create asset manager.");
+		printf("Failed to create asset manager.\n");
 		return false;
 	}
 
 	ServiceLocator::Provide(m_AssetManager);
 
-	m_AssetManager->PreloadFolder(m_ContentFolderLocation);
+	//m_AssetManager->PreloadFolder(m_ContentFolderLocation);
 
 	m_World = World::CreateWorld();
 
 	if (m_World == nullptr)
 	{
-		printf("Failed to create world.");
+		printf("Failed to create world.\n");
 		return false;
 	}
 
@@ -83,7 +98,8 @@ Engine* Engine::CreateEngine(HWND windowHandle, const std::filesystem::path& con
 	if (initialised == false)
 	{
 		m_ContentFolderLocation = "";
-		printf("Failed to initialise subsystems.");
+		m_ExecutableLocation = "";
+		printf("Failed to initialise subsystems.\n");
 		delete engine;
 		engine = nullptr;
 	}
@@ -95,7 +111,7 @@ bool Engine::DestroyEngine(Engine* engine)
 {
 	if (engine == nullptr)
 	{
-		printf("Trying to destroy an engine that doesn't exist.");
+		printf("Trying to destroy an engine that doesn't exist.\n");
 		return false;
 	}
 

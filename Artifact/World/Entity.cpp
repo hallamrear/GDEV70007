@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Entity.h"
 #include <Rendering/Renderer.h>
+#include <Physics/Colliders/SphereCollider.h>
 
 Entity::Entity()
 {
@@ -15,6 +16,7 @@ Entity::Entity()
 	m_Scale = Vector3(1.0f, 1.0f, 1.0f);
 	m_Translation = Vector3(0.0f, 0.0f, 0.0f);
 	m_RotationEuler = Vector3(0.0f, 0.0f, 0.0f);
+	m_Collider = new SphereCollider(*this, 0.5f);
 }
 
 Entity::~Entity()
@@ -94,6 +96,11 @@ void Entity::SetModel(ModelRef& model)
 	m_Model = model;
 }
 
+const ModelRef& Entity::GetModel() const
+{
+	return m_Model;
+}
+
 void Entity::Update(const float& deltaTime)
 {
 	UNREFERENCED_PARAMETER(deltaTime);
@@ -109,5 +116,10 @@ void Entity::Render(Renderer& renderer)
 	if (m_Model != nullptr)
 	{
 		renderer.Render(m_Model, m_WorldMatrix);
+	}
+
+	if (m_Collider != nullptr)
+	{
+		m_Collider->Render(renderer);
 	}
 }

@@ -79,6 +79,9 @@ public:
 	virtual void BeginIMGUIFrame() = 0;
 	virtual void EndIMGUIFrame() = 0;
 
+	virtual bool SetDebugDrawMode() = 0;
+	virtual bool SetDefaultDrawMode() = 0;
+
 	Camera& GetCamera();
 };
 

@@ -8,6 +8,7 @@ class Engine
 {
 private:
 	static std::filesystem::path m_ContentFolderLocation;
+	static std::filesystem::path m_ExecutableLocation;
 	bool m_IsInitialised;
 	bool m_IsRunning;
 

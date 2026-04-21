@@ -11,7 +11,5 @@ public:
 	~SphereCollider();
 
 	const float& GetRadius() const;
-
-	void Render();
 };
 

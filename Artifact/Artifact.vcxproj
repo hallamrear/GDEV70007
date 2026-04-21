@@ -295,6 +295,12 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Content\BoxCollider.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="Content\SphereCollider.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="Rendering\Shaders\Structures.hlsli" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

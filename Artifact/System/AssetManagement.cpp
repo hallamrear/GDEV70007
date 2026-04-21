@@ -166,7 +166,7 @@ bool AssetManager::DestroyAssetDatabase(AssetManager* assetManager)
 
 	if (!assetManager->IsInitialised())
 	{
-		printf("Trying to destroy an assetManager that doesn't exist.");
+		printf("Trying to destroy an assetManager that doesn't exist.\n");
 		return false;
 	}
 
@@ -216,11 +216,11 @@ void AssetManager::PreloadFolder(const std::filesystem::path& folderPath)
 		}
 		else if (extension == ".gltf" || extension == ".GLTF" || extension == ".glb" || extension == ".GLB")
 		{
-			TextureRef ref = GetTexture(directoryEntry.path().string());
+			ModelRef ref = GetModel(directoryEntry.path().string());
 
 			if (ref == nullptr)
 			{
-				printf("Failed to preload texture %s\n", directoryEntry.path().string().c_str());
+				printf("Failed to preload model %s\n", directoryEntry.path().string().c_str());
 			}
 		}
 		else

@@ -247,5 +247,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Rendering\Shaders\Structures.hlsli" />
+    <None Include="Content\BoxCollider.glb" />
+    <None Include="Content\SphereCollider.glb" />
   </ItemGroup>
 </Project>

@@ -15,8 +15,3 @@ const float& SphereCollider::GetRadius() const
 {
 	return m_Radius;
 }
-
-void SphereCollider::Render()
-{
-
-}

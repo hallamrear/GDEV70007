@@ -1,9 +1,12 @@
 #include "pch.h"
 #include "Collider.h"
+#include <World/Entity.h>
+#include <System/AssetManagement.h>
 
 Collider::Collider(const COLLIDER_TYPE& colliderType, const Entity& entity) : m_AttachedEntity(entity), m_Type(colliderType)
 {
-	m_OffsetMatrix = Matrix4x4();
+	m_OffsetMatrix = IdentityMatrix;
+	SetColliderModel(colliderType);
 }
 
 Collider::~Collider()
@@ -21,7 +24,62 @@ const Entity& Collider::GetAttachedEntity() const
 	return m_AttachedEntity;
 }
 
-void Collider::Render()
+void Collider::SetColliderModel(const COLLIDER_TYPE& colliderType)
 {
+	AssetManager* assetManager = ServiceLocator::Locate<AssetManager>();
 
+	if (assetManager == nullptr)
+	{
+		throw std::exception("Cannot source asset manager when setting collider models.\n");
+		return;
+	}
+
+	switch (colliderType)
+	{
+	case COLLIDER_TYPE_AABB:
+	{
+		m_ColliderModel = assetManager->GetModel("Content\\BoxCollider.glb");
+	}
+	break;
+
+	case COLLIDER_TYPE_SPHERE:
+	{
+		m_ColliderModel = assetManager->GetModel("Content\\SphereCollider.glb");
+	}
+	break;
+
+	case COLLIDER_TYPE_MESH:
+	{
+		m_ColliderModel = m_AttachedEntity.GetModel();
+	}
+	break;
+
+	default:
+		throw std::exception("Invalid collider type.\n");
+		break;
+	}
+
+	if (m_ColliderModel == nullptr)
+	{
+		printf("Failed to set collider type to the required mesh.\n");
+		throw std::exception("Invalid collider type.\n");
+		return;
+	}
+
+	m_Type = colliderType;
+}
+
+void Collider::Render(Renderer& renderer)
+{
+	if (m_ColliderModel == nullptr)
+	{
+		printf("Trying to draw a collider that doesn't have a model.\n");
+		throw;
+	}
+
+	renderer.SetDebugDrawMode();
+	Matrix4x4 worldMatrix = IdentityMatrix;
+	DirectX::XMStoreFloat4x4(&worldMatrix, DirectX::XMMatrixMultiply(DirectX::XMLoadFloat4x4(&m_AttachedEntity.GetWorldMatrix()), DirectX::XMLoadFloat4x4(&m_OffsetMatrix)));
+	renderer.Render(m_ColliderModel, worldMatrix);
+	renderer.SetDefaultDrawMode();
 }

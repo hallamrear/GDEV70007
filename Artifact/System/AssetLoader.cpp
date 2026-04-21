@@ -147,7 +147,7 @@ TextureRef AssetLoader::LoadTexture(const byte* buffer, const size_t& bufferLeng
 	if (texture != nullptr)
 	{
 		m_TextureCounter++;
-		texture->m_FileLocation = "Loaded from gltf file.";
+		texture->m_FileLocation = "Loaded from gltf file.\n";
 	}
 	else
 	{
@@ -443,7 +443,7 @@ bool AssetLoader::GetIndexDataFromGLTFPrimitive(Mesh& mesh, const tinygltf::Mode
 
 	if (boundIndexData == false)
 	{
-		printf("Failed to bind index data during model loading.");
+		printf("Failed to bind index data during model loading.\n");
 		return false;
 	}
 
@@ -521,13 +521,13 @@ bool AssetLoader::GetVertexDataFromGLTFPrimitive(Mesh& mesh, const tinygltf::Mod
 
 	if (boundVertexData == false)
 	{
-		printf("Failed to bind vertex data during model loading.");
+		printf("Failed to bind vertex data during model loading.\n");
 		return false;
 	}
 
 	if (mesh.m_VertexBuffer.GetResource() == nullptr)
 	{
-		printf("Failed to create vertex buffer resource during model loading.");
+		printf("Failed to create vertex buffer resource during model loading.\n");
 		return false;
 	}
 
