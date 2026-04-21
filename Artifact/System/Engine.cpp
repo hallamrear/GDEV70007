@@ -24,6 +24,8 @@ Engine::~Engine()
 
 bool Engine::InitialiseSubsystems(HWND windowHandle, const std::filesystem::path& contentFolderLocation)
 {
+	m_ContentFolderLocation = contentFolderLocation;
+
 	if (m_IsInitialised)
 	{
 		printf("Engine is already initialised.");
@@ -50,6 +52,8 @@ bool Engine::InitialiseSubsystems(HWND windowHandle, const std::filesystem::path
 
 	ServiceLocator::Provide(m_AssetManager);
 
+	m_AssetManager->PreloadFolder(m_ContentFolderLocation);
+
 	m_World = World::CreateWorld();
 
 	if (m_World == nullptr)
@@ -64,7 +68,6 @@ bool Engine::InitialiseSubsystems(HWND windowHandle, const std::filesystem::path
 
 	if (m_IsInitialised)
 	{
-		m_ContentFolderLocation = contentFolderLocation;
 		m_Renderer->PostAssetInitialisation();
 	}
 
@@ -79,6 +82,7 @@ Engine* Engine::CreateEngine(HWND windowHandle, const std::filesystem::path& con
 
 	if (initialised == false)
 	{
+		m_ContentFolderLocation = "";
 		printf("Failed to initialise subsystems.");
 		delete engine;
 		engine = nullptr;

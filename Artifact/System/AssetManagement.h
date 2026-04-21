@@ -42,6 +42,8 @@ public:
 
 	bool LoadBundle(const std::string& bundleFilePath, AssetBundle* bundle);
 
+	void PreloadFolder(const std::filesystem::path& folderPath);
+
 	TextureRef GetTexture(const std::string& path);
 	ModelRef GetModel(const std::string& path);
 

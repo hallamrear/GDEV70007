@@ -186,6 +186,50 @@ bool AssetManager::LoadBundle(const std::string& bundleFilePath, AssetBundle* bu
 	return (bundle != nullptr);
 }
 
+void AssetManager::PreloadFolder(const std::filesystem::path& folderPath)
+{
+	if (std::filesystem::exists(folderPath) == false)
+	{
+		printf("Failed to preload folder \"%s\". Folder does not exist.\n", folderPath.string().c_str());
+		return;
+	}
+
+	for (const auto& directoryEntry : std::filesystem::recursive_directory_iterator(folderPath))
+	{
+		std::string extension = directoryEntry.path().extension().string();
+
+		if (extension != ".png" && extension != ".PNG" &&
+			extension != ".gltf" && extension != ".GLTF" &&
+			extension != ".glb" &&  extension != ".GLB")
+		{
+			continue;
+		}
+
+		if (extension == ".png" || extension == ".PNG")
+		{
+			TextureRef ref = GetTexture(directoryEntry.path().string());
+
+			if (ref == nullptr)
+			{
+				printf("Failed to preload texture %s\n", directoryEntry.path().string().c_str());
+			}
+		}
+		else if (extension == ".gltf" || extension == ".GLTF" || extension == ".glb" || extension == ".GLB")
+		{
+			TextureRef ref = GetTexture(directoryEntry.path().string());
+
+			if (ref == nullptr)
+			{
+				printf("Failed to preload texture %s\n", directoryEntry.path().string().c_str());
+			}
+		}
+		else
+		{
+			printf("%s\n", directoryEntry.path().string().c_str());
+		}
+	}
+}
+
 TextureRef AssetManager::GetTexture(const std::string& path)
 {
 	TextureMap::iterator itr = m_TextureMap.find(path);

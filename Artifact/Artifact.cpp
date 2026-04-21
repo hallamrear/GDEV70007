@@ -30,6 +30,18 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
+#if defined(DEBUG) | defined(_DEBUG)
+    if (!AttachConsole(ATTACH_PARENT_PROCESS))
+        AllocConsole();
+
+    FILE* file = nullptr;
+    freopen_s(&file, "CONIN$", "r", stdin);
+    freopen_s(&file, "CONOUT$", "w", stdout);
+    freopen_s(&file, "CONOUT$", "w", stderr);
+
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
+
     // Initialize global strings
     LoadString(hInstance, IDS_APP_TITLE, g_TitleStr, MAX_LOADSTRING);
     LoadString(hInstance, IDC_ARTIFACT, g_WindowClassStr, MAX_LOADSTRING);
@@ -41,7 +53,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return -1;
     }
 
-    g_Engine = Engine::CreateEngine(g_WindowHandle, "Content/");
+    g_Engine = Engine::CreateEngine(g_WindowHandle, "..//");
 
     if (g_Engine == nullptr)
     {
