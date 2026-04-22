@@ -84,6 +84,7 @@ bool Engine::InitialiseSubsystems(HWND windowHandle, const std::filesystem::path
 	if (m_IsInitialised)
 	{
 		m_Renderer->PostAssetInitialisation();
+		InputListener::EnableControllerSupport(false);
 	}
 
 	return m_IsInitialised;
@@ -97,6 +98,7 @@ Engine* Engine::CreateEngine(HWND windowHandle, const std::filesystem::path& con
 
 	if (initialised == false)
 	{
+		InputListener::DisableControllerSupport();
 		m_ContentFolderLocation = "";
 		m_ExecutableLocation = "";
 		printf("Failed to initialise subsystems.\n");
@@ -152,6 +154,27 @@ LRESULT Engine::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	switch (message)
 	{
+		case WM_LBUTTONDOWN:
+		case WM_LBUTTONUP:
+		case WM_MBUTTONDOWN:
+		case WM_MBUTTONUP:
+		case WM_RBUTTONDOWN:
+		case WM_RBUTTONUP:
+		case WM_KEYDOWN:
+		case WM_SYSKEYDOWN:
+		case WM_KEYUP:
+		case WM_SYSKEYUP:
+		case WM_MOUSEMOVE:
+		case WM_MOUSEHOVER:
+		case WM_MOUSEWHEEL:
+		case WM_XBUTTONDOWN:
+		case WM_XBUTTONUP:
+		{
+			InputListener::WndProcCallback(message, lParam, wParam);
+			return 0;
+		}
+		break;
+
 		case WM_SIZE:
 		{
 			if (m_Renderer != nullptr)
@@ -175,6 +198,8 @@ void Engine::Update(const float& deltaTime)
 	if (!m_IsInitialised || !m_IsRunning)
 		return;
 
+	InputListener::UpdateControllerStates();
+
 	static float timeElapsed = 0.0f;
 	timeElapsed += deltaTime;
 
@@ -184,6 +209,15 @@ void Engine::Update(const float& deltaTime)
 	clearColour.z = (sin(timeElapsed + 4) * 127 + 127) / 255.0f;
 	clearColour.w = 1.0f;
 	m_Renderer->SetClearColour(clearColour);
+
+	Vector3 forward = m_Renderer->GetCamera().GetForwardVector();
+	Vector3 right = m_Renderer->GetCamera().GetRightVector();
+	Vector3 up = m_Renderer->GetCamera().GetUpVector();
+
+	if (m_InputListener.GetKeyDown(VK_KEY_W)) { m_Renderer->GetCamera().Move(Vector3(0.0f, 0.0f, +60.0f * deltaTime)); }
+	if (m_InputListener.GetKeyDown(VK_KEY_S)) { m_Renderer->GetCamera().Move(Vector3(0.0f, 0.0f, -60.0f * deltaTime)); }
+	if (m_InputListener.GetKeyDown(VK_KEY_A)) { m_Renderer->GetCamera().Move(Vector3(-60.0f * deltaTime, 0.0f, 0.0f)); }
+	if (m_InputListener.GetKeyDown(VK_KEY_D)) { m_Renderer->GetCamera().Move(Vector3(+60.0f * deltaTime, 0.0f, 0.0f)); }
 
 	m_World->Update(deltaTime);
 	m_World->PostUpdate(deltaTime);
@@ -201,6 +235,9 @@ void Engine::Render()
 	m_Renderer->BeginIMGUIFrame();
 	m_AssetManager->IMGUIRender();
 	m_World->IMGUIRender();
+
+	InputListener::DebugRender();
+
 	m_Renderer->EndIMGUIFrame();
 
 	m_Renderer->PresentFrame();

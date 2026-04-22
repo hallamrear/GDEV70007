@@ -32,6 +32,8 @@ public:
 	void SetDisplayName(const std::string& displayName);
 	Rigidbody& GetRigidbody();
 
+	Collider* GetCollider() const;
+
 	void SetPosition(const Vector3& position);
 	void Translate(const Vector3& translation);
 	const Vector3& GetPosition() const;

@@ -179,6 +179,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         g_Engine->Stop();
         PostQuitMessage(0);
         break;
+
     default:
         if (g_Engine != nullptr)
         {

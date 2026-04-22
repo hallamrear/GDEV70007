@@ -69,6 +69,16 @@ void Collider::SetColliderModel(const COLLIDER_TYPE& colliderType)
 	m_Type = colliderType;
 }
 
+const Vector3& Collider::GetSize() const
+{
+	return m_Size;
+}
+
+const Collider::COLLIDER_TYPE& Collider::GetType() const
+{
+	return m_Type;
+}
+
 void Collider::Render(Renderer& renderer)
 {
 	if (m_ColliderModel == nullptr)
@@ -79,7 +89,10 @@ void Collider::Render(Renderer& renderer)
 
 	renderer.SetDebugDrawMode();
 	Matrix4x4 worldMatrix = IdentityMatrix;
-	DirectX::XMStoreFloat4x4(&worldMatrix, DirectX::XMMatrixMultiply(DirectX::XMLoadFloat4x4(&m_AttachedEntity.GetWorldMatrix()), DirectX::XMLoadFloat4x4(&m_OffsetMatrix)));
+	DirectX::XMStoreFloat4x4(&worldMatrix, 
+		DirectX::XMMatrixScaling(m_Size.x, m_Size.y, m_Size.z) *
+		DirectX::XMLoadFloat4x4(&m_AttachedEntity.GetWorldMatrix()) * 
+		DirectX::XMLoadFloat4x4(&m_OffsetMatrix));
 	renderer.Render(m_ColliderModel, worldMatrix);
 	renderer.SetDefaultDrawMode();
 }

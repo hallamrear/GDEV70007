@@ -24,7 +24,7 @@ int DX12Renderer::m_IMGUISRVHeapDescriptorEndIndex = 0;
 DX12Renderer::DX12Renderer() : Renderer()
 {
     m_UseMultisampling = false;
-    m_ProjectionFOV = 90.0f;
+    m_ProjectionFOV = 60.0f;
     m_NullTextureDescriptorCPUHandle = {};
     m_MainStorageSRVHeap = nullptr;
     m_CBVHeaps = nullptr;
@@ -51,6 +51,7 @@ DX12Renderer::DX12Renderer() : Renderer()
     m_DefaultPixelShaderBlob = nullptr;
     m_DefaultVertexShaderBlob = nullptr;
     m_DefaultPipeline = nullptr;
+    m_DebugDrawPipeline = nullptr;
     m_RootSignature = nullptr;
     m_PushConstants = nullptr;
     m_CBVHeaps = new ID3D12DescriptorHeap * [m_SwapChainBufferCount];
@@ -1637,6 +1638,12 @@ void DX12Renderer::DestroyGraphicsPipelines()
     {
         m_DefaultPipeline->Release();
         m_DefaultPipeline = nullptr;
+    }
+
+    if (m_DebugDrawPipeline != nullptr)
+    {
+        m_DebugDrawPipeline->Release();
+        m_DebugDrawPipeline = nullptr;
     }
 }
 

@@ -5,6 +5,8 @@
 #include <System/AssetManagement.h>
 #include <Rendering/IMGUIIncludes.h>
 
+#include <Physics/Colliders/Collider.h>
+
 const bool& World::IsInitialised() const
 {
 	return m_IsInitialised;
@@ -149,6 +151,27 @@ void World::RenderEntityDetails(Entity& entity)
 		if (ImGui::InputText("Display Name: ", &buffer[0], MAX_DISPLAY_NAME_SIZE))
 		{
 			entity.SetDisplayName(buffer);
+		}
+
+		if (entity.GetCollider() != nullptr)
+		{
+			Collider& collider = *entity.GetCollider();
+
+			switch (collider.GetType())
+			{
+			case Collider::COLLIDER_TYPE_SPHERE:
+			{
+				float sphereColliderRadius = { collider.GetSize().x };
+				if (ImGui::SliderFloat("Sphere collider size: ", &sphereColliderRadius, 0.1f, 10.0f))
+				{
+					collider.SetSize(Vector3(sphereColliderRadius, sphereColliderRadius, sphereColliderRadius));
+				}
+			}
+			break;
+
+			default:
+				break;
+			}
 		}
 	}
 

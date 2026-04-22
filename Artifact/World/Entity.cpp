@@ -17,6 +17,9 @@ Entity::Entity()
 	m_Translation = Vector3(0.0f, 0.0f, 0.0f);
 	m_RotationEuler = Vector3(0.0f, 0.0f, 0.0f);
 	m_Collider = new SphereCollider(*this, 0.5f);
+
+	float r = (float)(rand() % 5) + 1;
+	m_Collider->SetSize(Vector3(r, r, r));
 }
 
 Entity::~Entity()
@@ -54,6 +57,16 @@ void Entity::SetDisplayName(const std::string& displayName)
 Rigidbody& Entity::GetRigidbody()
 {
 	return m_Rigidbody;
+}
+
+Collider* Entity::GetCollider() const
+{
+	if (m_Collider != nullptr)
+	{
+		return m_Collider;
+	}
+
+	return nullptr;
 }
 
 void Entity::SetPosition(const Vector3& translation)

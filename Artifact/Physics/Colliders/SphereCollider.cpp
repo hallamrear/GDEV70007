@@ -3,15 +3,19 @@
 
 SphereCollider::SphereCollider(const Entity& entity, const float& radius) : Collider(COLLIDER_TYPE::COLLIDER_TYPE_SPHERE, entity)
 {
-	m_Radius = radius;
+	SetSize(Vector3(radius, 0.0f, 0.0f));
 }
 
 SphereCollider::~SphereCollider()
 {
-
+	m_Size = Vector3(0.0f, 0.0f, 0.0f);
 }
 
-const float& SphereCollider::GetRadius() const
+void SphereCollider::SetSize(const Vector3& size)
 {
-	return m_Radius;
+	Vector3 absSize = Vector3(std::abs(size.x), std::abs(size.y), std::abs(size.z));
+	float r = max(absSize.x, max(absSize.y, absSize.z));
+	m_Size.x = r;
+	m_Size.y = r;
+	m_Size.z = r;
 }

@@ -10,8 +10,14 @@
 // add headers that you want to pre-compile here
 #include "framework.h"
 
+//RPC Library for GUIDs
 #pragma comment(lib, "Rpcrt4.lib")
 #include <rpc.h>
+
+//DirectX XInput
+#define XINPUT_ON_GAMEINPUT_NO_XINPUTENABLE
+#include <XInput.h>
+#pragma comment(lib,"xinput.lib")
 
 // C RunTime Header Files
 #include <stdlib.h>

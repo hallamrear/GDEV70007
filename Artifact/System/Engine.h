@@ -1,4 +1,5 @@
 #pragma once
+#include <System/InputListener.h>
 
 class World;
 class Renderer;
@@ -12,6 +13,7 @@ private:
 	bool m_IsInitialised;
 	bool m_IsRunning;
 
+	InputListener m_InputListener;
 	AssetManager* m_AssetManager;
 	Renderer* m_Renderer;
 	World* m_World;

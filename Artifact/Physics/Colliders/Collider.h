@@ -7,7 +7,7 @@ class Entity;
 
 class Collider
 {
-protected:
+public:
 	enum COLLIDER_TYPE
 	{
 		COLLIDER_TYPE_SPHERE,
@@ -22,15 +22,22 @@ private:
 	Matrix4x4 m_OffsetMatrix;
 	ModelRef m_ColliderModel;
 
+	void SetColliderModel(const COLLIDER_TYPE& colliderType);
+
 protected:
 	Collider(const COLLIDER_TYPE& colliderType, const Entity& entity);
 	virtual ~Collider() = 0;
+
+	Vector3 m_Size;
 
 public:
 	Matrix4x4& GetOffsetMatrix();
 	const Entity& GetAttachedEntity() const;
 
-	void SetColliderModel(const COLLIDER_TYPE& colliderType);
+	virtual void SetSize(const Vector3& size) = 0;
+	const Vector3& GetSize() const;
+
+	const COLLIDER_TYPE& GetType() const;
 
 	void Render(Renderer& renderer);
 };
