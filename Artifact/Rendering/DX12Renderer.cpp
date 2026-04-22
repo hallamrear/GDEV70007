@@ -260,7 +260,7 @@ bool DX12Renderer::InitialiseIMGUI()
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     io.WantCaptureKeyboard = true;
@@ -615,6 +615,8 @@ void DX12Renderer::BeginIMGUIFrame()
 
     ImGui::NewFrame();
     ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_::ImGuiDockNodeFlags_PassthruCentralNode);
+
+    ImGui::ShowDemoWindow();
 }
 
 void DX12Renderer::EndIMGUIFrame()

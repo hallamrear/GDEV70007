@@ -36,6 +36,12 @@ bool World::Initialise()
 		m_EntityMap.insert(std::make_pair(entity->GetID(), entity));
 	}
 
+
+	Entity* testRoom = CreateEntity("Test Room");
+	ModelRef ref = ServiceLocator::Locate<AssetManager>()->GetModel("Demo_Level.glb");
+	testRoom->SetModel(ref);
+	m_EntityMap.insert(std::make_pair(testRoom->GetID(), testRoom));
+
 	return true;
 }
 

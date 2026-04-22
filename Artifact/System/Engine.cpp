@@ -214,10 +214,37 @@ void Engine::Update(const float& deltaTime)
 	Vector3 right = m_Renderer->GetCamera().GetRightVector();
 	Vector3 up = m_Renderer->GetCamera().GetUpVector();
 
-	if (m_InputListener.GetKeyDown(VK_KEY_W)) { m_Renderer->GetCamera().Move(Vector3(0.0f, 0.0f, +60.0f * deltaTime)); }
-	if (m_InputListener.GetKeyDown(VK_KEY_S)) { m_Renderer->GetCamera().Move(Vector3(0.0f, 0.0f, -60.0f * deltaTime)); }
-	if (m_InputListener.GetKeyDown(VK_KEY_A)) { m_Renderer->GetCamera().Move(Vector3(-60.0f * deltaTime, 0.0f, 0.0f)); }
-	if (m_InputListener.GetKeyDown(VK_KEY_D)) { m_Renderer->GetCamera().Move(Vector3(+60.0f * deltaTime, 0.0f, 0.0f)); }
+	const float moveSpeed = +60.0f * deltaTime;
+	const float rotationSpeed = 5.0f * deltaTime;
+
+	if (m_InputListener.GetKeyDown(VK_KEY_W)) { m_Renderer->GetCamera().Move(Vector3(forward.x * moveSpeed, forward.y * moveSpeed, forward.z * moveSpeed)); }
+	if (m_InputListener.GetKeyDown(VK_KEY_S)) { m_Renderer->GetCamera().Move(Vector3(forward.x * -moveSpeed, forward.y * -moveSpeed, forward.z * -moveSpeed)); }
+	if (m_InputListener.GetKeyDown(VK_KEY_A)) { m_Renderer->GetCamera().Move(Vector3(right.x * -moveSpeed, right.y * -moveSpeed, right.z * -moveSpeed)); }
+	if (m_InputListener.GetKeyDown(VK_KEY_D)) { m_Renderer->GetCamera().Move(Vector3(right.x * moveSpeed, right.y * moveSpeed, right.z * moveSpeed)); }
+
+	if (m_InputListener.IsControllerSupportEnabled())
+	{
+		Vector2 thumbstickLeft =
+		{
+			m_InputListener.GetControllerAnalogValue(0, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_LEFT_THUMBSTICK_X),
+			m_InputListener.GetControllerAnalogValue(0, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_LEFT_THUMBSTICK_Y)
+		};
+
+		if ((thumbstickLeft.y > (0.0f + FLT_EPSILON)) || (thumbstickLeft.y < (0.0f - FLT_EPSILON))) { m_Renderer->GetCamera().Move(Vector3(forward.x * moveSpeed * thumbstickLeft.y, forward.y * moveSpeed * thumbstickLeft.y, forward.z * moveSpeed * thumbstickLeft.y)); }
+		if ((thumbstickLeft.x > (0.0f + FLT_EPSILON)) || (thumbstickLeft.x < (0.0f - FLT_EPSILON))) { m_Renderer->GetCamera().Move(Vector3(right.x * moveSpeed * thumbstickLeft.x, right.y * moveSpeed * thumbstickLeft.x, right.z * moveSpeed * thumbstickLeft.x)); }
+
+		Vector2 thumbstickRight =
+		{
+			m_InputListener.GetControllerAnalogValue(0, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_RIGHT_THUMBSTICK_X),
+			m_InputListener.GetControllerAnalogValue(0, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_RIGHT_THUMBSTICK_Y)
+		};
+
+		if (thumbstickRight.x > (0.0f + FLT_EPSILON) || thumbstickRight.x < (0.0f - FLT_EPSILON) ||
+			thumbstickRight.y > (0.0f + FLT_EPSILON) || thumbstickRight.y < (0.0f - FLT_EPSILON))
+		{
+			m_Renderer->GetCamera().RotateEulerDegrees(Vector3(rotationSpeed * -thumbstickRight.y, rotationSpeed * thumbstickRight.x, 0.0f));
+		}
+	}
 
 	m_World->Update(deltaTime);
 	m_World->PostUpdate(deltaTime);
@@ -233,10 +260,10 @@ void Engine::Render()
 	m_World->Render(*m_Renderer);
 
 	m_Renderer->BeginIMGUIFrame();
+
 	m_AssetManager->IMGUIRender();
 	m_World->IMGUIRender();
-
-	InputListener::DebugRender();
+	InputListener::RenderIMGUI();
 
 	m_Renderer->EndIMGUIFrame();
 

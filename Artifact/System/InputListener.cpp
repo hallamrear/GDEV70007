@@ -1,10 +1,11 @@
 #include "pch.h"
 #include "InputListener.h"
+#include <Rendering/IMGUIIncludes.h>
 
 std::vector<InputListener*> InputListener::m_Instances = std::vector<InputListener*>();
 InputListener::InputMap InputListener::m_KeyStates = InputListener::InputMap();
-ControllerState InputListener::m_ControllerStates[MAX_CONTROLLERS] = { ControllerState() };
-float InputListener::m_DeadZonePercentage = DEFAULT_CONTROLLER_DEADZONE;
+InputListener::ControllerState InputListener::m_ControllerStates[MAX_CONTROLLERS] = { InputListener::ControllerState() };
+float InputListener::m_DeadZonePercentageNormalised = DEFAULT_CONTROLLER_DEADZONE;
 bool InputListener::m_DeadZoneEnabled = true;
 bool InputListener::m_ControllersEnabled = true;
 
@@ -70,12 +71,17 @@ void InputListener::EnableControllerSupport(const bool& deadZoneEnabled)
 {
 	m_ControllersEnabled = true;
 
-	m_DeadZonePercentage = 0.0f;
+	m_DeadZonePercentageNormalised = 0.0f;
 
 	if (deadZoneEnabled)
 	{
-		m_DeadZonePercentage = DEFAULT_CONTROLLER_DEADZONE;
+		m_DeadZonePercentageNormalised = DEFAULT_CONTROLLER_DEADZONE;
 	}
+}
+
+const bool& InputListener::IsControllerSupportEnabled()
+{
+	return m_ControllersEnabled;
 }
 
 void InputListener::DisableControllerSupport()
@@ -83,11 +89,10 @@ void InputListener::DisableControllerSupport()
 	m_ControllersEnabled = false;
 }
 
-void InputListener::SetDeadZonePercentage(const float& deadZonePercentage)
+void InputListener::SetDeadZonePercentage(const float& deadZonePercentageNormalised)
 {
-	m_DeadZonePercentage = deadZonePercentage;
-	m_DeadZonePercentage = min(m_DeadZonePercentage, 100.0f);
-	m_DeadZonePercentage = max(m_DeadZonePercentage, 0.0f);
+	m_DeadZonePercentageNormalised = deadZonePercentageNormalised;
+	m_DeadZonePercentageNormalised = std::clamp(m_DeadZonePercentageNormalised, 0.0f, 1.0f);
 }
 
 void InputListener::SetDeadZoneEnabled(const bool& deadZoneEnabled)
@@ -175,8 +180,28 @@ void InputListener::UpdateControllerStates()
 
 	for (int i = 0; i < MAX_CONTROLLERS; i++)
 	{
-		DWORD dwResult = XInputGetState(i, &m_ControllerStates[i].m_State);
-		m_ControllerStates[i].m_IsConnected = (dwResult == ERROR_SUCCESS);
+		DWORD dwResult = XInputGetState(i, &m_ControllerStates[i].State);
+		m_ControllerStates[i].IsConnected = (dwResult == ERROR_SUCCESS);
+
+		if (m_DeadZoneEnabled)
+		{
+			const float scaledDeadzoneValue = m_DeadZonePercentageNormalised * float(0x7FFF);
+
+			// Zero value if thumbsticks are within the dead zone 
+			if ((m_ControllerStates[i].State.Gamepad.sThumbLX < scaledDeadzoneValue && m_ControllerStates[i].State.Gamepad.sThumbLX > -scaledDeadzoneValue) &&
+				(m_ControllerStates[i].State.Gamepad.sThumbLY < scaledDeadzoneValue && m_ControllerStates[i].State.Gamepad.sThumbLY > -scaledDeadzoneValue))
+			{
+				m_ControllerStates[i].State.Gamepad.sThumbLX = 0;
+				m_ControllerStates[i].State.Gamepad.sThumbLY = 0;
+			}
+
+			if ((m_ControllerStates[i].State.Gamepad.sThumbRX < scaledDeadzoneValue && m_ControllerStates[i].State.Gamepad.sThumbRX > -scaledDeadzoneValue) &&
+				(m_ControllerStates[i].State.Gamepad.sThumbRY < scaledDeadzoneValue && m_ControllerStates[i].State.Gamepad.sThumbRY > -scaledDeadzoneValue))
+			{
+				m_ControllerStates[i].State.Gamepad.sThumbRX = 0;
+				m_ControllerStates[i].State.Gamepad.sThumbRY = 0;
+			}
+		}
 	}
 }
 
@@ -191,13 +216,85 @@ const KeyState& InputListener::GetKeyState(const int& keycode)
 	return GetKeyStateReference(keycode);
 }
 
-#include <Rendering/IMGUIIncludes.h>
-void InputListener::DebugRender()
+const bool InputListener::GetControllerButtonDown(const int& controllerIndex, const CONTROLLER_BUTTON& controllerButton)
 {
+	if (m_ControllersEnabled == false)
+	{
+		return false;
+	}
 
-	ImGui::Begin("Controllers");
+	if (controllerIndex < 0 || controllerIndex >= MAX_CONTROLLERS)
+	{
+		printf("Trying to access a controller with an invalid index (%i).\n", controllerIndex);
+		return false;
+	}
 
-	if (ImGui::Checkbox("Enable Controllers", &m_ControllersEnabled))
+	if (m_ControllerStates[controllerIndex].IsConnected == false)
+	{
+		return false;
+	}
+
+	return (m_ControllerStates[controllerIndex].State.Gamepad.wButtons & controllerButton);
+}
+
+/// <summary>
+/// Returns a scaled float from -1 to 1 from edge to edge. 
+/// 0.0f means its at rest in the centre.
+/// </summary>
+/// <param name="controllerIndex">The index of the controller to query.</param>
+/// <param name="controllerAnalogStick">Which analog value to query.</param>
+/// <returns></returns>
+const float InputListener::GetControllerAnalogValue(const int& controllerIndex, const CONTROLLER_ANALOG_STICK& controllerAnalogStick)
+{
+	if (m_ControllersEnabled == false)
+	{
+		return 0.0f;
+	}
+
+	if (controllerIndex < 0 || controllerIndex >= MAX_CONTROLLERS)
+	{
+		printf("Trying to access a controller with an invalid index (%i).\n", controllerIndex);
+		return 0.0f;
+	}
+
+	if (m_ControllerStates[controllerIndex].IsConnected == false)
+	{
+		return 0.0f;
+	}
+
+	switch (controllerAnalogStick)
+	{
+	case CONTROLLER_ANALOG_LEFT_THUMBSTICK_X:
+		return (m_ControllerStates[controllerIndex].State.Gamepad.sThumbLX / (float)SHRT_MAX);
+		break;
+	case CONTROLLER_ANALOG_LEFT_THUMBSTICK_Y:
+		return (m_ControllerStates[controllerIndex].State.Gamepad.sThumbLY / (float)SHRT_MAX);
+		break;
+	case CONTROLLER_ANALOG_RIGHT_THUMBSTICK_X:
+		return (m_ControllerStates[controllerIndex].State.Gamepad.sThumbRX / (float)SHRT_MAX);
+		break;
+	case CONTROLLER_ANALOG_RIGHT_THUMBSTICK_Y:
+		return (m_ControllerStates[controllerIndex].State.Gamepad.sThumbRY / (float)SHRT_MAX);
+		break;
+	case CONTROLLER_ANALOG_LEFT_TRIGGER:
+		return (m_ControllerStates[controllerIndex].State.Gamepad.bLeftTrigger / 255.0f);
+		break;
+	case CONTROLLER_ANALOG_RIGHT_TRIGGER:
+		return (m_ControllerStates[controllerIndex].State.Gamepad.bRightTrigger / 255.0f);
+		break;
+	default:
+		printf("Trying to access an unrecognised analog stick.\n");
+		break;
+	}
+
+	return 0.0f;
+}
+
+void InputListener::RenderIMGUI()
+{
+	ImGui::Begin("Input Debug\n");
+
+	if (ImGui::Checkbox("Enable Controller Support\n", &m_ControllersEnabled))
 	{
 		if(m_ControllersEnabled)
 		{
@@ -209,18 +306,125 @@ void InputListener::DebugRender()
 		}
 	}
 
-	//Use this value when consulting the axis'.
-	const float scaledDeadzoneValue = m_DeadZonePercentage * float(0x7FFF);
-
-	for (size_t i = 0; i < MAX_CONTROLLERS; i++)
+	if (m_ControllersEnabled)
 	{
-		if (m_ControllerStates[i].m_IsConnected)
+		if (ImGui::Checkbox("Enabled Deadzone\n", &m_DeadZoneEnabled))
 		{
-			std::string str = "Controller - " + i;
+			SetDeadZoneEnabled(m_DeadZoneEnabled);
+		}
+
+		if (m_DeadZoneEnabled)
+		{
+			if (ImGui::InputFloat("Dead zone percentage (0.0 -> 1.0)\n", &m_DeadZonePercentageNormalised))
+			{
+				SetDeadZonePercentage(m_DeadZonePercentageNormalised);
+			}
+		}
+	}
+
+	for (int i = 0; i < MAX_CONTROLLERS; i++)
+	{
+		if (m_ControllerStates[i].IsConnected)
+		{
+			std::string str = "Controller - " + std::to_string(i);
 			if (ImGui::CollapsingHeader(str.c_str()))
 			{
-				bool pressed = m_ControllerStates[i].m_State.Gamepad.wButtons & XINPUT_GAMEPAD_A;
-				ImGui::Checkbox("Button Test", &pressed);
+				ImGui::PushID(str.c_str());
+
+				ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
+				ImGui::SeparatorText("Button Presses");
+				if (ImGui::BeginTable("Button Presses Table", 2, flags))
+				{
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0); ImGui::Text("A Button\n");
+					ImGui::TableSetColumnIndex(1); ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_A) ? "True\n" : "False\n");
+
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0); ImGui::Text("B Button\n");
+					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_B) ? "True\n" : "False\n");
+					
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0); ImGui::Text("X Button\n");
+					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_X) ? "True\n" : "False\n");
+
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0); ImGui::Text("Y Button\n");
+					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_Y) ? "True\n" : "False\n");
+					
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0); ImGui::Text("DPAD Up\n");
+					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_DPAD_UP) ? "True\n" : "False\n");
+
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0); ImGui::Text("DPAD Down\n");
+					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_DPAD_DOWN) ? "True\n" : "False\n");
+
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0); ImGui::Text("DPAD Left\n");
+					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_DPAD_LEFT) ? "True\n" : "False\n");
+
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0); ImGui::Text("DPAD Right\n");
+					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_DPAD_RIGHT) ? "True\n" : "False\n");
+
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0); ImGui::Text("Start button\n");
+					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_START) ? "True\n" : "False\n");
+
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0); ImGui::Text("Back button\n");
+					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_BACK) ? "True\n" : "False\n");
+
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0); ImGui::Text("Left Thumbstick Press\n");
+					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_LEFT_THUMBSTICK_PRESS) ? "True\n" : "False\n");
+
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0); ImGui::Text("Right Thumbstick Press\n");
+					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_RIGHT_THUMBSTICK_PRESS) ? "True\n" : "False\n");
+
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0); ImGui::Text("Left Shoulder\n");
+					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_LEFT_SHOULDER) ? "True\n" : "False\n");
+
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0); ImGui::Text("Right Shoulder");
+					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_RIGHT_SHOULDER) ? "True\n" : "False\n");
+
+					ImGui::EndTable();
+				}
+
+				ImGui::SeparatorText("Analog Values");
+				if (ImGui::BeginTable("Analog Values Table", 2, flags))
+				{
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0); ImGui::Text("Left Trigger\n");
+					ImGui::TableSetColumnIndex(1); ImGui::Text("%f\n", GetControllerAnalogValue(i, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_LEFT_TRIGGER));
+
+					ImGui::TableNextRow(); 
+					ImGui::TableSetColumnIndex(0); ImGui::Text("Right Trigger\n");
+					ImGui::TableSetColumnIndex(1); ImGui::Text("%f\n", GetControllerAnalogValue(i, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_RIGHT_TRIGGER));
+					
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0); ImGui::Text("Left Thumbstick X\n");
+					ImGui::TableSetColumnIndex(1); ImGui::Text("%f\n", GetControllerAnalogValue(i, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_LEFT_THUMBSTICK_X));
+
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0); ImGui::Text("Left Thumbstick Y\n");
+					ImGui::TableSetColumnIndex(1); ImGui::Text("%f\n", GetControllerAnalogValue(i, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_LEFT_THUMBSTICK_Y));
+
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0); ImGui::Text("Right Thumbstick X\n");
+					ImGui::TableSetColumnIndex(1); ImGui::Text("%f\n", GetControllerAnalogValue(i, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_RIGHT_THUMBSTICK_X));
+
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0); ImGui::Text("Right Thumbstick Y\n");
+					ImGui::TableSetColumnIndex(1); ImGui::Text("%f\n", GetControllerAnalogValue(i, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_RIGHT_THUMBSTICK_Y));
+
+					ImGui::EndTable();
+				}
+
+				ImGui::PopID();
 			}
 		}
 	}

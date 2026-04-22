@@ -40,6 +40,36 @@
 #define VK_KEY_Y 0x59 // Y key
 #define VK_KEY_Z 0x5A // Z key
 
+enum CONTROLLER_BUTTON
+{
+	CONTROLLER_BUTTON_DPAD_UP = XINPUT_GAMEPAD_DPAD_UP,
+	CONTROLLER_BUTTON_DPAD_DOWN = XINPUT_GAMEPAD_DPAD_DOWN,
+	CONTROLLER_BUTTON_DPAD_LEFT = XINPUT_GAMEPAD_DPAD_LEFT,
+	CONTROLLER_BUTTON_DPAD_RIGHT = XINPUT_GAMEPAD_DPAD_RIGHT,
+	CONTROLLER_BUTTON_START = XINPUT_GAMEPAD_START,
+	CONTROLLER_BUTTON_BACK = XINPUT_GAMEPAD_BACK,
+	CONTROLLER_BUTTON_LEFT_THUMBSTICK_PRESS = XINPUT_GAMEPAD_LEFT_THUMB,
+	CONTROLLER_BUTTON_RIGHT_THUMBSTICK_PRESS = XINPUT_GAMEPAD_RIGHT_THUMB,
+	CONTROLLER_BUTTON_LEFT_SHOULDER = XINPUT_GAMEPAD_LEFT_SHOULDER,
+	CONTROLLER_BUTTON_RIGHT_SHOULDER = XINPUT_GAMEPAD_RIGHT_SHOULDER,
+	CONTROLLER_BUTTON_A = XINPUT_GAMEPAD_A,
+	CONTROLLER_BUTTON_B = XINPUT_GAMEPAD_B,
+	CONTROLLER_BUTTON_X = XINPUT_GAMEPAD_X,
+	CONTROLLER_BUTTON_Y = XINPUT_GAMEPAD_Y,
+	CONTROLLER_BUTTON_COUNT = 15
+};
+
+enum CONTROLLER_ANALOG_STICK
+{
+	CONTROLLER_ANALOG_LEFT_THUMBSTICK_X,
+	CONTROLLER_ANALOG_LEFT_THUMBSTICK_Y,
+	CONTROLLER_ANALOG_RIGHT_THUMBSTICK_X,
+	CONTROLLER_ANALOG_RIGHT_THUMBSTICK_Y,
+	CONTROLLER_ANALOG_LEFT_TRIGGER,
+	CONTROLLER_ANALOG_RIGHT_TRIGGER,
+	CONTROLLER_ANALOG_STICK_COUNT = 6
+};
+
 struct KeyState
 {
 private:
@@ -54,12 +84,6 @@ public:
 	const int KeyCode;
 	const bool& IsRepeating() const;
 	const bool& IsDown() const;
-};
-
-struct ControllerState
-{
-	XINPUT_STATE m_State;
-	bool m_IsConnected;
 };
 
 namespace std
@@ -78,12 +102,18 @@ class InputListener
 public:
 
 private:
+	struct ControllerState
+	{
+		XINPUT_STATE State;
+		bool IsConnected;
+	};
+
 	typedef std::map<int, KeyState*> InputMap;
 	static std::vector<InputListener*> m_Instances;
 	static InputMap m_KeyStates;
-	static ControllerState m_ControllerStates[MAX_CONTROLLERS];
+	static InputListener::ControllerState m_ControllerStates[MAX_CONTROLLERS];
 	static bool m_ControllersEnabled;
-	static float m_DeadZonePercentage;
+	static float m_DeadZonePercentageNormalised;
 	static bool m_DeadZoneEnabled;
 
 	static void KeyboardInputCallback(const int& keycode, const bool& isDown);
@@ -94,6 +124,7 @@ public:
 	~InputListener();
 
 	static void EnableControllerSupport(const bool& deadZoneEnabled);
+	static const bool& IsControllerSupportEnabled();
 	static void DisableControllerSupport();
 	static void SetDeadZonePercentage(const float& deadZonePercentage);
 	static void SetDeadZoneEnabled(const bool& deadZoneEnabled);
@@ -104,6 +135,9 @@ public:
 	static const bool& GetKeyDown(const int& keycode);
 	static const KeyState& GetKeyState(const int& keycode);
 
-	static void DebugRender();
+	static const bool GetControllerButtonDown(const int& controllerIndex, const CONTROLLER_BUTTON& controllerButton);
+	static const float GetControllerAnalogValue(const int& controllerIndex, const CONTROLLER_ANALOG_STICK& controllerAnalogStick);
+
+	static void RenderIMGUI();
 };
 
