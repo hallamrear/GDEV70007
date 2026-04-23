@@ -260,8 +260,8 @@ void Engine::Render()
 	m_World->Render(*m_Renderer);
 
 	m_Renderer->BeginIMGUIFrame();
-
 	m_AssetManager->IMGUIRender();
+
 	m_World->IMGUIRender();
 	InputListener::RenderIMGUI();
 

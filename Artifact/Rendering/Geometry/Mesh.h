@@ -29,5 +29,8 @@ public:
 	const VertexBuffer& GetVertexBuffer() const;
 	const std::vector<TextureRef> GetTextures() const;
 	const MESH_TOPOLOGY& GetTopologyType() const;
+
+	const Vector3& GetMaxVertexLocalSpace() const;
+	const Vector3& GetMinVertexLocalSpace() const;
 };
 

@@ -3,6 +3,8 @@
 #include <World/Entity.h>
 #include <System/AssetManagement.h>
 
+TextureRef Collider::m_ColliderTexture = nullptr;
+
 Collider::Collider(const COLLIDER_TYPE& colliderType, const Entity& entity) : m_AttachedEntity(entity), m_Type(colliderType)
 {
 	m_OffsetMatrix = IdentityMatrix;
@@ -12,6 +14,11 @@ Collider::Collider(const COLLIDER_TYPE& colliderType, const Entity& entity) : m_
 Collider::~Collider()
 {
 	m_OffsetMatrix = Matrix4x4();
+	
+	if (m_ColliderTexture.use_count() == 1)
+	{
+		m_ColliderTexture = nullptr;
+	}
 }
 
 Matrix4x4& Collider::GetOffsetMatrix()
@@ -34,17 +41,19 @@ void Collider::SetColliderModel(const COLLIDER_TYPE& colliderType)
 		return;
 	}
 
+	m_ColliderTexture = assetManager->GetTexture("Content\\ColliderTexture.png");
+
 	switch (colliderType)
 	{
 	case COLLIDER_TYPE_AABB:
 	{
-		m_ColliderModel = assetManager->GetModel("Content\\BoxCollider.glb");
+		m_ColliderModel = assetManager->GetModel("Content\\Colliders\\BoxCollider.glb");
 	}
 	break;
 
 	case COLLIDER_TYPE_SPHERE:
 	{
-		m_ColliderModel = assetManager->GetModel("Content\\SphereCollider.glb");
+		m_ColliderModel = assetManager->GetModel("Content\\Colliders\\SphereCollider.glb");
 	}
 	break;
 
@@ -74,7 +83,7 @@ const Vector3& Collider::GetSize() const
 	return m_Size;
 }
 
-const Collider::COLLIDER_TYPE& Collider::GetType() const
+const COLLIDER_TYPE& Collider::GetType() const
 {
 	return m_Type;
 }
@@ -93,6 +102,7 @@ void Collider::Render(Renderer& renderer)
 		DirectX::XMMatrixScaling(m_Size.x, m_Size.y, m_Size.z) *
 		DirectX::XMLoadFloat4x4(&m_AttachedEntity.GetWorldMatrix()) * 
 		DirectX::XMLoadFloat4x4(&m_OffsetMatrix));
+	renderer.AssignTextureToTextureSlot(Renderer::TEXTURE_TYPE_DIFFUSE, m_ColliderTexture);
 	renderer.Render(m_ColliderModel, worldMatrix);
 	renderer.SetDefaultDrawMode();
 }

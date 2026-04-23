@@ -7,6 +7,7 @@ private:
 
 public:
 	SphereCollider(const Entity& entity, const float& radius);
+	SphereCollider(const Entity& entity, const Vector3& size);
 	~SphereCollider();
 
 	/// <summary>

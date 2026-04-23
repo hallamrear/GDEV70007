@@ -59,3 +59,13 @@ const MESH_TOPOLOGY& Mesh::GetTopologyType() const
 {
 	return m_Topology;
 }
+
+const Vector3& Mesh::GetMaxVertexLocalSpace() const
+{
+	return m_MaxVertex;
+}
+
+const Vector3& Mesh::GetMinVertexLocalSpace() const
+{
+	return m_MinVertex;
+}

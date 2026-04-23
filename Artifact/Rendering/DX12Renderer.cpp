@@ -627,6 +627,9 @@ void DX12Renderer::EndIMGUIFrame()
         return;
     }
 
+    ID3D12DescriptorHeap* heaps[] = { m_MainStorageSRVHeap };
+    m_CommandList->SetDescriptorHeaps(_countof(heaps), heaps);
+
     ImGui::Render();
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_CommandList);
 }
@@ -1973,7 +1976,7 @@ TextureRef DX12Renderer::BindTextureData(const int& indexToBindTo, const void* d
     D3D12_HEAP_PROPERTIES defaultHeap = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT);
     CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, width, height);
 
-    resourceDesc.MipLevels = static_cast<UINT16>(std::floor(std::log2(max(dimensions.x, dimensions.y)))) + 1;
+    resourceDesc.MipLevels = static_cast<UINT16>(std::floor(std::log2(std::max(dimensions.x, dimensions.y)))) + 1;
 
     result = m_Device->CreateCommittedResource(&defaultHeap, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&textureResource));
 

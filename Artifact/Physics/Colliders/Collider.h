@@ -5,32 +5,35 @@
 
 class Entity;
 
+enum COLLIDER_TYPE : int
+{
+	COLLIDER_TYPE_SPHERE = 0,
+	COLLIDER_TYPE_AABB = 1,
+	COLLIDER_TYPE_MESH = 2,
+	COLLIDER_TYPE_COUNT = 3
+};
+
 class Collider
 {
 public:
-	enum COLLIDER_TYPE
-	{
-		COLLIDER_TYPE_SPHERE,
-		COLLIDER_TYPE_AABB,
-		COLLIDER_TYPE_MESH,
-		COLLIDER_TYPE_COUNT
-	};
 
 private:
 	COLLIDER_TYPE m_Type;
 	const Entity& m_AttachedEntity;
 	Matrix4x4 m_OffsetMatrix;
 	ModelRef m_ColliderModel;
+	static TextureRef m_ColliderTexture;
 
 	void SetColliderModel(const COLLIDER_TYPE& colliderType);
 
 protected:
 	Collider(const COLLIDER_TYPE& colliderType, const Entity& entity);
-	virtual ~Collider() = 0;
 
 	Vector3 m_Size;
 
 public:
+	virtual ~Collider() = 0;
+
 	Matrix4x4& GetOffsetMatrix();
 	const Entity& GetAttachedEntity() const;
 

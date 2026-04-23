@@ -165,18 +165,75 @@ void World::RenderEntityDetails(Entity& entity)
 
 			switch (collider.GetType())
 			{
-			case Collider::COLLIDER_TYPE_SPHERE:
-			{
-				float sphereColliderRadius = { collider.GetSize().x };
-				if (ImGui::SliderFloat("Sphere collider size: ", &sphereColliderRadius, 0.1f, 10.0f))
+				case COLLIDER_TYPE::COLLIDER_TYPE_SPHERE:
 				{
-					collider.SetSize(Vector3(sphereColliderRadius, sphereColliderRadius, sphereColliderRadius));
+					float sphereColliderRadius = { collider.GetSize().x };
+					if (ImGui::SliderFloat("Sphere Collider Radius\n", &sphereColliderRadius, 0.1f, 10.0f))
+					{
+						collider.SetSize(Vector3(sphereColliderRadius, sphereColliderRadius, sphereColliderRadius));
+					}
+				}
+				break;
+
+				case COLLIDER_TYPE::COLLIDER_TYPE_AABB:
+				{
+					float boxSize[3] = { collider.GetSize().x, collider.GetSize().y, collider.GetSize().z };
+					if (ImGui::DragFloat3("Box Collider (half-size)", &boxSize[0], 1.0f, 0.1f, 10.0f, "%.1f", ImGuiSliderFlags_::ImGuiSliderFlags_AlwaysClamp))
+					{
+						collider.SetSize(Vector3(boxSize));
+					}
+				}
+				break;
+
+				default:
+					break;
+			}
+			
+			if (entity.GetModel() != nullptr)
+			{
+				if (ImGui::Button("Set Collider Size from current mesh\n"))
+				{
+					entity.SetColliderFromModel(entity.GetCollider()->GetType());
 				}
 			}
-			break;
+		}
+		else
+		{
+			const char* colliderNames[COLLIDER_TYPE::COLLIDER_TYPE_COUNT] =
+			{
+				/* */
 
-			default:
-				break;
+				/* COLLIDER_TYPE_SPHERE */ "Sphere Collider",
+				/* COLLIDER_TYPE_AABB */ "Box Collider",
+				/* COLLIDER_TYPE_MESH */ "Complex Mesh Collider",
+
+			};
+
+			const ImGuiComboFlags flags = 0;
+
+			static COLLIDER_TYPE selectedCollider = COLLIDER_TYPE::COLLIDER_TYPE_SPHERE;
+
+			if (ImGui::BeginCombo("Collider Type List", colliderNames[selectedCollider], flags))
+			{
+				for (int n = 0; n < IM_COUNTOF(colliderNames); n++)
+				{
+					const bool is_selected = ((int)selectedCollider == n);
+					if (ImGui::Selectable(colliderNames[n], is_selected))
+					{
+						selectedCollider = (COLLIDER_TYPE)n;
+					}
+
+					if (is_selected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+			}
+
+			if (ImGui::Button("Create selected collider"))
+			{
+				entity.SetCollider(selectedCollider);
 			}
 		}
 	}

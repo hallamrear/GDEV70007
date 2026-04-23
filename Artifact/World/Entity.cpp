@@ -2,6 +2,9 @@
 #include "Entity.h"
 #include <Rendering/Renderer.h>
 #include <Physics/Colliders/SphereCollider.h>
+#include <Physics/Colliders/BoxCollider.h>
+
+#include <Rendering/Geometry/Mesh.h>
 
 Entity::Entity()
 {
@@ -16,10 +19,6 @@ Entity::Entity()
 	m_Scale = Vector3(1.0f, 1.0f, 1.0f);
 	m_Translation = Vector3(0.0f, 0.0f, 0.0f);
 	m_RotationEuler = Vector3(0.0f, 0.0f, 0.0f);
-	m_Collider = new SphereCollider(*this, 0.5f);
-
-	float r = (float)(rand() % 5) + 1;
-	m_Collider->SetSize(Vector3(r, r, r));
 }
 
 Entity::~Entity()
@@ -67,6 +66,71 @@ Collider* Entity::GetCollider() const
 	}
 
 	return nullptr;
+}
+
+void Entity::SetCollider(const COLLIDER_TYPE& colliderType)
+{
+	Vector3 size = Vector3(0.5f, 0.5f, 0.5f);
+
+	if (GetCollider() != nullptr)
+	{
+		if (GetCollider()->GetType() == colliderType)
+		{
+			return;
+		}
+
+		size = GetCollider()->GetSize();
+
+		delete m_Collider;
+		m_Collider = nullptr;
+	}
+
+	switch (colliderType)
+	{
+	case COLLIDER_TYPE_SPHERE:
+		m_Collider = new SphereCollider(*this, size.x);
+		break;
+	case COLLIDER_TYPE_AABB:
+		m_Collider = new BoxCollider(*this, size);
+		break;
+	case COLLIDER_TYPE_MESH:
+		printf("Failed to create a new collider. Mesh collider is not implemented yet.\n");
+		break;
+	case COLLIDER_TYPE_COUNT:
+	default:
+		printf("Failed to create a new collider. SetCollider was passed an invalid collider type.\n");
+		break;
+	}
+}
+
+void Entity::SetColliderFromModel(const COLLIDER_TYPE& colliderType)
+{
+	if (GetModel() == nullptr)
+	{
+		printf("Failed to create a collider from the model. Model reference is not set or invalid.\n");
+		return;
+	}
+
+	SetCollider(colliderType);
+
+	if (GetCollider() != nullptr)
+	{
+		Vector3 newSize = Vector3(
+			std::max(GetModel()->GetMeshes()[0]->GetMaxVertexLocalSpace().x, std::abs(GetModel()->GetMeshes()[0]->GetMinVertexLocalSpace().x)) * 2.0f,
+			std::max(GetModel()->GetMeshes()[0]->GetMaxVertexLocalSpace().y, std::abs(GetModel()->GetMeshes()[0]->GetMinVertexLocalSpace().y)) * 2.0f,
+			std::max(GetModel()->GetMeshes()[0]->GetMaxVertexLocalSpace().z, std::abs(GetModel()->GetMeshes()[0]->GetMinVertexLocalSpace().z)) * 2.0f
+		);
+
+		//Spheres need radii rather than extents.
+		if (colliderType == COLLIDER_TYPE_SPHERE)
+		{
+			newSize.x *= 0.5f;
+			newSize.y *= 0.5f;
+			newSize.z *= 0.5f;
+		}
+
+		GetCollider()->SetSize(newSize);
+	}
 }
 
 void Entity::SetPosition(const Vector3& translation)

@@ -3,6 +3,7 @@
 #include <Rendering/Geometry/Model.h>
 
 class Collider;
+enum COLLIDER_TYPE : int;
 
 class Entity
 {
@@ -33,6 +34,8 @@ public:
 	Rigidbody& GetRigidbody();
 
 	Collider* GetCollider() const;
+	void SetCollider(const COLLIDER_TYPE& colliderType);
+	void SetColliderFromModel(const COLLIDER_TYPE& colliderType);
 
 	void SetPosition(const Vector3& position);
 	void Translate(const Vector3& translation);
