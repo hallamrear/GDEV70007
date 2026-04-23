@@ -274,5 +274,6 @@
     <None Include="Content\Colliders\BoxCollider.glb" />
     <None Include="Content\Colliders\SphereCollider.glb" />
     <None Include="Content\Demo_Level.glb" />
+    <None Include="Content\Suzanne.glb" />
   </ItemGroup>
 </Project>

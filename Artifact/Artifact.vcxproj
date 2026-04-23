@@ -316,6 +316,10 @@
     <None Include="Content\Demo_Level.glb">
       <DeploymentContent>true</DeploymentContent>
     </None>
+    <None Include="Content\Suzanne.glb">
+      <FileType>Document</FileType>
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="Rendering\Shaders\Structures.hlsli" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
