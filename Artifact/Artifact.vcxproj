@@ -188,6 +188,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Artifact.h" />
+    <ClInclude Include="Physics\CollisionDetection.h" />
     <ClInclude Include="Rendering\IMGUIRenderable.h" />
     <ClInclude Include="Physics\Colliders\BoxCollider.h" />
     <ClInclude Include="System\InputListener.h" />
@@ -232,6 +233,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Artifact.cpp" />
+    <ClCompile Include="Physics\CollisionDetection.cpp" />
     <ClCompile Include="Rendering\IMGUIRenderable.cpp" />
     <ClCompile Include="Physics\Colliders\BoxCollider.cpp" />
     <ClCompile Include="System\InputListener.cpp" />
