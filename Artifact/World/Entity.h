@@ -8,6 +8,8 @@ enum COLLIDER_TYPE : int;
 class Entity
 {
 private:
+	bool m_IsAlive;
+	bool m_IsPendingDestroy;
 	std::string m_DisplayName;
 	EntityID m_ID;
 	std::string m_IDString;
@@ -50,4 +52,11 @@ public:
 	void Update(const float& deltaTime);
 	void PostUpdate(const float& deltaTime);
 	void Render(Renderer& renderer);
+
+	void SetAlive(const bool& state);
+	const bool IsDead();
+	void Kill();
+
+	void Destroy();
+	const bool& IsPendingDestroy();
 };

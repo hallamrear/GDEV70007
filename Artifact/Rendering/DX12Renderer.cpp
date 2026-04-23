@@ -5,6 +5,7 @@
 #include <Rendering/Vertex.h>
 #include <Rendering/IndexBuffer.h>
 #include <Rendering/VertexBuffer.h>
+#include <Rendering/IMGUIRenderable.h>
 #include <functional>
 #include "Geometry/Model.h"
 
@@ -600,15 +601,13 @@ void DX12Renderer::Render(const ModelRef& model, const Matrix4x4& worldMatrix)
     }
 }
 
-void DX12Renderer::BeginIMGUIFrame()
+void DX12Renderer::RenderIMGUIFrame()
 {
     if (m_CommandList == nullptr)
     {
         printf("Error starting IMGUI frame, invalid command list.\n");
         return;
     }
-    ID3D12DescriptorHeap* heaps[] = { m_MainStorageSRVHeap };
-    m_CommandList->SetDescriptorHeaps(_countof(heaps), heaps);
 
     ImGui_ImplWin32_NewFrame();
     ImGui_ImplDX12_NewFrame();
@@ -617,10 +616,9 @@ void DX12Renderer::BeginIMGUIFrame()
     ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_::ImGuiDockNodeFlags_PassthruCentralNode);
 
     ImGui::ShowDemoWindow();
-}
 
-void DX12Renderer::EndIMGUIFrame()
-{
+    IIMGUIRenderable::RenderAllIMGUIInstances();
+
     if (m_CommandList == nullptr)
     {
         printf("Error ending IMGUI frame, invalid command list.\n");
@@ -629,7 +627,7 @@ void DX12Renderer::EndIMGUIFrame()
 
     ID3D12DescriptorHeap* heaps[] = { m_MainStorageSRVHeap };
     m_CommandList->SetDescriptorHeaps(_countof(heaps), heaps);
-
+    m_CommandList->SetGraphicsRootSignature(m_RootSignature);
     ImGui::Render();
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_CommandList);
 }

@@ -102,7 +102,6 @@ void Collider::Render(Renderer& renderer)
 		DirectX::XMMatrixScaling(m_Size.x, m_Size.y, m_Size.z) *
 		DirectX::XMLoadFloat4x4(&m_AttachedEntity.GetWorldMatrix()) * 
 		DirectX::XMLoadFloat4x4(&m_OffsetMatrix));
-	renderer.AssignTextureToTextureSlot(Renderer::TEXTURE_TYPE_DIFFUSE, m_ColliderTexture);
 	renderer.Render(m_ColliderModel, worldMatrix);
 	renderer.SetDefaultDrawMode();
 }

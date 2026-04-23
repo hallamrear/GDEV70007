@@ -135,6 +135,12 @@
     <ClInclude Include="System\InputListener.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Physics\Colliders\BoxCollider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\IMGUIRenderable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Artifact.cpp">
@@ -233,6 +239,12 @@
     <ClCompile Include="System\InputListener.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Physics\Colliders\BoxCollider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\IMGUIRenderable.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Artifact.rc">
@@ -246,6 +258,12 @@
     <Image Include="Artifact.ico">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="Content\DebugTexture.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Content\ColliderTexture.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Rendering\Shaders\VS_Standard.hlsl" />
@@ -253,7 +271,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Rendering\Shaders\Structures.hlsli" />
-    <None Include="Content\BoxCollider.glb" />
-    <None Include="Content\SphereCollider.glb" />
+    <None Include="Content\Colliders\BoxCollider.glb" />
+    <None Include="Content\Colliders\SphereCollider.glb" />
+    <None Include="Content\Demo_Level.glb" />
   </ItemGroup>
 </Project>

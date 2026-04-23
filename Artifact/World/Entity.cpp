@@ -19,6 +19,8 @@ Entity::Entity()
 	m_Scale = Vector3(1.0f, 1.0f, 1.0f);
 	m_Translation = Vector3(0.0f, 0.0f, 0.0f);
 	m_RotationEuler = Vector3(0.0f, 0.0f, 0.0f);
+	m_IsAlive = true;
+	m_IsPendingDestroy = false;
 }
 
 Entity::~Entity()
@@ -31,6 +33,8 @@ Entity::~Entity()
 	m_Scale = Vector3(0.0f, 0.0f, 0.0f);
 	m_Translation = Vector3(0.0f, 0.0f, 0.0f);
 	m_RotationEuler = Vector3(0.0f, 0.0f, 0.0f);
+	m_IsAlive = false;
+	m_IsPendingDestroy = true;
 }
 
 const EntityID Entity::GetID() const
@@ -199,4 +203,29 @@ void Entity::Render(Renderer& renderer)
 	{
 		m_Collider->Render(renderer);
 	}
+}
+
+void Entity::SetAlive(const bool& state)
+{
+	m_IsAlive = state;
+}
+
+const bool Entity::IsDead()
+{
+	return (m_IsAlive == false);
+}
+
+void Entity::Kill()
+{
+	SetAlive(false);
+}
+
+const bool& Entity::IsPendingDestroy()
+{
+	return m_IsPendingDestroy;
+}
+
+void Entity::Destroy()
+{
+	m_IsPendingDestroy = true;
 }

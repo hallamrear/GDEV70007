@@ -188,6 +188,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Artifact.h" />
+    <ClInclude Include="Rendering\IMGUIRenderable.h" />
     <ClInclude Include="Physics\Colliders\BoxCollider.h" />
     <ClInclude Include="System\InputListener.h" />
     <ClInclude Include="Rendering\IndexBuffer.h" />
@@ -231,6 +232,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Artifact.cpp" />
+    <ClCompile Include="Rendering\IMGUIRenderable.cpp" />
     <ClCompile Include="Physics\Colliders\BoxCollider.cpp" />
     <ClCompile Include="System\InputListener.cpp" />
     <ClCompile Include="Rendering\IndexBuffer.cpp" />
@@ -274,6 +276,9 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="Artifact.ico" />
+    <Image Include="Content\ColliderTexture.png">
+      <DeploymentContent>true</DeploymentContent>
+    </Image>
     <Image Include="Content\DebugTexture.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
@@ -306,6 +311,9 @@
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Content\Colliders\SphereCollider.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="Content\Demo_Level.glb">
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Rendering\Shaders\Structures.hlsli" />

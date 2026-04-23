@@ -1,4 +1,5 @@
 #pragma once
+#include <Rendering/IMGUIRenderable.h>
 #include <unordered_map>
 #include <rpc.h>
 
@@ -14,7 +15,7 @@ struct GUIDHasher
 	}
 };
 
-class World
+class World : public IIMGUIRenderable
 {
 private:
 	typedef std::unordered_map<EntityID, Entity*, GUIDHasher> EntityMap;
@@ -30,6 +31,7 @@ private:
 	bool Shutdown();
 
 	void RenderEntityDetails(Entity& entity);
+	void DestroyDeadEntities();
 
 public:
 	const bool& IsInitialised() const;
@@ -38,10 +40,14 @@ public:
 	static bool DestroyWorld(World* world);
 
 	Entity* CreateEntity(const std::string& displayName);
+	Entity* CreateEntity();
+	Entity* GetEntity(const EntityID& entityID);
 
 	void Update(const float& deltaTime);
 	void PostUpdate(const float& deltaTime);
-	void IMGUIRender();
 	void Render(Renderer& renderer);
+
+	// Inherited via IIMGUIRenderable
+	void OnIMGUIRender() override;
 };
 

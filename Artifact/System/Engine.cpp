@@ -259,13 +259,7 @@ void Engine::Render()
 
 	m_World->Render(*m_Renderer);
 
-	m_Renderer->BeginIMGUIFrame();
-	m_AssetManager->IMGUIRender();
-
-	m_World->IMGUIRender();
-	InputListener::RenderIMGUI();
-
-	m_Renderer->EndIMGUIFrame();
+	m_Renderer->RenderIMGUIFrame();
 
 	m_Renderer->PresentFrame();
 

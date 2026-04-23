@@ -53,6 +53,10 @@ KeyState& InputListener::GetKeyStateReference(const int& keycode)
 	{
 		throw std::exception("Failed to add the keycode to the state listener.\n");
 	}
+	else
+	{
+		printf("Added key %i to input map.\n", keycode);
+	}
 
 	return *validInsertion.first->second;
 }
@@ -290,142 +294,167 @@ const float InputListener::GetControllerAnalogValue(const int& controllerIndex, 
 	return 0.0f;
 }
 
-void InputListener::RenderIMGUI()
+void InputListener::OnIMGUIRender()
 {
 	ImGui::Begin("Input Debug\n");
 
-	if (ImGui::Checkbox("Enable Controller Support\n", &m_ControllersEnabled))
-	{
-		if(m_ControllersEnabled)
-		{
-			EnableControllerSupport(false);
-		}
-		else
-		{
-			DisableControllerSupport();
-		}
-	}
+	ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
 
-	if (m_ControllersEnabled)
+	if (ImGui::CollapsingHeader("Controller Debug Details"))
 	{
-		if (ImGui::Checkbox("Enabled Deadzone\n", &m_DeadZoneEnabled))
-		{
-			SetDeadZoneEnabled(m_DeadZoneEnabled);
-		}
 
-		if (m_DeadZoneEnabled)
+		if (ImGui::Checkbox("Enable Controller Support\n", &m_ControllersEnabled))
 		{
-			if (ImGui::InputFloat("Dead zone percentage (0.0 -> 1.0)\n", &m_DeadZonePercentageNormalised))
+			if (m_ControllersEnabled)
 			{
-				SetDeadZonePercentage(m_DeadZonePercentageNormalised);
+				EnableControllerSupport(false);
+			}
+			else
+			{
+				DisableControllerSupport();
+			}
+		}
+
+		if (m_ControllersEnabled)
+		{
+			if (ImGui::Checkbox("Enabled Deadzone\n", &m_DeadZoneEnabled))
+			{
+				SetDeadZoneEnabled(m_DeadZoneEnabled);
+			}
+
+			if (m_DeadZoneEnabled)
+			{
+				if (ImGui::InputFloat("Dead zone percentage (0.0 -> 1.0)\n", &m_DeadZonePercentageNormalised))
+				{
+					SetDeadZonePercentage(m_DeadZonePercentageNormalised);
+				}
+			}
+		}
+
+		for (int i = 0; i < MAX_CONTROLLERS; i++)
+		{
+			if (m_ControllerStates[i].IsConnected)
+			{
+				std::string str = "Controller - " + std::to_string(i);
+				if (ImGui::CollapsingHeader(str.c_str()))
+				{
+					ImGui::PushID(str.c_str());
+
+					ImGui::SeparatorText("Button Presses");
+					if (ImGui::BeginTable("Button Presses Table", 2, tableFlags))
+					{
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0); ImGui::Text("A Button\n");
+						ImGui::TableSetColumnIndex(1); ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_A) ? "True\n" : "False\n");
+
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0); ImGui::Text("B Button\n");
+						ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_B) ? "True\n" : "False\n");
+
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0); ImGui::Text("X Button\n");
+						ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_X) ? "True\n" : "False\n");
+
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0); ImGui::Text("Y Button\n");
+						ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_Y) ? "True\n" : "False\n");
+
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0); ImGui::Text("DPAD Up\n");
+						ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_DPAD_UP) ? "True\n" : "False\n");
+
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0); ImGui::Text("DPAD Down\n");
+						ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_DPAD_DOWN) ? "True\n" : "False\n");
+
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0); ImGui::Text("DPAD Left\n");
+						ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_DPAD_LEFT) ? "True\n" : "False\n");
+
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0); ImGui::Text("DPAD Right\n");
+						ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_DPAD_RIGHT) ? "True\n" : "False\n");
+
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0); ImGui::Text("Start button\n");
+						ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_START) ? "True\n" : "False\n");
+
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0); ImGui::Text("Back button\n");
+						ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_BACK) ? "True\n" : "False\n");
+
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0); ImGui::Text("Left Thumbstick Press\n");
+						ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_LEFT_THUMBSTICK_PRESS) ? "True\n" : "False\n");
+
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0); ImGui::Text("Right Thumbstick Press\n");
+						ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_RIGHT_THUMBSTICK_PRESS) ? "True\n" : "False\n");
+
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0); ImGui::Text("Left Shoulder\n");
+						ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_LEFT_SHOULDER) ? "True\n" : "False\n");
+
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0); ImGui::Text("Right Shoulder");
+						ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_RIGHT_SHOULDER) ? "True\n" : "False\n");
+
+						ImGui::EndTable();
+					}
+
+					ImGui::SeparatorText("Analog Values");
+					if (ImGui::BeginTable("Analog Values Table", 2, tableFlags))
+					{
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0); ImGui::Text("Left Trigger\n");
+						ImGui::TableSetColumnIndex(1); ImGui::Text("%f\n", GetControllerAnalogValue(i, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_LEFT_TRIGGER));
+
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0); ImGui::Text("Right Trigger\n");
+						ImGui::TableSetColumnIndex(1); ImGui::Text("%f\n", GetControllerAnalogValue(i, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_RIGHT_TRIGGER));
+
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0); ImGui::Text("Left Thumbstick X\n");
+						ImGui::TableSetColumnIndex(1); ImGui::Text("%f\n", GetControllerAnalogValue(i, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_LEFT_THUMBSTICK_X));
+
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0); ImGui::Text("Left Thumbstick Y\n");
+						ImGui::TableSetColumnIndex(1); ImGui::Text("%f\n", GetControllerAnalogValue(i, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_LEFT_THUMBSTICK_Y));
+
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0); ImGui::Text("Right Thumbstick X\n");
+						ImGui::TableSetColumnIndex(1); ImGui::Text("%f\n", GetControllerAnalogValue(i, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_RIGHT_THUMBSTICK_X));
+
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0); ImGui::Text("Right Thumbstick Y\n");
+						ImGui::TableSetColumnIndex(1); ImGui::Text("%f\n", GetControllerAnalogValue(i, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_RIGHT_THUMBSTICK_Y));
+
+						ImGui::EndTable();
+					}
+
+					ImGui::PopID();
+				}
 			}
 		}
 	}
 
-	for (int i = 0; i < MAX_CONTROLLERS; i++)
+	if (ImGui::CollapsingHeader("Keyboard Input Details"))
 	{
-		if (m_ControllerStates[i].IsConnected)
+
+		//char keyBuffer[32] = { '\0' };
+
+		if (ImGui::BeginTable("Keyboard Input Details", 3, tableFlags))
 		{
-			std::string str = "Controller - " + std::to_string(i);
-			if (ImGui::CollapsingHeader(str.c_str()))
-			{
-				ImGui::PushID(str.c_str());
-
-				ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
-				ImGui::SeparatorText("Button Presses");
-				if (ImGui::BeginTable("Button Presses Table", 2, flags))
-				{
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0); ImGui::Text("A Button\n");
-					ImGui::TableSetColumnIndex(1); ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_A) ? "True\n" : "False\n");
-
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0); ImGui::Text("B Button\n");
-					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_B) ? "True\n" : "False\n");
-					
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0); ImGui::Text("X Button\n");
-					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_X) ? "True\n" : "False\n");
-
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0); ImGui::Text("Y Button\n");
-					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_Y) ? "True\n" : "False\n");
-					
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0); ImGui::Text("DPAD Up\n");
-					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_DPAD_UP) ? "True\n" : "False\n");
-
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0); ImGui::Text("DPAD Down\n");
-					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_DPAD_DOWN) ? "True\n" : "False\n");
-
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0); ImGui::Text("DPAD Left\n");
-					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_DPAD_LEFT) ? "True\n" : "False\n");
-
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0); ImGui::Text("DPAD Right\n");
-					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_DPAD_RIGHT) ? "True\n" : "False\n");
-
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0); ImGui::Text("Start button\n");
-					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_START) ? "True\n" : "False\n");
-
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0); ImGui::Text("Back button\n");
-					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_BACK) ? "True\n" : "False\n");
-
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0); ImGui::Text("Left Thumbstick Press\n");
-					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_LEFT_THUMBSTICK_PRESS) ? "True\n" : "False\n");
-
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0); ImGui::Text("Right Thumbstick Press\n");
-					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_RIGHT_THUMBSTICK_PRESS) ? "True\n" : "False\n");
-
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0); ImGui::Text("Left Shoulder\n");
-					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_LEFT_SHOULDER) ? "True\n" : "False\n");
-
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0); ImGui::Text("Right Shoulder");
-					ImGui::TableSetColumnIndex(1); ImGui::Text(GetControllerButtonDown(i, CONTROLLER_BUTTON_RIGHT_SHOULDER) ? "True\n" : "False\n");
-
-					ImGui::EndTable();
-				}
-
-				ImGui::SeparatorText("Analog Values");
-				if (ImGui::BeginTable("Analog Values Table", 2, flags))
-				{
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0); ImGui::Text("Left Trigger\n");
-					ImGui::TableSetColumnIndex(1); ImGui::Text("%f\n", GetControllerAnalogValue(i, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_LEFT_TRIGGER));
-
-					ImGui::TableNextRow(); 
-					ImGui::TableSetColumnIndex(0); ImGui::Text("Right Trigger\n");
-					ImGui::TableSetColumnIndex(1); ImGui::Text("%f\n", GetControllerAnalogValue(i, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_RIGHT_TRIGGER));
-					
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0); ImGui::Text("Left Thumbstick X\n");
-					ImGui::TableSetColumnIndex(1); ImGui::Text("%f\n", GetControllerAnalogValue(i, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_LEFT_THUMBSTICK_X));
-
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0); ImGui::Text("Left Thumbstick Y\n");
-					ImGui::TableSetColumnIndex(1); ImGui::Text("%f\n", GetControllerAnalogValue(i, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_LEFT_THUMBSTICK_Y));
-
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0); ImGui::Text("Right Thumbstick X\n");
-					ImGui::TableSetColumnIndex(1); ImGui::Text("%f\n", GetControllerAnalogValue(i, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_RIGHT_THUMBSTICK_X));
-
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0); ImGui::Text("Right Thumbstick Y\n");
-					ImGui::TableSetColumnIndex(1); ImGui::Text("%f\n", GetControllerAnalogValue(i, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_RIGHT_THUMBSTICK_Y));
-
-					ImGui::EndTable();
-				}
-
-				ImGui::PopID();
+			for (auto& keyState : m_KeyStates)
+			{	
+				char key = (char)MapVirtualKey(keyState.second->KeyCode, MAPVK_VK_TO_CHAR);
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0); ImGui::Text("%c Key\n", key);
+				ImGui::TableSetColumnIndex(1); ImGui::Text("%s\n", keyState.second->IsDown() ? "True" : "False");
+				ImGui::TableSetColumnIndex(2); ImGui::Text("%s\n", keyState.second->IsRepeating() ? "True" : "False");
 			}
+
+			ImGui::EndTable();
 		}
 	}
 

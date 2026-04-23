@@ -1,5 +1,6 @@
 #pragma once
 #include <unordered_map>
+#include <Rendering/IMGUIRenderable.h>
 #include <Rendering/Texturing/Texture.h>
 #include <Rendering/Geometry/Model.h>
 
@@ -22,7 +23,7 @@ public:
 	}
 };
 
-class AssetManager
+class AssetManager : public IIMGUIRenderable
 {
 private:
 	ModelMap m_ModelMap;
@@ -49,6 +50,7 @@ public:
 
 	const bool& IsInitialised() const;
 	
-	void IMGUIRender();
+	// Inherited via IIMGUIRenderable
+	void OnIMGUIRender() override;
 };
 

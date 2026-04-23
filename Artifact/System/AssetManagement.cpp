@@ -22,7 +22,7 @@ const bool& AssetManager::IsInitialised() const
 	return m_IsInitialised;
 }
 
-void AssetManager::IMGUIRender()
+void AssetManager::OnIMGUIRender()
 {
 	ImGui::Begin("Asset Manager");
 

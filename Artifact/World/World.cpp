@@ -4,7 +4,6 @@
 #include <System/ServiceLocator.h>
 #include <System/AssetManagement.h>
 #include <Rendering/IMGUIIncludes.h>
-
 #include <Physics/Colliders/Collider.h>
 
 const bool& World::IsInitialised() const
@@ -16,6 +15,7 @@ World::World()
 {
 	m_EntityMap = EntityMap();
 	m_IsInitialised = false;
+	m_Octree = nullptr;
 }
 
 World::~World()
@@ -25,20 +25,8 @@ World::~World()
 
 bool World::Initialise()
 {
-	for (size_t i = 0; i < 10; i++)
-	{
-		Entity* entity = CreateEntity("Entity: " + std::to_string(i));
-
-		Matrix4x4 translation;
-		DirectX::XMStoreFloat4x4(&translation, DirectX::XMMatrixTranslation(i * -5.0f, 0.0f, 0.0f));
-		entity->SetWorldMatrix(translation);
-
-		m_EntityMap.insert(std::make_pair(entity->GetID(), entity));
-	}
-
-
 	Entity* testRoom = CreateEntity("Test Room");
-	ModelRef ref = ServiceLocator::Locate<AssetManager>()->GetModel("Demo_Level.glb");
+	ModelRef ref = ServiceLocator::Locate<AssetManager>()->GetModel("Content\\Demo_Level.glb");
 	testRoom->SetModel(ref);
 	m_EntityMap.insert(std::make_pair(testRoom->GetID(), testRoom));
 
@@ -95,25 +83,31 @@ bool World::DestroyWorld(World* world)
 	return true;
 }
 
-Entity* World::CreateEntity(const std::string& displayName)
+Entity* World::CreateEntity()
 {
 	Entity* entity = new Entity();
-	entity->SetDisplayName(displayName);
-	ModelRef ref = ServiceLocator::Locate<AssetManager>()->GetModel("Barrel.glb");
-	entity->SetModel(ref);
+	m_EntityMap.insert(std::make_pair(entity->GetID(), entity));
+	return entity;
+}
 
+Entity* World::CreateEntity(const std::string& displayName)
+{
+	Entity* entity = CreateEntity();
+	entity->SetDisplayName(displayName);
 	return entity;
 }
 
 void World::Update(const float& deltaTime)
 {
-	for (auto& entity : m_EntityMap)
+	for (auto& itr : m_EntityMap)
 	{
-		if (entity.second != nullptr)
+		if (itr.second != nullptr)
 		{
-			entity.second->Update(deltaTime);
+			itr.second->Update(deltaTime);
 		}
 	}
+
+	DestroyDeadEntities();
 }
 
 void World::PostUpdate(const float& deltaTime)
@@ -127,9 +121,15 @@ void World::PostUpdate(const float& deltaTime)
 	}
 }
 
-void World::IMGUIRender()
+void World::OnIMGUIRender()
 {
 	ImGui::Begin("World");
+
+	if (ImGui::Button("Create New Entity"))
+	{
+		CreateEntity();
+	}
+
 	for (auto& entity : m_EntityMap)
 	{
 		if (entity.second != nullptr)
@@ -143,6 +143,7 @@ void World::IMGUIRender()
 
 void World::RenderEntityDetails(Entity& entity)
 {
+
 	std::string imguiHash = "###" + entity.GetIDString();
 	
 	ImGui::PushID(imguiHash.c_str());
@@ -151,7 +152,12 @@ void World::RenderEntityDetails(Entity& entity)
 	if (ImGui::CollapsingHeader(headerHash.c_str()))
 	{
 		ImGui::Text("GUID: %s", entity.GetIDString().c_str());
-		
+		ImGui::SameLine();
+		if (ImGui::Button("Delete Entity"))
+		{
+			entity.Destroy();
+		}
+
 		char buffer[MAX_DISPLAY_NAME_SIZE] = { 0 };
 		strcpy_s(&buffer[0], MAX_DISPLAY_NAME_SIZE, entity.GetDisplayName().c_str());
 		if (ImGui::InputText("Display Name: ", &buffer[0], MAX_DISPLAY_NAME_SIZE))
@@ -201,8 +207,6 @@ void World::RenderEntityDetails(Entity& entity)
 		{
 			const char* colliderNames[COLLIDER_TYPE::COLLIDER_TYPE_COUNT] =
 			{
-				/* */
-
 				/* COLLIDER_TYPE_SPHERE */ "Sphere Collider",
 				/* COLLIDER_TYPE_AABB */ "Box Collider",
 				/* COLLIDER_TYPE_MESH */ "Complex Mesh Collider",
@@ -239,6 +243,21 @@ void World::RenderEntityDetails(Entity& entity)
 	}
 
 	ImGui::PopID();
+}
+
+void World::DestroyDeadEntities()
+{
+	for (EntityMap::iterator itr = m_EntityMap.begin(); itr != m_EntityMap.end(); )
+	{
+		if (itr->second->IsPendingDestroy())
+		{
+			itr = m_EntityMap.erase(itr);
+		}
+		else 
+		{
+			++itr;
+		}
+	}	
 }
 
 void World::Render(Renderer& renderer)

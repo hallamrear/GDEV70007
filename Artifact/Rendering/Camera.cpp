@@ -44,10 +44,6 @@ void Camera::UpdateTransformMatrix()
 	DirectX::XMStoreFloat3(&m_RightVector, DirectX::XMVector3Normalize(DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&BASIS_RIGHT_VECTOR), DirectX::XMLoadFloat4x4(&m_RotationMatrix))));
 	DirectX::XMStoreFloat3(&m_UpVector, DirectX::XMVector3Normalize(DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&BASIS_UP_VECTOR), DirectX::XMLoadFloat4x4(&m_RotationMatrix))));
 	DirectX::XMStoreFloat3(&m_ForwardVector, DirectX::XMVector3Normalize(DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&BASIS_FORWARD_VECTOR), DirectX::XMLoadFloat4x4(&m_RotationMatrix))));
-
-	printf("Up: %f %f %f\n", m_UpVector.x, m_UpVector.y, m_UpVector.z);
-	printf("Left: %f %f %f\n", m_RightVector.x, m_RightVector.y, m_RightVector.z);
-	printf("Forward: % f % f % f\n", m_ForwardVector.x, m_ForwardVector.y, m_ForwardVector.z);
 }
 
 void Camera::Move(const Vector3& movement)

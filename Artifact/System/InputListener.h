@@ -1,4 +1,5 @@
 #pragma once
+#include <Rendering/IMGUIRenderable.h>
 
 #define MAX_CONTROLLERS 4
 #define DEFAULT_CONTROLLER_DEADZONE (20.0f)
@@ -97,7 +98,7 @@ namespace std
 	};
 }
 
-class InputListener
+class InputListener : public IIMGUIRenderable
 {
 public:
 
@@ -138,6 +139,7 @@ public:
 	static const bool GetControllerButtonDown(const int& controllerIndex, const CONTROLLER_BUTTON& controllerButton);
 	static const float GetControllerAnalogValue(const int& controllerIndex, const CONTROLLER_ANALOG_STICK& controllerAnalogStick);
 
-	static void RenderIMGUI();
+	// Inherited via IIMGUIRenderable
+	void OnIMGUIRender() override;
 };
 

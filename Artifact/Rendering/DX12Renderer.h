@@ -176,6 +176,5 @@ public:
 	void ClearFrame();
 	HRESULT FlushCommandQueue();
 	void PresentFrame();
-	void BeginIMGUIFrame();
-	void EndIMGUIFrame();
+	void RenderIMGUIFrame();
 };
