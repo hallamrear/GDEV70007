@@ -26,7 +26,7 @@ World::~World()
 bool World::Initialise()
 {
 	Entity* testRoom = CreateEntity("Test Room");
-	ModelRef ref = ServiceLocator::Locate<AssetManager>()->GetModel("Content\\Demo_Level.glb");
+	ModelRef ref = ServiceLocator::Locate<AssetManager>()->GetModel("Demo_Level.glb");
 	testRoom->SetModel(ref);
 	m_EntityMap.insert(std::make_pair(testRoom->GetID(), testRoom));
 
@@ -143,7 +143,6 @@ void World::OnIMGUIRender()
 
 void World::RenderEntityDetails(Entity& entity)
 {
-
 	std::string imguiHash = "###" + entity.GetIDString();
 	
 	ImGui::PushID(imguiHash.c_str());
@@ -158,11 +157,65 @@ void World::RenderEntityDetails(Entity& entity)
 			entity.Destroy();
 		}
 
-		char buffer[MAX_DISPLAY_NAME_SIZE] = { 0 };
-		strcpy_s(&buffer[0], MAX_DISPLAY_NAME_SIZE, entity.GetDisplayName().c_str());
-		if (ImGui::InputText("Display Name: ", &buffer[0], MAX_DISPLAY_NAME_SIZE))
+		char buffer[MAX_DISPLAY_NAME_LENGTH] = { 0 };
+		strcpy_s(&buffer[0], MAX_DISPLAY_NAME_LENGTH, entity.GetDisplayName().c_str());
+		if (ImGui::InputText("Display Name: ", &buffer[0], MAX_DISPLAY_NAME_LENGTH))
 		{
 			entity.SetDisplayName(buffer);
+		}
+
+		std::string modelDisplayName = "None";
+		
+		if (entity.GetModel().get() != nullptr)
+		{
+			modelDisplayName = entity.GetModel()->GetDisplayName();
+		}
+
+		ImGui::Text("Model: %s\n", modelDisplayName.c_str());
+		ImGui::SameLine();
+
+		if (ImGui::Button("Change Model"))
+		{
+			ImGui::OpenPopup("Change Model Modal");
+		}
+
+		// Always center this window when appearing
+		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+		if (ImGui::BeginPopupModal("Change Model Modal", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			static char modelName[MAX_DISPLAY_NAME_LENGTH] = { "\0" };
+
+			if (entity.GetModel() != NULL)
+			{
+				ImGui::Text("Current File: %s\n", entity.GetModel()->GetDisplayName().c_str());
+			}
+
+			ImGui::Text("New Model location (relative to the content folder)");
+			ImGui::SameLine();
+			ImGui::InputText("###NewModelTextInput", & modelName[0], MAX_DISPLAY_NAME_LENGTH, ImGuiInputFlags_::ImGuiInputFlags_None);
+
+			if (ImGui::Button("OK", ImVec2(120, 0)))
+			{
+				if (strlen(modelName) > 0)
+				{
+					ModelRef attemptedModel = ServiceLocator::Locate<AssetManager>()->GetModel(modelName);
+					entity.SetModel(attemptedModel);
+				}
+
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::SetItemDefaultFocus();
+			ImGui::SameLine();
+
+			if (ImGui::Button("Cancel", ImVec2(120, 0))) 
+			{ 
+				ImGui::CloseCurrentPopup();
+			
+			}
+			ImGui::EndPopup();
 		}
 
 		if (entity.GetCollider() != nullptr)

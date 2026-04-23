@@ -41,27 +41,18 @@ void Collider::SetColliderModel(const COLLIDER_TYPE& colliderType)
 		return;
 	}
 
-	m_ColliderTexture = assetManager->GetTexture("Content\\ColliderTexture.png");
+	if (m_ColliderTexture == nullptr)
+	{
+		m_ColliderTexture = assetManager->GetTexture("ColliderTexture.png");
+	}
 
 	switch (colliderType)
 	{
-	case COLLIDER_TYPE_AABB:
-	{
-		m_ColliderModel = assetManager->GetModel("Content\\Colliders\\BoxCollider.glb");
-	}
-	break;
+	case COLLIDER_TYPE_AABB: m_ColliderModel = assetManager->GetModel("Colliders\\BoxCollider.glb"); break;
 
-	case COLLIDER_TYPE_SPHERE:
-	{
-		m_ColliderModel = assetManager->GetModel("Content\\Colliders\\SphereCollider.glb");
-	}
-	break;
+	case COLLIDER_TYPE_SPHERE: m_ColliderModel = assetManager->GetModel("Colliders\\SphereCollider.glb"); break;
 
-	case COLLIDER_TYPE_MESH:
-	{
-		m_ColliderModel = m_AttachedEntity.GetModel();
-	}
-	break;
+	case COLLIDER_TYPE_MESH: m_ColliderModel = m_AttachedEntity.GetModel(); break;
 
 	default:
 		throw std::exception("Invalid collider type.\n");

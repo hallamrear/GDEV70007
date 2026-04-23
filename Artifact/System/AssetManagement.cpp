@@ -243,7 +243,13 @@ TextureRef AssetManager::GetTexture(const std::string& path)
 		}
 	}
 
-	TextureRef ref = AssetLoader::LoadTexture(path);
+	std::filesystem::path filepath = Engine::GetContentFolderLocation() / std::filesystem::path(path);
+	if (filepath.has_extension() == false)
+	{
+		filepath += ".png";
+	}
+
+	TextureRef ref = AssetLoader::LoadTexture(filepath.string());
 
 	if (ref != nullptr)
 	{
@@ -265,7 +271,8 @@ ModelRef AssetManager::GetModel(const std::string& path)
 		}
 	}
 
-	ModelRef ref = AssetLoader::LoadModel(path);
+	std::filesystem::path filepath = Engine::GetContentFolderLocation() / std::filesystem::path(path);
+	ModelRef ref = AssetLoader::LoadModel(filepath.string());
 
 	if (ref != nullptr)
 	{

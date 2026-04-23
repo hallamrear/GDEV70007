@@ -137,6 +137,15 @@ void Entity::SetColliderFromModel(const COLLIDER_TYPE& colliderType)
 	}
 }
 
+void Entity::RemoveCollider()
+{
+	if (m_Collider != nullptr)
+	{
+		delete m_Collider;
+		m_Collider = nullptr;
+	}
+}
+
 void Entity::SetPosition(const Vector3& translation)
 {
 	m_Translation = translation;

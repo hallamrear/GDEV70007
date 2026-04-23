@@ -15,7 +15,7 @@ constexpr Vector3 BASIS_RIGHT_VECTOR = { 1.0f, 0.0f, 0.0f };
 constexpr Vector3 BASIS_UP_VECTOR = { 0.0f, 1.0f, 0.0f };
 constexpr Vector3 BASIS_FORWARD_VECTOR = { 0.0f, 0.0f, 1.0f };
 
-#define MAX_DISPLAY_NAME_SIZE 256
+#define MAX_DISPLAY_NAME_LENGTH 256
 
 #define MAX_NUM_ENTITIES 1024
 #define MAX_LOADABLE_TEXTURES 64

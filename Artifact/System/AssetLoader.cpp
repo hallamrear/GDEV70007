@@ -3,6 +3,7 @@
 #include <Rendering/Renderer.h>
 #include <Rendering/Vertex.h>
 #include <Rendering/Geometry/Mesh.h>
+#include <System/AssetManagement.h>
 
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
@@ -197,30 +198,40 @@ bool AssetLoader::LoadTexturesFromGLTFPrimitive(Mesh& mesh, const tinygltf::Mode
 
 	TextureRef texture = nullptr;
 
-	if (textureImage.uri != "")
-	{
-		texture = LoadTexture(textureImage.uri);
-	}
-	else
-	{
-		int textureBufferViewIndex = textureImage.bufferView;
-		const tinygltf::BufferView textureBufferView = gltfModel.bufferViews[textureBufferViewIndex];
-		const tinygltf::Buffer& textureImageBuffer = gltfModel.buffers[textureBufferView.buffer];
+	AssetManager* assetManager = ServiceLocator::Locate<AssetManager>();
 
-		if (textureImage.mimeType == "image/jpeg")
+	if (assetManager != nullptr)
+	{
+		texture = assetManager->GetTexture(textureName);
+	}
+
+	if (texture == nullptr)
+	{
+		if (textureImage.uri != "")
 		{
-			const byte* data = &textureImageBuffer.data[textureBufferView.byteOffset];
-			texture = LoadTexture(data, textureBufferView.byteLength);			
-		}
-		else if(textureImage.mimeType == "image/png")
-		{
-			const byte* data = &textureImageBuffer.data[textureBufferView.byteOffset];
-			texture = LoadTexture(data, textureBufferView.byteLength);
+			texture = LoadTexture(textureImage.uri);
 		}
 		else
 		{
-			printf("Error fetching texture from gltf file. Invalid MIME type.\n");
-			return false;
+			int textureBufferViewIndex = textureImage.bufferView;
+			const tinygltf::BufferView textureBufferView = gltfModel.bufferViews[textureBufferViewIndex];
+			const tinygltf::Buffer& textureImageBuffer = gltfModel.buffers[textureBufferView.buffer];
+
+			if (textureImage.mimeType == "image/jpeg")
+			{
+				const byte* data = &textureImageBuffer.data[textureBufferView.byteOffset];
+				texture = LoadTexture(data, textureBufferView.byteLength);
+			}
+			else if (textureImage.mimeType == "image/png")
+			{
+				const byte* data = &textureImageBuffer.data[textureBufferView.byteOffset];
+				texture = LoadTexture(data, textureBufferView.byteLength);
+			}
+			else
+			{
+				printf("Error fetching texture from gltf file. Invalid MIME type.\n");
+				return false;
+			}
 		}
 	}
 

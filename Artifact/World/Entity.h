@@ -38,6 +38,7 @@ public:
 	Collider* GetCollider() const;
 	void SetCollider(const COLLIDER_TYPE& colliderType);
 	void SetColliderFromModel(const COLLIDER_TYPE& colliderType);
+	void RemoveCollider();
 
 	void SetPosition(const Vector3& position);
 	void Translate(const Vector3& translation);
