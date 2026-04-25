@@ -10,6 +10,10 @@ https://staffsuniversity-my.sharepoint.com/:w:/g/personal/r017093h_student_staff
 - Game Engine Physics Development by Ian Millington
 - Real-time Collision Detection by Christer Ericson
 
+## Writeups I'm coming across.
+https://realtimecollisiondetection.net/blog/?p=12#:~:text=The%20triangle%20soup%20is%20great%20in%20the,and%20apply%20collsion%20materials%20to%20the%20triangles.
+https://realtimecollisiondetection.net/blog/?p=20
+
 # Development Notes
 
 ## Rendering

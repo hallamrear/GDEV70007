@@ -188,9 +188,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Artifact.h" />
+    <ClInclude Include="ConvexHullCollider.h" />
     <ClInclude Include="Physics\CollisionDetection.h" />
     <ClInclude Include="Rendering\IMGUIRenderable.h" />
-    <ClInclude Include="Physics\Colliders\BoxCollider.h" />
+    <ClInclude Include="Physics\Colliders\AABBCollider.h" />
     <ClInclude Include="System\InputListener.h" />
     <ClInclude Include="Rendering\IndexBuffer.h" />
     <ClInclude Include="Rendering\GenericBuffer.h" />
@@ -233,9 +234,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Artifact.cpp" />
+    <ClCompile Include="ConvexHullCollider.cpp" />
     <ClCompile Include="Physics\CollisionDetection.cpp" />
     <ClCompile Include="Rendering\IMGUIRenderable.cpp" />
-    <ClCompile Include="Physics\Colliders\BoxCollider.cpp" />
+    <ClCompile Include="Physics\Colliders\AABBCollider.cpp" />
     <ClCompile Include="System\InputListener.cpp" />
     <ClCompile Include="Rendering\IndexBuffer.cpp" />
     <ClCompile Include="Rendering\GenericBuffer.cpp" />

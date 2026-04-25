@@ -2,7 +2,7 @@
 #include "Entity.h"
 #include <Rendering/Renderer.h>
 #include <Physics/Colliders/SphereCollider.h>
-#include <Physics/Colliders/BoxCollider.h>
+#include <Physics/Colliders/AABBCollider.h>
 
 #include <Rendering/Geometry/Mesh.h>
 
@@ -95,9 +95,9 @@ void Entity::SetCollider(const COLLIDER_TYPE& colliderType)
 		m_Collider = new SphereCollider(*this, size.x);
 		break;
 	case COLLIDER_TYPE_AABB:
-		m_Collider = new BoxCollider(*this, size);
+		m_Collider = new AABBCollider(*this, size);
 		break;
-	case COLLIDER_TYPE_MESH:
+	case COLLIDER_TYPE_CONVEX_HULL:
 		printf("Failed to create a new collider. Mesh collider is not implemented yet.\n");
 		break;
 	case COLLIDER_TYPE_COUNT:

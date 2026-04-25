@@ -1,14 +1,14 @@
 #pragma once
 #include <Physics/Colliders/Collider.h>
 
-class BoxCollider : public Collider
+class AABBCollider : public Collider
 {
 private:
 
 public:
-	BoxCollider(const Entity& entity, const Vector3& halfWidth = Vector3(0.5f, 0.5f, 0.5f));
-	BoxCollider(const Entity& entity, const Vector3& max, const Vector3& min);
-	~BoxCollider();
+	AABBCollider(const Entity& entity, const Vector3& halfWidth = Vector3(0.5f, 0.5f, 0.5f));
+	AABBCollider(const Entity& entity, const Vector3& max, const Vector3& min);
+	~AABBCollider();
 
 	/// <summary>
 	/// Sets the size of the box collider.

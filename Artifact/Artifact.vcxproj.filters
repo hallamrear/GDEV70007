@@ -135,13 +135,16 @@
     <ClInclude Include="System\InputListener.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Physics\Colliders\BoxCollider.h">
+    <ClInclude Include="Physics\Colliders\AABBCollider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Rendering\IMGUIRenderable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Physics\CollisionDetection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ConvexHullCollider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -242,13 +245,16 @@
     <ClCompile Include="System\InputListener.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Physics\Colliders\BoxCollider.cpp">
+    <ClCompile Include="Physics\Colliders\AABBCollider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Rendering\IMGUIRenderable.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Physics\CollisionDetection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConvexHullCollider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
