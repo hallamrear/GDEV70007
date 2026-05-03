@@ -12,7 +12,6 @@ private:
 
 public:
 	ConvexHullCollider(const Entity& entity);
-	ConvexHullCollider(const Entity& entity);
 	~ConvexHullCollider();
 };
 

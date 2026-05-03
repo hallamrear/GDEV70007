@@ -1,3 +1,25 @@
+#ifndef __STRUCTURES_HLSL__
+#define __STRUCTURES_HLSL__
+
+#define MAX_LIGHT_COUNT 96
+
+struct Light
+{
+	int Type;
+	float SpecularStrength;
+	float SpecularPower;
+	float AmbientStrength;
+	float3 Position;
+	float InnerCutoff;
+	float OuterCutoff;
+	float3 Direction;
+	float4 Colour;
+	float4 Diffuse;
+	float4 Attenuation;
+	float4 Strength;
+	bool IsEnabled;
+	bool Padding[15];
+};
 
 cbuffer FrameConstantBuffer : register(b0)
 {
@@ -16,12 +38,9 @@ cbuffer PushConstantBuffer : register(b1)
     float4x4 PCBPadding;
 };
 
-struct VS_STANDARD_VERTEX_INPUT
+cbuffer LightingDataBuffer : register(b2)
 {
-    float3 Position : POSITION;
-    float3 Normal : NORMAL;
-    float3 Tangent : TANGENT;
-    float2 UV : TEXCOORD;
+    Light LightData[MAX_LIGHT_COUNT];
 };
 
 struct VS_STANDARD_VERTEX_OUTPUT
@@ -34,3 +53,13 @@ struct VS_STANDARD_VERTEX_OUTPUT
     float3 TangentW : TANGENT1;
     float2 UV : TEXCOORD;
 };
+
+struct VS_STANDARD_VERTEX_INPUT
+{
+    float3 Position : POSITION;
+    float3 Normal : NORMAL;
+    float3 Tangent : TANGENT;
+    float2 UV : TEXCOORD;
+};
+
+#endif //__STRUCTURES_HLSL__

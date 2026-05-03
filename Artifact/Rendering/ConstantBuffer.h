@@ -1,5 +1,5 @@
 #pragma once
-#include <DirectXMath.h>
+#include "Lighting/Light.h"
 
 /// <summary>
 /// Constant buffer has to be 256-byte aligned in DX12.
@@ -30,5 +30,6 @@ struct PushConstants
 
 class LightBuffer
 {
-	Matrix4x4 Padding[4];
+public:
+	Light Lights[MAX_LIGHT_COUNT];
 };

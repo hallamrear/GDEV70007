@@ -1,4 +1,5 @@
 #pragma once
+#include <Rendering/IMGUIRenderable.h>
 #include <Rendering/DX12Includes.h>
 #include <Rendering/Renderer.h>
 
@@ -11,7 +12,7 @@ class VertexBuffer;
 class IndexBuffer;
 class Mesh;
 
-class DX12Renderer : public Renderer
+class DX12Renderer : public Renderer, IIMGUIRenderable
 {
 private:
 	struct IDXGIFactory2* m_DXGIFactory;
@@ -177,4 +178,7 @@ public:
 	HRESULT FlushCommandQueue();
 	void PresentFrame();
 	void RenderIMGUIFrame();
+
+	// Inherited via IIMGUIRenderable
+	void OnIMGUIRender() override;
 };

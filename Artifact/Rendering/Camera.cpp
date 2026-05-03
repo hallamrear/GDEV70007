@@ -76,56 +76,10 @@ void Camera::RotateQuat(const Vector4& rotationQuat)
 	UpdateTransformMatrix();
 }
 
-//bool Camera::HandleEvent(const float& deltaTime, const Event& event)
-//{
-//	switch (event.GetType())
-//	{
-//	case CAMERA_EVENT:
-//
-//		break;
-//
-//	case INPUT_EVENT:
-//	{
-//		float step = (5000.0f * deltaTime);
-//		float rotation = 200.0f * deltaTime;
-//
-//		switch (event.Data.Input.Key)
-//		{
-//			/* E Key */
-//		case 0x45: RotateEulerDegrees({ 0.0f, +1.0F * rotation, 0.0f }); break;
-//			/* Q Key */
-//		case 0x51: RotateEulerDegrees({ 0.0f, -1.0F * rotation, 0.0f }); break;
-//
-//			/* R Key */
-//		case 0x52: RotateEulerDegrees({ -1.0F * rotation, 0.0f, 0.0f }); break;
-//			/* F Key */
-//		case 0x46: RotateEulerDegrees({ +1.0F * rotation, 0.0f, 0.0f }); break;
-//
-//			/* Up Arrow */
-//		case VK_UP: Move({ m_ForwardVector.x * step, m_ForwardVector.y * step, m_ForwardVector.z * step }); break;
-//			/* Down Arrow */
-//		case VK_DOWN:  Move({ m_ForwardVector.x * -step, m_ForwardVector.y * -step, m_ForwardVector.z * -step }); break;
-//			/* Left Arrow */
-//		case VK_LEFT:  Move({ m_RightVector.x * -step, m_RightVector.y * -step, m_RightVector.z * -step }); break;
-//			/* Right Arrow */
-//		case VK_RIGHT: Move({ m_RightVector.x * step, m_RightVector.y * step, m_RightVector.z * step }); break;
-//			/* Space Bar */
-//		case VK_SPACE: Move({ m_UpVector.x * step, m_UpVector.y * step, m_UpVector.z * step }); break;
-//			/* Left Shift */
-//		case VK_LSHIFT: Move({ m_UpVector.x * -step, m_UpVector.y * -step, m_UpVector.z * -step }); break;
-//
-//		default:
-//			break;
-//		}
-//	}
-//		break;
-//
-//	default:
-//		return false;
-//	}
-//
-//	return true;
-//}
+const Vector3& Camera::GetPosition() const
+{
+	return m_Translation;
+}
 
 const Matrix4x4 Camera::GetViewMatrix() const
 {

@@ -27,6 +27,8 @@ public:
 	void RotateEulerDegrees(const Vector3& rotationEulerDegrees);
 	void RotateQuat(const Quaternion& rotationQuat);
 
+	const Vector3& GetPosition() const;
+
 	const DirectX::XMFLOAT4X4 GetViewMatrix() const;
 };
 

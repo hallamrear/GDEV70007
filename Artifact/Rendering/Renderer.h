@@ -2,6 +2,7 @@
 #include "Texturing/Texture.h"
 #include <Rendering/Camera.h>
 #include <Rendering/Geometry/Model.h>
+#include <Rendering/ConstantBuffer.h>
 
 class Model;
 class GenericBuffer;
@@ -16,6 +17,8 @@ private:
 
 protected:
 	Camera m_Camera;
+	LightBuffer m_LightData;
+	ConstantBuffer m_ConstantBuffer;
 
 	static const enum TEXTURE_FORMAT m_BackbufferFormat;
 	static const enum TEXTURE_FORMAT m_DepthStencilBufferFormat;
@@ -82,5 +85,6 @@ public:
 	virtual bool SetDefaultDrawMode() = 0;
 
 	Camera& GetCamera();
+	LightBuffer& GetLightData();
 };
 

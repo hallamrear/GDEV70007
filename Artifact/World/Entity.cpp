@@ -20,6 +20,7 @@ Entity::Entity()
 	m_Translation = Vector3(0.0f, 0.0f, 0.0f);
 	m_RotationEuler = Vector3(0.0f, 0.0f, 0.0f);
 	m_IsAlive = true;
+	m_Collider = nullptr;
 	m_IsPendingDestroy = false;
 }
 
@@ -96,9 +97,6 @@ void Entity::SetCollider(const COLLIDER_TYPE& colliderType)
 		break;
 	case COLLIDER_TYPE_AABB:
 		m_Collider = new AABBCollider(*this, size);
-		break;
-	case COLLIDER_TYPE_CONVEX_HULL:
-		printf("Failed to create a new collider. Mesh collider is not implemented yet.\n");
 		break;
 	case COLLIDER_TYPE_COUNT:
 	default:

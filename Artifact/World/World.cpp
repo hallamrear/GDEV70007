@@ -258,24 +258,16 @@ void World::RenderEntityDetails(Entity& entity)
 		}
 		else
 		{
-			const char* colliderNames[COLLIDER_TYPE::COLLIDER_TYPE_COUNT] =
-			{
-				/* COLLIDER_TYPE_SPHERE */ "Sphere Collider",
-				/* COLLIDER_TYPE_AABB */ "Box Collider",
-				/* COLLIDER_TYPE_MESH */ "Complex Mesh Collider",
-
-			};
-
 			const ImGuiComboFlags flags = 0;
 
 			static COLLIDER_TYPE selectedCollider = COLLIDER_TYPE::COLLIDER_TYPE_SPHERE;
 
-			if (ImGui::BeginCombo("Collider Type List", colliderNames[selectedCollider], flags))
+			if (ImGui::BeginCombo("Collider Type List", c_ColliderTypeNames[selectedCollider].c_str(), flags))
 			{
-				for (int n = 0; n < IM_COUNTOF(colliderNames); n++)
+				for (int n = 0; n < IM_COUNTOF(c_ColliderTypeNames); n++)
 				{
 					const bool is_selected = ((int)selectedCollider == n);
-					if (ImGui::Selectable(colliderNames[n], is_selected))
+					if (ImGui::Selectable(c_ColliderTypeNames[n].c_str(), is_selected))
 					{
 						selectedCollider = (COLLIDER_TYPE)n;
 					}

@@ -173,6 +173,10 @@ bool DX12Renderer::Initialise(HWND windowHandle)
     m_IsInitialised = true;
     m_WindowHandle = windowHandle;
 
+    #ifdef _DEBUG
+    //TODO : Add Pix winpixgpucapturer.dll
+    #endif
+
     hr = CreateDeviceAndFactory();
     m_IsInitialised &= SUCCEEDED(hr);
     FAILED_RETURN(hr);
@@ -549,10 +553,13 @@ void DX12Renderer::PrepareDefaultModelRender()
     ID3D12DescriptorHeap* heaps[] = { m_MainStorageSRVHeap };
     m_CommandList->SetDescriptorHeaps(_countof(heaps), heaps);
 
-    static ConstantBuffer cb = {};
-    cb.Projection = m_ProjectionMatrix;
-    cb.View = m_Camera.GetViewMatrix();
-    UpdateConstantBuffer(cb);
+    m_ConstantBuffer.Projection = m_ProjectionMatrix;
+    m_ConstantBuffer.View = m_Camera.GetViewMatrix();
+    m_ConstantBuffer.CameraDirection = Vector4(m_Camera.GetForwardVector().x, m_Camera.GetForwardVector().y, m_Camera.GetForwardVector().z, 0.0f);
+    m_ConstantBuffer.CameraPosition = Vector4(m_Camera.GetPosition().x, m_Camera.GetPosition().y, m_Camera.GetPosition().z, 1.0f);
+
+    UpdateConstantBuffer(m_ConstantBuffer);
+    UpdateLightingBuffer(m_LightData);
 }
 
 void DX12Renderer::Render(const ModelRef& model, const Matrix4x4& worldMatrix)
@@ -635,6 +642,11 @@ void DX12Renderer::RenderIMGUIFrame()
 Camera& Renderer::GetCamera()
 {
     return m_Camera;
+}
+
+LightBuffer& Renderer::GetLightData()
+{
+    return m_LightData;
 }
 
 HRESULT DX12Renderer::CreateDeviceAndFactory()
@@ -2085,6 +2097,19 @@ void DX12Renderer::ClearFrame()
     transition = CD3DX12_RESOURCE_BARRIER::Transition(m_SwapchainBuffers[m_CurrentBackbufferIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
     m_CommandList->ResourceBarrier(1, &transition);
 
+    m_CommandList->SetGraphicsRootSignature(m_RootSignature);
+
+    ID3D12DescriptorHeap* heaps[] = { m_MainStorageSRVHeap };
+    m_CommandList->SetDescriptorHeaps(_countof(heaps), heaps);
+
+    m_ConstantBuffer.Projection = m_ProjectionMatrix;
+    m_ConstantBuffer.View = m_Camera.GetViewMatrix();
+    m_ConstantBuffer.CameraDirection = Vector4(m_Camera.GetForwardVector().x, m_Camera.GetForwardVector().y, m_Camera.GetForwardVector().z, 0.0f);
+    m_ConstantBuffer.CameraPosition = Vector4(m_Camera.GetPosition().x, m_Camera.GetPosition().y, m_Camera.GetPosition().z, 1.0f);
+
+    UpdateConstantBuffer(m_ConstantBuffer);
+    UpdateLightingBuffer(m_LightData);
+
     m_CommandList->ClearRenderTargetView(backBufferHandle, Colour, 0, nullptr);
     m_CommandList->OMSetRenderTargets(1, &backBufferHandle, true, &dsvBufferHandle);
 }
@@ -2131,4 +2156,71 @@ void DX12Renderer::PresentFrame()
         printf("Failed to flush command queue.\n");
         return;
     }
+}
+
+void DX12Renderer::OnIMGUIRender()
+{
+    ImGui::Begin("Lighting");
+
+    std::string id = "Light_";
+    for (size_t i = 0; i < MAX_LIGHT_COUNT; i++)
+    {
+        Light& light = m_LightData.Lights[i];
+
+        id = "Light " + std::to_string(i);
+        ImGui::PushID(id.c_str());
+
+        ImGui::Spacing();
+
+        if (ImGui::CollapsingHeader(id.c_str()))
+        {
+            ImGui::Checkbox("Enabled?", &light.IsEnabled);
+            const ImGuiComboFlags flags = 0;
+
+            if (light.IsEnabled)
+            {
+                ImGui::ColorPicker3("Light Colour", &light.Colour.x, ImGuiColorEditFlags_::ImGuiColorEditFlags_Float);
+
+                static LIGHT_TYPE selectedCollider = light.Type;
+
+                if (ImGui::BeginCombo("Light Type", c_LightTypeNames[selectedCollider].c_str(), flags))
+                {
+                    for (int n = 0; n < IM_COUNTOF(c_LightTypeNames); n++)
+                    {
+                        const bool is_selected = ((int)selectedCollider == n);
+                        if (ImGui::Selectable(c_LightTypeNames[n].c_str(), is_selected))
+                        {
+                            selectedCollider = (LIGHT_TYPE)n;
+                            light.Type = (LIGHT_TYPE)n;
+                        }
+
+                        if (is_selected)
+                        {
+                            ImGui::SetItemDefaultFocus();
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+
+                switch (light.Type)
+                {
+                case LIGHT_TYPE::AMBIENT_LIGHT:
+                {
+                    ImGui::DragFloat("Ambient light strength", &light.AmbientStrength, 0.05f, 0.0f, 1.0f);
+                }
+                break;
+
+                default:
+                    break;
+                }
+
+                ImGui::Spacing();
+            }
+
+        }
+
+        ImGui::PopID();
+    }
+
+    ImGui::End();
 }

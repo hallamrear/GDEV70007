@@ -14,6 +14,14 @@ enum COLLIDER_TYPE : int
 	COLLIDER_TYPE_COUNT = 4
 };
 
+static const std::string c_ColliderTypeNames[COLLIDER_TYPE::COLLIDER_TYPE_COUNT] =
+{
+	"Sphere Collider",
+	"Axis Aligned Bounding Box",
+	"Convex Hull Collider",
+	"Mesh Collider",
+};
+
 class Collider
 {
 public:

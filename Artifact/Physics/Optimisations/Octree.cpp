@@ -3,7 +3,7 @@
 
 OctreeNode::OctreeNode(const float colliderSize, const int depth) : m_Depth(depth)
 {
-
+	UNREFERENCED_PARAMETER(colliderSize);
 }
 
 OctreeNode::~OctreeNode()

@@ -188,8 +188,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Artifact.h" />
-    <ClInclude Include="ConvexHullCollider.h" />
-    <ClInclude Include="Physics\CollisionDetection.h" />
+    <ClInclude Include="Physics\Colliders\ConvexHullCollider.h" />
+    <ClInclude Include="Rendering\Lighting\Light.h" />
+    <ClInclude Include="Physics\Collision Detection\CollisionDetection.h" />
     <ClInclude Include="Rendering\IMGUIRenderable.h" />
     <ClInclude Include="Physics\Colliders\AABBCollider.h" />
     <ClInclude Include="System\InputListener.h" />
@@ -234,8 +235,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Artifact.cpp" />
-    <ClCompile Include="ConvexHullCollider.cpp" />
-    <ClCompile Include="Physics\CollisionDetection.cpp" />
+    <ClCompile Include="Physics\Colliders\ConvexHullCollider.cpp" />
+    <ClCompile Include="Rendering\Lighting\Light.cpp" />
+    <ClCompile Include="Physics\Collision Detection\CollisionDetection.cpp" />
     <ClCompile Include="Rendering\IMGUIRenderable.cpp" />
     <ClCompile Include="Physics\Colliders\AABBCollider.cpp" />
     <ClCompile Include="System\InputListener.cpp" />
@@ -298,6 +300,7 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
+      <FileType>Document</FileType>
     </FxCompile>
     <FxCompile Include="Rendering\Shaders\VS_Standard.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
@@ -308,6 +311,7 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
+      <FileType>Document</FileType>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -324,7 +328,24 @@
       <FileType>Document</FileType>
       <DeploymentContent>true</DeploymentContent>
     </None>
-    <None Include="Rendering\Shaders\Structures.hlsli" />
+    <None Include="Rendering\Shaders\Lighting.hlsli">
+      <FileType>Document</FileType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.1</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.1</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Effect</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Effect</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Effect</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Effect</ShaderType>
+    </None>
+    <None Include="Rendering\Shaders\Structures.hlsli">
+      <FileType>Document</FileType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.1</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.1</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
