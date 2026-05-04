@@ -224,6 +224,14 @@ void Engine::Update(const float& deltaTime)
 	if (m_InputListener.GetKeyDown(VK_LSHIFT)) { m_Renderer->GetCamera().Move(Vector3(up.x * -moveSpeed, up.y * -moveSpeed, up.z * -moveSpeed)); }
 	if (m_InputListener.GetKeyDown(VK_SPACE)) { m_Renderer->GetCamera().Move(Vector3(up.x * moveSpeed, up.y * moveSpeed, up.z * moveSpeed)); }
 
+	Vector2 delta = m_InputListener.GetMouseState().GetMouseDelta();
+	float sensitivity = 0.0f;
+
+	if (delta.x > FLT_EPSILON || delta.y > FLT_EPSILON)
+	{
+		m_Renderer->GetCamera().RotateEulerDegrees(Vector3(rotationSpeed * -delta.y * sensitivity, rotationSpeed * delta.x * sensitivity, 0.0f));
+	}
+
 	if (m_InputListener.IsControllerSupportEnabled())
 	{
 		Vector2 thumbstickLeft =

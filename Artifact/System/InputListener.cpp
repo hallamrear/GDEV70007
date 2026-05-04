@@ -230,6 +230,11 @@ void InputListener::UpdateControllerStates()
 	}
 }
 
+const MouseState& InputListener::GetMouseState()
+{
+	return m_MouseState;
+}
+
 const bool& InputListener::GetKeyDown(const int& keycode)
 {
 	const KeyState& keyState = GetKeyState(keycode);
@@ -483,6 +488,9 @@ void InputListener::OnIMGUIRender()
 	
 	if (ImGui::CollapsingHeader("Mouse Input Details"))
 	{
+		ImGui::Text("Mouse Position - X %f Y %f\n", m_MouseState.m_Position.x, m_MouseState.m_Position.y);
+		ImGui::Text("Mouse Delta - X %f Y %f\n", m_MouseState.m_FrameDelta.x, m_MouseState.m_FrameDelta.y);
+
 		if (ImGui::BeginTable("Mouse Input Details", 2, tableFlags))
 		{
 			for (size_t i = 0; i < MOUSE_BUTTON::MOUSE_BUTTON_COUNT; i++)
@@ -535,6 +543,16 @@ MouseState::~MouseState()
 MouseButtonState& MouseState::GetButtonState(const MOUSE_BUTTON& buttonID)
 {
 	return *m_ButtonStates[(int)buttonID];
+}
+
+const Vector2& MouseState::GetMouseDelta() const
+{
+	return m_FrameDelta;
+}
+
+const Vector2& MouseState::GetPosition() const
+{
+	return m_Position;
 }
 
 MouseButtonState::MouseButtonState(const MOUSE_BUTTON& buttonID, const bool& down)

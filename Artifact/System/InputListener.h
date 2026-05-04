@@ -125,6 +125,9 @@ public:
 	~MouseState();
 
 	MouseButtonState& GetButtonState(const MOUSE_BUTTON& buttonID);
+
+	const Vector2& GetPosition() const;
+	const Vector2& GetMouseDelta() const;
 };
 
 namespace std
@@ -179,6 +182,7 @@ public:
 	static void WndProcCallback(const int& msg, LPARAM lParam, WPARAM wParam);
 	static void UpdateInputStates();
 
+	static const MouseState& GetMouseState();
 	static const bool& GetKeyDown(const int& keycode);
 	static const KeyState& GetKeyState(const int& keycode);
 	static const bool& GetButtonDown(const MOUSE_BUTTON& buttonCode);
