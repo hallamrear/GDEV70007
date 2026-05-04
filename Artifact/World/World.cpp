@@ -30,6 +30,7 @@ bool World::Initialise()
 	testRoom->SetModel(ref);
 	m_EntityMap.insert(std::make_pair(testRoom->GetID(), testRoom));
 
+	m_IsInitialised = true;
 	return true;
 }
 
@@ -148,7 +149,16 @@ void World::RenderEntityDetails(Entity& entity)
 	ImGui::PushID(imguiHash.c_str());
 	std::string headerHash = entity.GetDisplayName() + imguiHash;
 
-	if (ImGui::CollapsingHeader(headerHash.c_str()))
+	ImGui::Text(entity.GetDisplayName().c_str()); 
+	ImGui::SameLine(); 
+
+	std::string str = "EntityEditModal" + imguiHash;
+	if(ImGui::Button("Edit Entity"))
+	{
+		ImGui::OpenPopup(str.c_str());
+	}
+
+	if (ImGui::BeginPopupModal(str.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		ImGui::Text("GUID: %s", entity.GetIDString().c_str());
 		ImGui::SameLine();
@@ -165,7 +175,7 @@ void World::RenderEntityDetails(Entity& entity)
 		}
 
 		std::string modelDisplayName = "None";
-		
+
 		if (entity.GetModel().get() != nullptr)
 		{
 			modelDisplayName = entity.GetModel()->GetDisplayName();
@@ -194,7 +204,7 @@ void World::RenderEntityDetails(Entity& entity)
 
 			ImGui::Text("New Model location (relative to the content folder)");
 			ImGui::SameLine();
-			ImGui::InputText("###NewModelTextInput", & modelName[0], MAX_DISPLAY_NAME_LENGTH, ImGuiInputFlags_::ImGuiInputFlags_None);
+			ImGui::InputText("###NewModelTextInput", &modelName[0], MAX_DISPLAY_NAME_LENGTH, ImGuiInputFlags_::ImGuiInputFlags_None);
 
 			if (ImGui::Button("OK", ImVec2(120, 0)))
 			{
@@ -210,10 +220,10 @@ void World::RenderEntityDetails(Entity& entity)
 			ImGui::SetItemDefaultFocus();
 			ImGui::SameLine();
 
-			if (ImGui::Button("Cancel", ImVec2(120, 0))) 
-			{ 
+			if (ImGui::Button("Cancel", ImVec2(120, 0)))
+			{
 				ImGui::CloseCurrentPopup();
-			
+
 			}
 			ImGui::EndPopup();
 		}
@@ -224,30 +234,30 @@ void World::RenderEntityDetails(Entity& entity)
 
 			switch (collider.GetType())
 			{
-				case COLLIDER_TYPE::COLLIDER_TYPE_SPHERE:
+			case COLLIDER_TYPE::COLLIDER_TYPE_SPHERE:
+			{
+				float sphereColliderRadius = { collider.GetSize().x };
+				if (ImGui::SliderFloat("Sphere Collider Radius\n", &sphereColliderRadius, 0.1f, 10.0f))
 				{
-					float sphereColliderRadius = { collider.GetSize().x };
-					if (ImGui::SliderFloat("Sphere Collider Radius\n", &sphereColliderRadius, 0.1f, 10.0f))
-					{
-						collider.SetSize(Vector3(sphereColliderRadius, sphereColliderRadius, sphereColliderRadius));
-					}
+					collider.SetSize(Vector3(sphereColliderRadius, sphereColliderRadius, sphereColliderRadius));
 				}
-				break;
-
-				case COLLIDER_TYPE::COLLIDER_TYPE_AABB:
-				{
-					float boxSize[3] = { collider.GetSize().x, collider.GetSize().y, collider.GetSize().z };
-					if (ImGui::DragFloat3("Box Collider (half-size)", &boxSize[0], 1.0f, 0.1f, 10.0f, "%.1f", ImGuiSliderFlags_::ImGuiSliderFlags_AlwaysClamp))
-					{
-						collider.SetSize(Vector3(boxSize));
-					}
-				}
-				break;
-
-				default:
-					break;
 			}
-			
+			break;
+
+			case COLLIDER_TYPE::COLLIDER_TYPE_AABB:
+			{
+				float boxSize[3] = { collider.GetSize().x, collider.GetSize().y, collider.GetSize().z };
+				if (ImGui::DragFloat3("Box Collider (half-size)", &boxSize[0], 1.0f, 0.1f, 10.0f, "%.1f", ImGuiSliderFlags_::ImGuiSliderFlags_AlwaysClamp))
+				{
+					collider.SetSize(Vector3(boxSize));
+				}
+			}
+			break;
+
+			default:
+				break;
+			}
+
 			if (entity.GetModel() != nullptr)
 			{
 				if (ImGui::Button("Set Collider Size from current mesh\n"))
@@ -285,7 +295,23 @@ void World::RenderEntityDetails(Entity& entity)
 				entity.SetCollider(selectedCollider);
 			}
 		}
+
+		if (ImGui::Button("OK", ImVec2(120, 0))) 
+		{ 
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::SetItemDefaultFocus();
+		ImGui::SameLine();
+
+		if (ImGui::Button("Cancel", ImVec2(120, 0)))
+		{ 
+			ImGui::CloseCurrentPopup(); 
+		}
+
+		ImGui::EndPopup();
 	}
+
 
 	ImGui::PopID();
 }

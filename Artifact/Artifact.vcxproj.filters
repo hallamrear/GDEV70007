@@ -150,6 +150,9 @@
     <ClInclude Include="Rendering\Lighting\Light.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="System\Maths.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Artifact.cpp">
@@ -263,6 +266,9 @@
     <ClCompile Include="Rendering\Lighting\Light.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="System\Maths.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Artifact.rc">
@@ -284,15 +290,18 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Rendering\Shaders\Lighting.hlsli" />
-    <FxCompile Include="Rendering\Shaders\Structures.hlsli" />
     <FxCompile Include="Rendering\Shaders\PS_Standard.hlsl" />
+    <FxCompile Include="Rendering\Shaders\VS_Standard.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Content\Colliders\BoxCollider.glb" />
     <None Include="Content\Colliders\SphereCollider.glb" />
     <None Include="Content\Demo_Level.glb" />
     <None Include="Content\Suzanne.glb" />
-    <None Include="Rendering\Shaders\VS_Standard.hlsl" />
+    <None Include="Rendering\Shaders\Lighting.hlsli" />
+    <None Include="Rendering\Shaders\Structures.hlsli" />
+    <None Include="Content\Lighting.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

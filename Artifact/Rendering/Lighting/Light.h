@@ -1,12 +1,11 @@
 #pragma once
 
-enum LIGHT_TYPE : int
+enum LIGHT_TYPE : unsigned int
 {
 	AMBIENT_LIGHT = 0,
 	POINT_LIGHT = 1,
 	DIRECTIONAL_LIGHT = 2,
-	SPOT_LIGHT = 3,
-	COUNT = 4,
+	COUNT = 3,
 };
 
 static const std::string c_LightTypeNames[LIGHT_TYPE::COUNT] =
@@ -14,7 +13,6 @@ static const std::string c_LightTypeNames[LIGHT_TYPE::COUNT] =
 	"Ambient Light",
 	"Point Light",
 	"Directional Light",
-	"Spot Light"
 };
 
 class alignas(16) Light
@@ -27,18 +25,25 @@ public:
 
 	LIGHT_TYPE Type;
 	float SpecularStrength;
-	float SpecularPower;
+	int SpecularPower;
 	float AmbientStrength;
-	Vector3 Position;
-	float InnerCutoff;
-	float OuterCutoff;
-	Vector3 Direction;
+
+	Vector4 Position;
+
+	Vector4 Direction;
+
 	Vector4 Colour;
+
 	Vector4 Diffuse;
+
 	Vector4 Attenuation;
+
 	Vector4 Strength;
-	bool IsEnabled;
-	bool Padding[15];
+
+	BOOL IsEnabled;
+	float Range;
+	float ConeAngle;
+	float Padding;
 
 	const std::string& GetTypeName() const;
 };

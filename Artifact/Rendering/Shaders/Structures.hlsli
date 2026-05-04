@@ -1,24 +1,31 @@
 #ifndef __STRUCTURES_HLSL__
 #define __STRUCTURES_HLSL__
 
-#define MAX_LIGHT_COUNT 96
+#define MAX_LIGHT_COUNT 32
 
 struct Light
 {
-	int Type;
-	float SpecularStrength;
-	float SpecularPower;
-	float AmbientStrength;
-	float3 Position;
-	float InnerCutoff;
-	float OuterCutoff;
-	float3 Direction;
-	float4 Colour;
-	float4 Diffuse;
-	float4 Attenuation;
-	float4 Strength;
-	bool IsEnabled;
-	bool Padding[15];
+    int Type;
+    float SpecularStrength;
+    int SpecularPower;
+    float AmbientStrength;
+
+    float4 Position;
+
+    float4 Direction;
+
+    float4 Colour;
+
+    float4 Diffuse;
+
+    float4 Attenuation;
+
+    float4 Strength;
+
+    bool IsEnabled;
+    float Range;
+    float ConeAngle;
+    float Padding;
 };
 
 cbuffer FrameConstantBuffer : register(b0)

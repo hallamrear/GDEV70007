@@ -115,9 +115,12 @@ private:
 
 	HRESULT CreateDefaultBuffer(ID3D12Resource*& defaultBuffer, ID3D12Resource*& gpuUploadBuffer, const void* data, const size_t& sizeBytes);
 
-	void PrepareDefaultModelRender();
+	void RenderIMGUIForLighting();
 
 	float m_ProjectionFOV;
+
+	void LoadLightingData();
+	void SaveLightingData();
 
 protected:
 
@@ -136,6 +139,8 @@ public:
 	const GraphicsDevice* GetDevice() const;
 	GraphicsDevice* GetDevice();
 
+	bool LoadGraphicsDebuggers();
+
 	UINT GetSRVDescriptorHeapSize() const;
 	struct D3D12_CPU_DESCRIPTOR_HANDLE GetMainSRVDescriptorHeapStartCPU() const;
 	struct D3D12_GPU_DESCRIPTOR_HANDLE GetMainSRVDescriptorHeapStartGPU() const;
@@ -144,8 +149,8 @@ public:
 	bool SetDefaultDrawMode();
 
 	HRESULT UpdateWorldMatrix(const Matrix4x4& worldMatrix);
-	HRESULT UpdateLightingBuffer(const LightBuffer& lb);
-	HRESULT UpdateConstantBuffer(const ConstantBuffer& cb);
+	HRESULT UpdateLightingBuffer();
+	HRESULT UpdateConstantBuffer();
 
 	bool BindGenericBufferData(GenericBuffer& genericBuffer, const void* buffer, const size_t& bufferLength);
 	bool BindVertexData(VertexBuffer& vertexBuffer, const void* buffer, const size_t& bufferLength);

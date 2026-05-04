@@ -4,6 +4,7 @@
 
 std::vector<InputListener*> InputListener::m_Instances = std::vector<InputListener*>();
 InputListener::InputMap InputListener::m_KeyStates = InputListener::InputMap();
+MouseState InputListener::m_MouseState = MouseState();
 InputListener::ControllerState InputListener::m_ControllerStates[MAX_CONTROLLERS] = { InputListener::ControllerState() };
 float InputListener::m_DeadZonePercentageNormalised = DEFAULT_CONTROLLER_DEADZONE;
 bool InputListener::m_DeadZoneEnabled = true;
@@ -38,6 +39,12 @@ void InputListener::KeyboardInputCallback(const int& keycode, const bool& isDown
 	keyState.m_IsDown = isDown;
 }
 
+void InputListener::MouseInputCallback(const MOUSE_BUTTON& buttonCode, const bool& isDown)
+{
+	MouseButtonState& mouseButtonState = GetMouseButtonStateReference(buttonCode);
+	mouseButtonState.m_IsDown = isDown;
+}
+
 KeyState& InputListener::GetKeyStateReference(const int& keycode)
 {
 	InputMap::iterator itr = m_KeyStates.find(keycode);
@@ -61,6 +68,11 @@ KeyState& InputListener::GetKeyStateReference(const int& keycode)
 	return *validInsertion.first->second;
 }
 
+MouseButtonState& InputListener::GetMouseButtonStateReference(const MOUSE_BUTTON& buttonCode)
+{
+	return m_MouseState.GetButtonState(buttonCode);
+}
+
 InputListener::InputListener()
 {
 	m_Instances.push_back(this);
@@ -75,12 +87,8 @@ void InputListener::EnableControllerSupport(const bool& deadZoneEnabled)
 {
 	m_ControllersEnabled = true;
 
-	m_DeadZonePercentageNormalised = 0.0f;
-
-	if (deadZoneEnabled)
-	{
-		m_DeadZonePercentageNormalised = DEFAULT_CONTROLLER_DEADZONE;
-	}
+	SetDeadZoneEnabled(deadZoneEnabled);
+	SetDeadZonePercentage(DEFAULT_CONTROLLER_DEADZONE);
 }
 
 const bool& InputListener::IsControllerSupportEnabled()
@@ -108,12 +116,12 @@ void InputListener::WndProcCallback(const int& msg, LPARAM lParam, WPARAM wParam
 {
 	switch (msg)
 	{
-	//case WM_LBUTTONDOWN: { InputMonitor::KeyboardInputCallback(BENNETT_MOUSE_LEFT, true, false); } break;
-	//case WM_LBUTTONUP:	 { InputMonitor::KeyboardInputCallback(BENNETT_MOUSE_LEFT, false, false); }	break;
-	//case WM_MBUTTONDOWN: { InputMonitor::KeyboardInputCallback(BENNETT_MOUSE_MIDDLE, true, false); } break;
-	//case WM_MBUTTONUP:	 { InputMonitor::KeyboardInputCallback(BENNETT_MOUSE_MIDDLE, false, false); } break;
-	//case WM_RBUTTONDOWN: { InputMonitor::KeyboardInputCallback(BENNETT_MOUSE_RIGHT, true, false); } break;
-	//case WM_RBUTTONUP:   { InputMonitor::KeyboardInputCallback(BENNETT_MOUSE_RIGHT, false, false); } break;
+	case WM_LBUTTONDOWN: { InputListener::MouseInputCallback(MOUSE_BUTTON::MOUSE_BUTTON_LEFT, true); } break;
+	case WM_LBUTTONUP:	 { InputListener::MouseInputCallback(MOUSE_BUTTON::MOUSE_BUTTON_LEFT, false); }	break;
+	case WM_MBUTTONDOWN: { InputListener::MouseInputCallback(MOUSE_BUTTON::MOUSE_BUTTON_MIDDLE, true); } break;
+	case WM_MBUTTONUP:	 { InputListener::MouseInputCallback(MOUSE_BUTTON::MOUSE_BUTTON_MIDDLE, false); } break;
+	case WM_RBUTTONDOWN: { InputListener::MouseInputCallback(MOUSE_BUTTON::MOUSE_BUTTON_RIGHT, true); } break;
+	case WM_RBUTTONUP:   { InputListener::MouseInputCallback(MOUSE_BUTTON::MOUSE_BUTTON_RIGHT, false); } break;
 
 	case WM_XBUTTONDOWN:
 	case WM_XBUTTONUP:
@@ -142,7 +150,7 @@ void InputListener::WndProcCallback(const int& msg, LPARAM lParam, WPARAM wParam
 	{
 		POINTS p = MAKEPOINTS(lParam);
 		Vector2 pos = Vector2(p.x, p.y);
-		//MouseMovementInputCallback(pos);
+		m_MouseState.m_LastPolledPosition = pos;
 	}
 	break;
 
@@ -175,13 +183,26 @@ void InputListener::WndProcCallback(const int& msg, LPARAM lParam, WPARAM wParam
 	}
 }
 
-void InputListener::UpdateControllerStates()
+void InputListener::UpdateInputStates()
 {
 	if (m_ControllersEnabled == false)
 	{
 		return;
 	}
 
+	UpdateControllerStates();
+	UpdateMouseState();
+}
+
+void InputListener::UpdateMouseState()
+{
+	m_MouseState.m_LastPosition = m_MouseState.m_Position;
+	m_MouseState.m_Position = m_MouseState.m_LastPolledPosition;
+	m_MouseState.m_FrameDelta = Vector2(m_MouseState.m_Position.x - m_MouseState.m_LastPosition.x, m_MouseState.m_Position.y - m_MouseState.m_LastPosition.y);
+}
+
+void InputListener::UpdateControllerStates()
+{
 	for (int i = 0; i < MAX_CONTROLLERS; i++)
 	{
 		DWORD dwResult = XInputGetState(i, &m_ControllerStates[i].State);
@@ -218,6 +239,11 @@ const bool& InputListener::GetKeyDown(const int& keycode)
 const KeyState& InputListener::GetKeyState(const int& keycode)
 {
 	return GetKeyStateReference(keycode);
+}
+
+const bool& InputListener::GetButtonDown(const MOUSE_BUTTON& buttonCode)
+{
+	return m_MouseState.GetButtonState(buttonCode).IsDown();
 }
 
 const bool InputListener::GetControllerButtonDown(const int& controllerIndex, const CONTROLLER_BUTTON& controllerButton)
@@ -440,9 +466,6 @@ void InputListener::OnIMGUIRender()
 
 	if (ImGui::CollapsingHeader("Keyboard Input Details"))
 	{
-
-		//char keyBuffer[32] = { '\0' };
-
 		if (ImGui::BeginTable("Keyboard Input Details", 3, tableFlags))
 		{
 			for (auto& keyState : m_KeyStates)
@@ -457,6 +480,75 @@ void InputListener::OnIMGUIRender()
 			ImGui::EndTable();
 		}
 	}
+	
+	if (ImGui::CollapsingHeader("Mouse Input Details"))
+	{
+		if (ImGui::BeginTable("Mouse Input Details", 2, tableFlags))
+		{
+			for (size_t i = 0; i < MOUSE_BUTTON::MOUSE_BUTTON_COUNT; i++)
+			{
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0); ImGui::Text("Mouse Button %i\n", (int)i);
+
+				if (m_MouseState.m_ButtonStates[i] != nullptr)
+				{
+					ImGui::TableSetColumnIndex(1); ImGui::Text("%s\n", m_MouseState.m_ButtonStates[i]->IsDown() ? "True" : "False");
+				}
+				else
+				{
+					ImGui::TableSetColumnIndex(1); ImGui::Text("Pointer to object is invalid.\n");
+				}
+			}
+
+			ImGui::EndTable();
+		}
+	}
 
 	ImGui::End();
+}
+
+MouseState::MouseState()
+{
+	m_FrameDelta = Vector2(0.0f, 0.0f);
+	m_LastPolledPosition = Vector2(0.0f, 0.0f);
+	m_Position = Vector2(0.0f, 0.0f);
+	m_LastPosition = Vector2(0.0f, 0.0f);
+
+	for (size_t i = 0; i < MOUSE_BUTTON::MOUSE_BUTTON_COUNT; i++)
+	{
+		m_ButtonStates[i] = new MouseButtonState((MOUSE_BUTTON)i);
+	}
+}
+
+MouseState::~MouseState()
+{
+	for (size_t i = 0; i < MOUSE_BUTTON::MOUSE_BUTTON_COUNT; i++)
+	{
+		if (m_ButtonStates[i] != nullptr)
+		{
+			delete m_ButtonStates[i];
+			m_ButtonStates[i] = nullptr;
+		}
+	}
+}
+
+MouseButtonState& MouseState::GetButtonState(const MOUSE_BUTTON& buttonID)
+{
+	return *m_ButtonStates[(int)buttonID];
+}
+
+MouseButtonState::MouseButtonState(const MOUSE_BUTTON& buttonID, const bool& down)
+	: ButtonID(buttonID)
+{
+	m_IsDown = down;
+}
+
+MouseButtonState::~MouseButtonState()
+{
+	m_IsDown = false;
+}
+
+const bool& MouseButtonState::IsDown() const
+{
+	return m_IsDown;
 }

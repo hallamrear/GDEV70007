@@ -2,7 +2,7 @@
 #include <Rendering/IMGUIRenderable.h>
 
 #define MAX_CONTROLLERS 4
-#define DEFAULT_CONTROLLER_DEADZONE (20.0f)
+#define DEFAULT_CONTROLLER_DEADZONE (0.2f)
 
 #define VK_KEY_0 0x30 // 0 key
 #define VK_KEY_1 0x31 // 1 key
@@ -40,6 +40,16 @@
 #define VK_KEY_X 0x58 // X key
 #define VK_KEY_Y 0x59 // Y key
 #define VK_KEY_Z 0x5A // Z key
+
+enum MOUSE_BUTTON
+{
+	MOUSE_BUTTON_LEFT = 0x0,
+	MOUSE_BUTTON_MIDDLE = 0x1,
+	MOUSE_BUTTON_RIGHT = 0x2,
+	MOUSE_BUTTON_4 = 0x3,
+	MOUSE_BUTTON_5 = 0x4,
+	MOUSE_BUTTON_COUNT = 0x5,
+};
 
 enum CONTROLLER_BUTTON
 {
@@ -87,6 +97,36 @@ public:
 	const bool& IsDown() const;
 };
 
+struct MouseButtonState
+{
+private:
+	friend class InputListener;
+	bool m_IsDown;
+
+public:
+	const MOUSE_BUTTON ButtonID;
+	MouseButtonState(const MOUSE_BUTTON& buttonID, const bool& down = false);
+	~MouseButtonState();
+	const bool& IsDown() const;
+};
+
+struct MouseState
+{
+private:
+	friend class InputListener;
+	Vector2 m_Position;
+	Vector2 m_LastPosition;
+	Vector2 m_FrameDelta;
+	Vector2 m_LastPolledPosition;
+	MouseButtonState* m_ButtonStates[5];
+
+public:
+	MouseState();
+	~MouseState();
+
+	MouseButtonState& GetButtonState(const MOUSE_BUTTON& buttonID);
+};
+
 namespace std
 {
 	template<> struct less<KeyState>
@@ -113,12 +153,18 @@ private:
 	static std::vector<InputListener*> m_Instances;
 	static InputMap m_KeyStates;
 	static InputListener::ControllerState m_ControllerStates[MAX_CONTROLLERS];
+	static MouseState m_MouseState;
 	static bool m_ControllersEnabled;
 	static float m_DeadZonePercentageNormalised;
 	static bool m_DeadZoneEnabled;
 
 	static void KeyboardInputCallback(const int& keycode, const bool& isDown);
+	static void MouseInputCallback(const MOUSE_BUTTON& buttonCode, const bool& isDown);
 	static KeyState& GetKeyStateReference(const int& keycode);
+	static MouseButtonState& GetMouseButtonStateReference(const MOUSE_BUTTON& buttonCode);
+
+	static void UpdateControllerStates();
+	static void UpdateMouseState();
 
 public:
 	InputListener();
@@ -131,10 +177,12 @@ public:
 	static void SetDeadZoneEnabled(const bool& deadZoneEnabled);
 
 	static void WndProcCallback(const int& msg, LPARAM lParam, WPARAM wParam);
-	static void UpdateControllerStates();
+	static void UpdateInputStates();
 
 	static const bool& GetKeyDown(const int& keycode);
 	static const KeyState& GetKeyState(const int& keycode);
+	static const bool& GetButtonDown(const MOUSE_BUTTON& buttonCode);
+	static const MouseButtonState& GetButtonState(const MOUSE_BUTTON& buttonCode);
 
 	static const bool GetControllerButtonDown(const int& controllerIndex, const CONTROLLER_BUTTON& controllerButton);
 	static const float GetControllerAnalogValue(const int& controllerIndex, const CONTROLLER_ANALOG_STICK& controllerAnalogStick);

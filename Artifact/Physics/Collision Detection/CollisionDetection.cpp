@@ -6,6 +6,9 @@ CollisionDetection::CollisionFunction CollisionDetection::s_CollisionFunctionArr
 
 bool CollisionDetection::SeperatingAxisTheorem(const Collider* colliderA, const Collider* colliderB)
 {
+	UNREFERENCED_PARAMETER(colliderA);
+	UNREFERENCED_PARAMETER(colliderB);
+
 	assert(colliderA);
 	assert(colliderB);
 

@@ -26,7 +26,6 @@ Engine::~Engine()
 
 bool Engine::InitialiseSubsystems(HWND windowHandle, const std::filesystem::path& contentFolderLocation)
 {
-
 	char execLocationBuffer[256];
 	bool foundExecLocation = (GetModuleFileName(NULL, execLocationBuffer, 256) != 0);
 
@@ -84,7 +83,7 @@ bool Engine::InitialiseSubsystems(HWND windowHandle, const std::filesystem::path
 	if (m_IsInitialised)
 	{
 		m_Renderer->PostAssetInitialisation();
-		InputListener::EnableControllerSupport(false);
+		InputListener::EnableControllerSupport(true);
 	}
 
 	return m_IsInitialised;
@@ -198,7 +197,7 @@ void Engine::Update(const float& deltaTime)
 	if (!m_IsInitialised || !m_IsRunning)
 		return;
 
-	InputListener::UpdateControllerStates();
+	InputListener::UpdateInputStates();
 
 	static float timeElapsed = 0.0f;
 	timeElapsed += deltaTime;
@@ -221,6 +220,9 @@ void Engine::Update(const float& deltaTime)
 	if (m_InputListener.GetKeyDown(VK_KEY_S)) { m_Renderer->GetCamera().Move(Vector3(forward.x * -moveSpeed, forward.y * -moveSpeed, forward.z * -moveSpeed)); }
 	if (m_InputListener.GetKeyDown(VK_KEY_A)) { m_Renderer->GetCamera().Move(Vector3(right.x * -moveSpeed, right.y * -moveSpeed, right.z * -moveSpeed)); }
 	if (m_InputListener.GetKeyDown(VK_KEY_D)) { m_Renderer->GetCamera().Move(Vector3(right.x * moveSpeed, right.y * moveSpeed, right.z * moveSpeed)); }
+
+	if (m_InputListener.GetKeyDown(VK_LSHIFT)) { m_Renderer->GetCamera().Move(Vector3(up.x * -moveSpeed, up.y * -moveSpeed, up.z * -moveSpeed)); }
+	if (m_InputListener.GetKeyDown(VK_SPACE)) { m_Renderer->GetCamera().Move(Vector3(up.x * moveSpeed, up.y * moveSpeed, up.z * moveSpeed)); }
 
 	if (m_InputListener.IsControllerSupportEnabled())
 	{
@@ -262,5 +264,4 @@ void Engine::Render()
 	m_Renderer->RenderIMGUIFrame();
 
 	m_Renderer->PresentFrame();
-
 }

@@ -6,6 +6,7 @@
 #include <Rendering/IndexBuffer.h>
 #include <Rendering/VertexBuffer.h>
 #include <Rendering/IMGUIRenderable.h>
+#include <System/Maths.h>
 #include <functional>
 #include "Geometry/Model.h"
 
@@ -24,9 +25,10 @@ int DX12Renderer::m_IMGUISRVHeapDescriptorEndIndex = 0;
 
 DX12Renderer::DX12Renderer() : Renderer()
 {
+    m_NullTextureDescriptorCPUHandle = {};
+    m_NullTextureDescriptorGPUHandle = {};
     m_UseMultisampling = false;
     m_ProjectionFOV = 60.0f;
-    m_NullTextureDescriptorCPUHandle = {};
     m_MainStorageSRVHeap = nullptr;
     m_CBVHeaps = nullptr;
     m_DXGIFactory = nullptr;
@@ -155,6 +157,14 @@ ID3D12Device* DX12Renderer::GetDevice()
     return m_Device;
 }
 
+bool DX12Renderer::LoadGraphicsDebuggers()
+{
+    #if defined(GRAPHICS_DEBUGGER_PIX) && defined(_DEBUG)
+
+    #endif
+    return false;
+}
+
 bool DX12Renderer::Initialise(HWND windowHandle)
 {
     if (IsInitialised())
@@ -174,6 +184,11 @@ bool DX12Renderer::Initialise(HWND windowHandle)
     m_WindowHandle = windowHandle;
 
     #ifdef _DEBUG
+
+    bool loadedDebuggers = LoadGraphicsDebuggers();
+
+    printf("%s all graphics debugging DLLs.\n", loadedDebuggers ? "Successfully loaded" : "Failed to load");
+
     //TODO : Add Pix winpixgpucapturer.dll
     #endif
 
@@ -354,6 +369,8 @@ bool DX12Renderer::Shutdown()
         printf("Calling shutdown on a DX12Renderer object that doesn't exist.\n");
         return false;
     }
+
+    SaveLightingData();
 
     ShutdownIMGUI();
 
@@ -538,28 +555,58 @@ void DX12Renderer::PostAssetInitialisation()
 { 
     //Setting to closed as the first refernce to the command list will open it.
     if (m_CommandList)
-    {
-        HRESULT hr = m_CommandList->Close();
-        assert(SUCCEEDED(hr));
+    {        
+        assert(SUCCEEDED(m_CommandList->Close()));
     }
 
     m_Camera.Move(Vector3(0.0f, 0.0f, -15.0f));
+
+    LoadLightingData();
 }
 
-void DX12Renderer::PrepareDefaultModelRender()
+void DX12Renderer::LoadLightingData()
 {
-    m_CommandList->SetGraphicsRootSignature(m_RootSignature);
+    std::fstream file("Content/Lighting.bin");
 
-    ID3D12DescriptorHeap* heaps[] = { m_MainStorageSRVHeap };
-    m_CommandList->SetDescriptorHeaps(_countof(heaps), heaps);
+    if (file.bad() || file.fail() || file.eof())
+    {
+        printf("Failed to load the lighting data binary.\n");
+        return;
+    }
 
-    m_ConstantBuffer.Projection = m_ProjectionMatrix;
-    m_ConstantBuffer.View = m_Camera.GetViewMatrix();
-    m_ConstantBuffer.CameraDirection = Vector4(m_Camera.GetForwardVector().x, m_Camera.GetForwardVector().y, m_Camera.GetForwardVector().z, 0.0f);
-    m_ConstantBuffer.CameraPosition = Vector4(m_Camera.GetPosition().x, m_Camera.GetPosition().y, m_Camera.GetPosition().z, 1.0f);
+    file.seekg(0, file.end);
+    size_t bytes = (size_t)file.tellg();
+    file.seekg(0, file.beg);
 
-    UpdateConstantBuffer(m_ConstantBuffer);
-    UpdateLightingBuffer(m_LightData);
+    char* buffer = new char[bytes];
+    file.read(buffer, bytes);
+    file.close();
+
+    assert(buffer);
+    
+    memcpy(&m_LightData.Lights[0], buffer, bytes);
+
+    delete[] buffer;
+    buffer = nullptr;
+
+    printf("Loaded lighting data to binary file \"Content/Lighting.bin\"\n");
+}
+
+void DX12Renderer::SaveLightingData()
+{
+    std::fstream file("Content/Lighting.bin", std::ofstream::out | std::ofstream::trunc);
+
+    if (file.bad() || file.fail() || file.eof())
+    {
+        printf("Failed to load the lighting data binary.\n");
+        return;
+    }
+    
+    file.seekp(0, file.beg);
+    file.write((char*)&m_LightData.Lights[0], sizeof(Light) * MAX_LIGHT_COUNT);
+    file.close();
+
+    printf("Saved lighting data to binary file \"Content/Lighting.bin\"\n");
 }
 
 void DX12Renderer::Render(const ModelRef& model, const Matrix4x4& worldMatrix)
@@ -570,7 +617,18 @@ void DX12Renderer::Render(const ModelRef& model, const Matrix4x4& worldMatrix)
         return;
     }
 
-    PrepareDefaultModelRender();
+    m_CommandList->SetGraphicsRootSignature(m_RootSignature);
+
+    ID3D12DescriptorHeap* heaps[] = { m_MainStorageSRVHeap };
+    m_CommandList->SetDescriptorHeaps(_countof(heaps), heaps);
+
+    m_ConstantBuffer.Projection = m_ProjectionMatrix;
+    m_ConstantBuffer.View = m_Camera.GetViewMatrix();
+    m_ConstantBuffer.CameraDirection = Vector4(m_Camera.GetForwardVector().x, m_Camera.GetForwardVector().y, m_Camera.GetForwardVector().z, 0.0f);
+    m_ConstantBuffer.CameraPosition = Vector4(m_Camera.GetPosition().x, m_Camera.GetPosition().y, m_Camera.GetPosition().z, 1.0f);
+
+    UpdateConstantBuffer();
+    UpdateLightingBuffer();
 
     for (auto& mesh : model->GetMeshes())
     {
@@ -1258,7 +1316,7 @@ HRESULT DX12Renderer::CreateConstantBuffers()
 
         D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc{};
         cbvDesc.BufferLocation = m_ConstantBufferGPUUploaderArray[i]->GetGPUVirtualAddress();
-        cbvDesc.SizeInBytes = (sizeof(ConstantBuffer) + 255) & ~255;
+        cbvDesc.SizeInBytes = sizeof(ConstantBuffer);
 
         m_Device->CreateConstantBufferView(&cbvDesc, m_CBVHeaps[i]->GetCPUDescriptorHandleForHeapStart());
 
@@ -1296,7 +1354,7 @@ HRESULT DX12Renderer::CreateConstantBuffers()
 
         D3D12_CONSTANT_BUFFER_VIEW_DESC lbvDesc{};
         lbvDesc.BufferLocation = m_LightBufferGPUUploaderArray[i]->GetGPUVirtualAddress();
-        lbvDesc.SizeInBytes = (sizeof(LightBuffer) + 255) & ~255;
+        lbvDesc.SizeInBytes = sizeof(LightBuffer);
 
         CD3DX12_CPU_DESCRIPTOR_HANDLE lbHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(m_CBVHeaps[i]->GetCPUDescriptorHandleForHeapStart());
         lbHandle.Offset(1, m_CBVSRVDescriptorHeapSize);
@@ -1612,6 +1670,8 @@ HRESULT DX12Renderer::CreateGraphicsPipelines()
     pipelineStateDesc.DSVFormat = m_DepthStencilBufferFormat;
     pipelineStateDesc.SampleDesc.Count = 1;
     pipelineStateDesc.SampleDesc.Quality = 0;
+    pipelineStateDesc.RasterizerState.FillMode = D3D12_FILL_MODE::D3D12_FILL_MODE_SOLID;
+    pipelineStateDesc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_BACK;
     pipelineStateDesc.Flags = D3D12_PIPELINE_STATE_FLAGS::D3D12_PIPELINE_STATE_FLAG_NONE;
 
     HRESULT result = E_POINTER;
@@ -1857,28 +1917,28 @@ HRESULT DX12Renderer::UpdateWorldMatrix(const Matrix4x4& worldMatrix)
     return S_OK;
 }
 
-HRESULT DX12Renderer::UpdateLightingBuffer(const LightBuffer& lb)
+HRESULT DX12Renderer::UpdateLightingBuffer()
 {
     assert(m_IsInitialised);
 
     if (m_LightBufferAddressArray[m_CurrentBackbufferIndex] != nullptr)
     {
         m_CommandList->SetGraphicsRootConstantBufferView(2, m_LightBufferGPUUploaderArray[m_CurrentBackbufferIndex]->GetGPUVirtualAddress());
-        memcpy(m_LightBufferAddressArray[m_CurrentBackbufferIndex], &lb, sizeof(LightBuffer));
+        memcpy(m_LightBufferAddressArray[m_CurrentBackbufferIndex], &m_LightData, sizeof(LightBuffer));
         return S_OK;
     }
 
     return E_FAIL;
 }
 
-HRESULT DX12Renderer::UpdateConstantBuffer(const ConstantBuffer& cb)
+HRESULT DX12Renderer::UpdateConstantBuffer()
 {
     assert(m_IsInitialised);
 
     if (m_ConstantBufferAddressArray[m_CurrentBackbufferIndex] != nullptr)
     {
         m_CommandList->SetGraphicsRootConstantBufferView(0, m_ConstantBufferGPUUploaderArray[m_CurrentBackbufferIndex]->GetGPUVirtualAddress());
-        memcpy(m_ConstantBufferAddressArray[m_CurrentBackbufferIndex], &cb, sizeof(ConstantBuffer));
+        memcpy(m_ConstantBufferAddressArray[m_CurrentBackbufferIndex], &m_ConstantBuffer, sizeof(ConstantBuffer));
         return S_OK;
     }
 
@@ -2104,14 +2164,21 @@ void DX12Renderer::ClearFrame()
 
     m_ConstantBuffer.Projection = m_ProjectionMatrix;
     m_ConstantBuffer.View = m_Camera.GetViewMatrix();
-    m_ConstantBuffer.CameraDirection = Vector4(m_Camera.GetForwardVector().x, m_Camera.GetForwardVector().y, m_Camera.GetForwardVector().z, 0.0f);
-    m_ConstantBuffer.CameraPosition = Vector4(m_Camera.GetPosition().x, m_Camera.GetPosition().y, m_Camera.GetPosition().z, 1.0f);
+    m_ConstantBuffer.CameraDirection = Vector4(m_Camera.GetForwardVector().x, m_Camera.GetForwardVector().y, m_Camera.GetForwardVector().z, VECTOR_W_DIRECTION);
+    m_ConstantBuffer.CameraPosition = Vector4(m_Camera.GetPosition().x, m_Camera.GetPosition().y, m_Camera.GetPosition().z, VECTOR_W_POSITION);
 
-    UpdateConstantBuffer(m_ConstantBuffer);
-    UpdateLightingBuffer(m_LightData);
+    UpdateConstantBuffer();
+    UpdateLightingBuffer();
 
     m_CommandList->ClearRenderTargetView(backBufferHandle, Colour, 0, nullptr);
     m_CommandList->OMSetRenderTargets(1, &backBufferHandle, true, &dsvBufferHandle);
+
+    #ifdef GRAPHICS_DEBUGGER_RENDERDOC
+    if (s_RenderDocDLLHandle != nullptr)
+    {
+        s_RenderDocDLLHandle->StartFrameCapture(NULL, NULL);
+    }
+    #endif
 }
 
 void DX12Renderer::PresentFrame()
@@ -2156,32 +2223,46 @@ void DX12Renderer::PresentFrame()
         printf("Failed to flush command queue.\n");
         return;
     }
+
+    #ifdef GRAPHICS_DEBUGGER_RENDERDOC
+    if (s_RenderDocDLLHandle != nullptr)
+    {
+        s_RenderDocDLLHandle->EndFrameCapture(NULL, NULL);
+    }
+    #endif
 }
 
-void DX12Renderer::OnIMGUIRender()
+void DX12Renderer::RenderIMGUIForLighting()
 {
     ImGui::Begin("Lighting");
 
-    std::string id = "Light_";
+    std::string id = "###";
     for (size_t i = 0; i < MAX_LIGHT_COUNT; i++)
     {
         Light& light = m_LightData.Lights[i];
 
-        id = "Light " + std::to_string(i);
+        std::string name = "Light " + std::to_string(i);
+        
+        id = "###" + name;
         ImGui::PushID(id.c_str());
 
         ImGui::Spacing();
 
-        if (ImGui::CollapsingHeader(id.c_str()))
+        if (ImGui::CollapsingHeader(name.c_str()))
         {
-            ImGui::Checkbox("Enabled?", &light.IsEnabled);
+            bool enabled = (bool)light.IsEnabled;
+            if (ImGui::Checkbox("Enabled?", &enabled))
+            {
+                light.IsEnabled = (int)enabled;
+            }
+
             const ImGuiComboFlags flags = 0;
 
             if (light.IsEnabled)
             {
                 ImGui::ColorPicker3("Light Colour", &light.Colour.x, ImGuiColorEditFlags_::ImGuiColorEditFlags_Float);
 
-                static LIGHT_TYPE selectedCollider = light.Type;
+                LIGHT_TYPE selectedCollider = light.Type;
 
                 if (ImGui::BeginCombo("Light Type", c_LightTypeNames[selectedCollider].c_str(), flags))
                 {
@@ -2210,6 +2291,41 @@ void DX12Renderer::OnIMGUIRender()
                 }
                 break;
 
+                case LIGHT_TYPE::DIRECTIONAL_LIGHT:
+                {
+                    ImGui::InputFloat3("Direction", &light.Direction.x); ImGui::SameLine();
+                    if (ImGui::Button("Set direction to Camera look direction"))
+                    {
+                        light.Direction = Vector4(m_Camera.GetForwardVector().x, m_Camera.GetForwardVector().y, m_Camera.GetForwardVector().z, VECTOR_W_DIRECTION);
+                    }
+
+                    ImGui::DragFloat("Specular Strength", &light.SpecularStrength, 0.05f, 0.0f, 1.0f);
+
+                    if (ImGui::DragInt("Specular Power (will round to nearest base 2)", &light.SpecularPower, 1, 2, 128))
+                    {
+                        light.SpecularPower = Maths::RoundToNearestBaseTwo(light.SpecularPower);
+                    }
+                }
+                break;
+
+                case LIGHT_TYPE::POINT_LIGHT:
+                {
+                    ImGui::InputFloat3("Position", &light.Position.x); ImGui::SameLine();
+                    if (ImGui::Button("Set position to camera position"))
+                    {
+                        light.Position = Vector4(m_Camera.GetPosition().x, m_Camera.GetPosition().y, m_Camera.GetPosition().z, VECTOR_W_POSITION);
+                    }
+
+                    ImGui::DragFloat("Specular Strength", &light.SpecularStrength, 0.05f, 0.0f, 1.0f);
+
+                    if (ImGui::DragInt("Specular Power (will round to nearest base 2)", &light.SpecularPower, 1, 2, 128))
+                    {
+                        light.SpecularPower = Maths::RoundToNearestBaseTwo(light.SpecularPower);
+                    }
+                    ImGui::DragFloat("Attenuation (C, L, Q)", &light.Attenuation.x, 0.05f, 0.0f, 1.0f);
+                }
+                break;
+
                 default:
                     break;
                 }
@@ -2223,4 +2339,9 @@ void DX12Renderer::OnIMGUIRender()
     }
 
     ImGui::End();
+}
+
+void DX12Renderer::OnIMGUIRender()
+{
+    RenderIMGUIForLighting();
 }

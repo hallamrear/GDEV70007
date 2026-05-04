@@ -3,13 +3,13 @@
 #include "Structures.hlsli"
 
 #define LIGHT_AMBIENT 0
-#define LIGHT_DIRECTIONAL 1
-#define LIGHT_POINT 2
+#define LIGHT_POINT 1
+#define LIGHT_DIRECTIONAL 2
 #define LIGHT_SPOT 3
 
 float CalculateAttenuation(float distance, float constantAtt, float linearAtt, float quadraticAtt)
 {
-	return 1.0f / (constantAtt + linearAtt * distance + quadraticAtt * (distance * distance));
+    return 1.0f / (constantAtt + (linearAtt * distance) + (quadraticAtt * (distance * distance)));
 }
 
 //Lambert's Cosine Law
@@ -23,14 +23,14 @@ float4 CalculateDirectionalLighting(Light light, float4 sampleColour, float3 wor
     float3 toLight = normalize(-light.Direction.xyz);
     
     float NdotL = CosineLaw(normalize(toLight), normalize(normal));
-    float3 diffuse = light.Diffuse * NdotL * sampleColour;
+    float3 diffuse = light.Colour * NdotL * sampleColour;
     
     float3 toEye = normalize(CameraPosition.xyz - worldPosition.xyz);    
     float3 halfway = normalize(toEye + toLight);
     float NdotH = CosineLaw(normalize(halfway), normalize(normal));
     float3 specular = light.SpecularStrength * pow(NdotH, light.SpecularPower) * light.Colour;
 
-    return float4(diffuse + specular, 1.0f);
+    return float4(saturate(diffuse + specular), sampleColour.a);
 }
 
 float4 CalculatePointLighting(Light light, float4 sampleColour, float3 worldPosition, float3 normal)
@@ -38,8 +38,10 @@ float4 CalculatePointLighting(Light light, float4 sampleColour, float3 worldPosi
     float3 toLight = light.Position.xyz - worldPosition;
 
     float NdotL = CosineLaw(normalize(toLight), normalize(normal));
-    float3 diffuse = light.Diffuse * NdotL * sampleColour;
-
+    float3 diffuse = light.Colour * NdotL * sampleColour;
+    
+    return float4(saturate(diffuse), sampleColour.a);
+    
     float3 toEye = normalize(CameraPosition.xyz - worldPosition.xyz);    
     float3 halfway = normalize(toEye + toLight);
     float NdotH = CosineLaw(normalize(halfway), normalize(normal));
@@ -51,35 +53,33 @@ float4 CalculatePointLighting(Light light, float4 sampleColour, float3 worldPosi
     diffuse *= attenuation;
     specular *= attenuation;    
 
-    return float4(diffuse + specular, 1.0f);
+    return float4(saturate(diffuse + specular), sampleColour.a);
 }
 
 float4 CalculateSpotLight(Light light, float4 sampleColour, float3 worldPosition, float3 normal)
 {
     float3 toLight = light.Position.xyz - worldPosition;
-
+    float distance = length(toLight);
+    if (distance > light.Range)
+        return float4(0.0f, 0.0f, 0.0f, 0.0f);
+    
     float NdotL = CosineLaw(normalize(toLight), normalize(normal));
-    float3 diffuse = light.Diffuse * NdotL * sampleColour;
+    float3 diffuse = light.Colour * NdotL * sampleColour;
 
     float3 toEye = normalize(CameraPosition.xyz - worldPosition.xyz);    
     float3 halfway = normalize(toEye + toLight);
     float NdotH = CosineLaw(normalize(halfway), normalize(normal));
     float3 specular = light.SpecularStrength * pow(NdotH, light.SpecularPower) * light.Colour;
+    
+    //Calculate falloff from center to edge of pointlight cone
+    float falloff = pow(max(dot(-toLight, normalize(light.Direction.xyz)), 0.0f), light.ConeAngle);
 
-    float theta = dot(normalize(toLight), normalize(-light.Direction));
-    float epsilon = (light.InnerCutoff - light.OuterCutoff);
-    float intensity = clamp((theta - light.OuterCutoff) / epsilon, 0.0f, 1.0f);
-    diffuse *= intensity;
-    specular *= intensity;    
-
-
-    float distance = length(toLight);
     float attenuation = CalculateAttenuation(distance, light.Attenuation.x, light.Attenuation.y, light.Attenuation.z);
 
     diffuse *= attenuation;
     specular *= attenuation;    
 
-    return float4(diffuse + specular, 1.0f);
+    return float4(saturate(diffuse + specular), sampleColour.a);
 }
 
 float4 CalculateLighting(float4 sampleColour, float3 worldPosition, float3 normal)

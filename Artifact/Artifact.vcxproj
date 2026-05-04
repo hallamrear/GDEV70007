@@ -188,6 +188,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Artifact.h" />
+    <ClInclude Include="System\Maths.h" />
     <ClInclude Include="Physics\Colliders\ConvexHullCollider.h" />
     <ClInclude Include="Rendering\Lighting\Light.h" />
     <ClInclude Include="Physics\Collision Detection\CollisionDetection.h" />
@@ -235,6 +236,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Artifact.cpp" />
+    <ClCompile Include="System\Maths.cpp" />
     <ClCompile Include="Physics\Colliders\ConvexHullCollider.cpp" />
     <ClCompile Include="Rendering\Lighting\Light.cpp" />
     <ClCompile Include="Physics\Collision Detection\CollisionDetection.cpp" />
@@ -322,6 +324,9 @@
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Content\Demo_Level.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="Content\Lighting.bin">
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Content\Suzanne.glb">
