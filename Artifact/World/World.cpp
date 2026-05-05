@@ -98,26 +98,26 @@ Entity* World::CreateEntity(const std::string& displayName)
 	return entity;
 }
 
-void World::Update(const float& deltaTime)
+void World::FixedUpdate()
 {
 	for (auto& itr : m_EntityMap)
 	{
 		if (itr.second != nullptr)
 		{
-			itr.second->Update(deltaTime);
+			itr.second->FixedUpdate();
 		}
 	}
 
 	DestroyDeadEntities();
 }
 
-void World::PostUpdate(const float& deltaTime)
+void World::Update(const float& deltaTime)
 {
 	for (auto& entity : m_EntityMap)
 	{
 		if (entity.second != nullptr)
 		{
-			entity.second->PostUpdate(deltaTime);
+			entity.second->Update(deltaTime);
 		}
 	}
 }
@@ -149,16 +149,17 @@ void World::RenderEntityDetails(Entity& entity)
 	ImGui::PushID(imguiHash.c_str());
 	std::string headerHash = entity.GetDisplayName() + imguiHash;
 
-	ImGui::Text(entity.GetDisplayName().c_str()); 
-	ImGui::SameLine(); 
+	ImGui::SeparatorText(entity.GetDisplayName().c_str());
 
-	std::string str = "EntityEditModal" + imguiHash;
+	std::string entityEditModalStr = "EntityEditModal" + imguiHash;
 	if(ImGui::Button("Edit Entity"))
 	{
-		ImGui::OpenPopup(str.c_str());
+		ImGui::OpenPopup(entityEditModalStr.c_str());
 	}
 
-	if (ImGui::BeginPopupModal(str.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	std::string EntityEditRigidbodyModalStr = "EntityEditRigidbody222" + imguiHash;
+
+	if (ImGui::BeginPopupModal(entityEditModalStr.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		ImGui::Text("GUID: %s", entity.GetIDString().c_str());
 		ImGui::SameLine();
@@ -174,6 +175,26 @@ void World::RenderEntityDetails(Entity& entity)
 			entity.SetDisplayName(buffer);
 		}
 
+		ImGui::SeparatorText("Position and Rotation");
+
+		ImGui::InputFloat3("Position", &entity.GetRigidbody().Translation.x);
+		ImGui::SameLine();
+
+		if (ImGui::Button("Reset Position"))
+		{
+			entity.GetRigidbody().Translation = Vector3(0.0f, 0.0f, 0.0f);
+		}
+
+		ImGui::InputFloat4("Rotation (Quat)", &entity.GetRigidbody().Rotation.x);
+		ImGui::SameLine();
+
+		if (ImGui::Button("Reset Rotation"))
+		{
+			entity.GetRigidbody().Rotation = Vector4(0.0f, 0.0f, 0.0f, 1.0f);
+		}
+
+		ImGui::SeparatorText("Models and Colliders");
+
 		std::string modelDisplayName = "None";
 
 		if (entity.GetModel().get() != nullptr)
@@ -182,12 +203,13 @@ void World::RenderEntityDetails(Entity& entity)
 		}
 
 		ImGui::Text("Model: %s\n", modelDisplayName.c_str());
-		ImGui::SameLine();
 
 		if (ImGui::Button("Change Model"))
 		{
 			ImGui::OpenPopup("Change Model Modal");
 		}
+
+		ImGui::Spacing();
 
 		// Always center this window when appearing
 		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
@@ -296,6 +318,44 @@ void World::RenderEntityDetails(Entity& entity)
 			}
 		}
 
+		ImGui::SeparatorText("Rigidbody");
+
+		if (ImGui::Button("Edit Rigidbody"))
+		{
+			ImGui::OpenPopup("Edit Rigidbody Data");
+		}
+
+		if (ImGui::BeginPopupModal("Edit Rigidbody Data", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			Rigidbody& rigidbody = entity.GetRigidbody();
+
+			ImGui::Checkbox("Is Gravity Enabled", &rigidbody.IsGravityEnabled);
+
+			ImGui::InputFloat3("Linear Velocity", &rigidbody.LinearVelocity.x);
+			ImGui::InputFloat3("Angular Velocity", &rigidbody.AngularVelocity.x);
+
+			float mass = rigidbody.GetMass();
+
+			if (ImGui::DragFloat("Mass", &mass, 1.0f, 0.0f, 1000.0f))
+			{
+				rigidbody.SetMass(mass);
+			}
+
+			if (ImGui::Button("OK", ImVec2(120, 0)))
+			{
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::SetItemDefaultFocus();
+			ImGui::SameLine();
+
+			if (ImGui::Button("Cancel", ImVec2(120, 0)))
+			{
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+
 		if (ImGui::Button("OK", ImVec2(120, 0))) 
 		{ 
 			ImGui::CloseCurrentPopup();
@@ -311,7 +371,6 @@ void World::RenderEntityDetails(Entity& entity)
 
 		ImGui::EndPopup();
 	}
-
 
 	ImGui::PopID();
 }

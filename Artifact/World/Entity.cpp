@@ -6,7 +6,7 @@
 
 #include <Rendering/Geometry/Mesh.h>
 
-Entity::Entity()
+Entity::Entity() : m_Rigidbody(*this)
 {
 	m_Model = nullptr;
 	m_ID = EntityID();
@@ -16,9 +16,6 @@ Entity::Entity()
 	m_IDString = std::string(reinterpret_cast<char*>(str));
 	m_DisplayName = "Unnamed";
 	m_WorldMatrix = IdentityMatrix;
-	m_Scale = Vector3(1.0f, 1.0f, 1.0f);
-	m_Translation = Vector3(0.0f, 0.0f, 0.0f);
-	m_RotationEuler = Vector3(0.0f, 0.0f, 0.0f);
 	m_IsAlive = true;
 	m_Collider = nullptr;
 	m_IsPendingDestroy = false;
@@ -31,9 +28,6 @@ Entity::~Entity()
 	m_IDString = "";
 	m_DisplayName = "";
 	m_WorldMatrix = IdentityMatrix;
-	m_Scale = Vector3(0.0f, 0.0f, 0.0f);
-	m_Translation = Vector3(0.0f, 0.0f, 0.0f);
-	m_RotationEuler = Vector3(0.0f, 0.0f, 0.0f);
 	m_IsAlive = false;
 	m_IsPendingDestroy = true;
 }
@@ -59,6 +53,11 @@ void Entity::SetDisplayName(const std::string& displayName)
 }
 
 Rigidbody& Entity::GetRigidbody()
+{
+	return m_Rigidbody;
+}
+
+const Rigidbody& Entity::GetRigidbody() const
 {
 	return m_Rigidbody;
 }
@@ -146,19 +145,19 @@ void Entity::RemoveCollider()
 
 void Entity::SetPosition(const Vector3& translation)
 {
-	m_Translation = translation;
+	m_Rigidbody.Translation = translation;
 }
 
 void Entity::Translate(const Vector3& translation)
 {
-	m_Translation.x += translation.x;
-	m_Translation.y += translation.y;
-	m_Translation.z += translation.z;
+	m_Rigidbody.Translation.x += translation.x;
+	m_Rigidbody.Translation.y += translation.y;
+	m_Rigidbody.Translation.z += translation.z;
 }
 
 const Vector3& Entity::GetPosition() const
 {
-	return m_Translation;
+	return m_Rigidbody.Translation;
 }
 
 void Entity::SetWorldMatrix(const Matrix4x4& worldMatrix)
@@ -174,9 +173,8 @@ const Matrix4x4& Entity::GetWorldMatrix() const
 void Entity::UpdateWorldMatrix()
 {
 	DirectX::XMStoreFloat4x4(&m_WorldMatrix,
-		DirectX::XMMatrixScaling(m_Scale.x, m_Scale.y, m_Scale.z) *
-		DirectX::XMMatrixRotationRollPitchYaw(m_RotationEuler.x, m_RotationEuler.y, m_RotationEuler.z) *
-		DirectX::XMMatrixTranslation(m_Translation.x, m_Translation.y, m_Translation.z));
+		DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&m_Rigidbody.Rotation)) *
+		DirectX::XMMatrixTranslation(m_Rigidbody.Translation.x, m_Rigidbody.Translation.y, m_Rigidbody.Translation.z));
 }
 
 void Entity::SetModel(ModelRef& model)
@@ -191,12 +189,23 @@ const ModelRef& Entity::GetModel() const
 
 void Entity::Update(const float& deltaTime)
 {
-	UNREFERENCED_PARAMETER(deltaTime);
+	if (m_IsPendingDestroy)
+	{
+		return;
+	}
+
+	m_Rigidbody.Update(deltaTime);
 }
 
-void Entity::PostUpdate(const float& deltaTime)
+void Entity::FixedUpdate()
 {
-	UNREFERENCED_PARAMETER(deltaTime);
+	if (m_IsPendingDestroy)
+	{
+		return;
+	}
+
+	m_Rigidbody.FixedUpdate();
+	UpdateWorldMatrix();
 }
 
 void Entity::Render(Renderer& renderer)

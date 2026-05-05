@@ -11,6 +11,9 @@ constexpr Vector3 BASIS_RIGHT_VECTOR = { 1.0f, 0.0f, 0.0f };
 constexpr Vector3 BASIS_UP_VECTOR = { 0.0f, 1.0f, 0.0f };
 constexpr Vector3 BASIS_FORWARD_VECTOR = { 0.0f, 0.0f, 1.0f };
 
+#define CAPPED_TIMESTEP (1.0f / 15.0f)
+#define FIXED_TIMESTEP (1.0f / 60.0f)
+
 #define MAX_DISPLAY_NAME_LENGTH 256
 
 #define VECTOR_W_POSITION 1.0f

@@ -43,8 +43,8 @@ public:
 	Entity* CreateEntity();
 	Entity* GetEntity(const EntityID& entityID);
 
+	void FixedUpdate();
 	void Update(const float& deltaTime);
-	void PostUpdate(const float& deltaTime);
 	void Render(Renderer& renderer);
 
 	// Inherited via IIMGUIRenderable

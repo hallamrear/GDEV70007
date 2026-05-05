@@ -35,6 +35,7 @@ public:
 
 	LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
+	void FixedUpdate();
 	void Update(const float& deltaTime);
 	void Render();
 };

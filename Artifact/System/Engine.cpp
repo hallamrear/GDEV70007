@@ -192,11 +192,19 @@ LRESULT Engine::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
-void Engine::Update(const float& deltaTime)
+void Engine::FixedUpdate()
 {
 	if (!m_IsInitialised || !m_IsRunning)
 		return;
 
+	if (m_World != nullptr)
+	{
+		m_World->FixedUpdate();
+	}
+}
+
+void Engine::Update(const float& deltaTime)
+{
 	InputListener::UpdateInputStates();
 
 	static float timeElapsed = 0.0f;
@@ -250,14 +258,16 @@ void Engine::Update(const float& deltaTime)
 		};
 
 		if (thumbstickRight.x > (0.0f + FLT_EPSILON) || thumbstickRight.x < (0.0f - FLT_EPSILON) ||
-			thumbstickRight.y > (0.0f + FLT_EPSILON) || thumbstickRight.y < (0.0f - FLT_EPSILON))
+			thumbstickRight.y >(0.0f + FLT_EPSILON) || thumbstickRight.y < (0.0f - FLT_EPSILON))
 		{
 			m_Renderer->GetCamera().RotateEulerDegrees(Vector3(rotationSpeed * -thumbstickRight.y, rotationSpeed * thumbstickRight.x, 0.0f));
 		}
 	}
 
-	m_World->Update(deltaTime);
-	m_World->PostUpdate(deltaTime);
+	if (m_World != nullptr)
+	{
+		m_World->Update(deltaTime);
+	}
 }
 
 void Engine::Render()

@@ -16,11 +16,6 @@ private:
 	Rigidbody m_Rigidbody;
 	ModelRef m_Model;
 	Matrix4x4 m_WorldMatrix;
-
-	Vector3 m_Scale;
-	Vector3 m_Translation;
-	Vector3 m_RotationEuler;
-
 	Collider* m_Collider;
 
 	void UpdateWorldMatrix();
@@ -34,6 +29,7 @@ public:
 	const std::string& GetDisplayName() const;
 	void SetDisplayName(const std::string& displayName);
 	Rigidbody& GetRigidbody();
+	const Rigidbody& GetRigidbody() const;
 
 	Collider* GetCollider() const;
 	void SetCollider(const COLLIDER_TYPE& colliderType);
@@ -50,8 +46,8 @@ public:
 	void SetModel(ModelRef& model);
 	const ModelRef& GetModel() const;
 
+	void FixedUpdate();
 	void Update(const float& deltaTime);
-	void PostUpdate(const float& deltaTime);
 	void Render(Renderer& renderer);
 
 	void SetAlive(const bool& state);
