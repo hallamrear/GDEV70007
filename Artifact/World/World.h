@@ -4,7 +4,7 @@
 #include <rpc.h>
 
 class Entity;
-class Octree;
+class OctreeNode;
 
 struct GUIDHasher
 {
@@ -25,7 +25,7 @@ private:
 
 	bool m_IsInitialised;
 	EntityMap m_EntityMap;
-	Octree* m_Octree;
+	OctreeNode* m_Octree;
 
 	bool Initialise();
 	bool Shutdown();

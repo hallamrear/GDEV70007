@@ -5,6 +5,7 @@
 #include <System/AssetManagement.h>
 #include <Rendering/IMGUIIncludes.h>
 #include <Physics/Colliders/Collider.h>
+#include <Physics/Optimisations/Octree.h>
 
 const bool& World::IsInitialised() const
 {
@@ -15,7 +16,7 @@ World::World()
 {
 	m_EntityMap = EntityMap();
 	m_IsInitialised = false;
-	m_Octree = nullptr;
+	m_Octree = new OctreeNode(nullptr, 8192.0f, 0);
 }
 
 World::~World()
@@ -29,6 +30,8 @@ bool World::Initialise()
 	ModelRef ref = ServiceLocator::Locate<AssetManager>()->GetModel("Demo_Level.glb");
 	testRoom->SetModel(ref);
 	m_EntityMap.insert(std::make_pair(testRoom->GetID(), testRoom));
+
+	m_Octree->AddEntity({ testRoom });
 
 	m_IsInitialised = true;
 	return true;
@@ -398,5 +401,10 @@ void World::Render(Renderer& renderer)
 		{
 			entity.second->Render(renderer);
 		}
+	}
+
+	if (m_Octree != nullptr)
+	{
+		m_Octree->Render(renderer);
 	}
 }

@@ -84,6 +84,10 @@ public:
 	virtual bool SetDebugDrawMode() = 0;
 	virtual bool SetDefaultDrawMode() = 0;
 
+	virtual bool UpdateWorldMatrix(const Matrix4x4& worldMatrix) = 0;
+	virtual bool UpdateLightingBuffer() = 0;
+	virtual bool UpdateConstantBuffer() = 0;
+
 	Camera& GetCamera();
 	LightBuffer& GetLightData();
 };

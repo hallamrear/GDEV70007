@@ -148,9 +148,9 @@ public:
 	bool SetDebugDrawMode();
 	bool SetDefaultDrawMode();
 
-	HRESULT UpdateWorldMatrix(const Matrix4x4& worldMatrix);
-	HRESULT UpdateLightingBuffer();
-	HRESULT UpdateConstantBuffer();
+	bool UpdateWorldMatrix(const Matrix4x4& worldMatrix);
+	bool UpdateLightingBuffer();
+	bool UpdateConstantBuffer();
 
 	bool BindGenericBufferData(GenericBuffer& genericBuffer, const void* buffer, const size_t& bufferLength);
 	bool BindVertexData(VertexBuffer& vertexBuffer, const void* buffer, const size_t& bufferLength);

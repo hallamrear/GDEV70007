@@ -1909,15 +1909,15 @@ void DX12Renderer::UploadPushConstants()
     m_CommandList->SetGraphicsRoot32BitConstants(1, sizeof(PushConstants) / sizeof(UINT32), m_PushConstants, 0);
 }
 
-HRESULT DX12Renderer::UpdateWorldMatrix(const Matrix4x4& worldMatrix)
+bool DX12Renderer::UpdateWorldMatrix(const Matrix4x4& worldMatrix)
 {
     assert(m_IsInitialised);
     m_PushConstants->World = worldMatrix;
     UploadPushConstants();
-    return S_OK;
+    return true;
 }
 
-HRESULT DX12Renderer::UpdateLightingBuffer()
+bool DX12Renderer::UpdateLightingBuffer()
 {
     assert(m_IsInitialised);
 
@@ -1925,13 +1925,13 @@ HRESULT DX12Renderer::UpdateLightingBuffer()
     {
         m_CommandList->SetGraphicsRootConstantBufferView(2, m_LightBufferGPUUploaderArray[m_CurrentBackbufferIndex]->GetGPUVirtualAddress());
         memcpy(m_LightBufferAddressArray[m_CurrentBackbufferIndex], &m_LightData, sizeof(LightBuffer));
-        return S_OK;
+        return true;
     }
 
-    return E_FAIL;
+    return false;
 }
 
-HRESULT DX12Renderer::UpdateConstantBuffer()
+bool DX12Renderer::UpdateConstantBuffer()
 {
     assert(m_IsInitialised);
 
@@ -1939,10 +1939,10 @@ HRESULT DX12Renderer::UpdateConstantBuffer()
     {
         m_CommandList->SetGraphicsRootConstantBufferView(0, m_ConstantBufferGPUUploaderArray[m_CurrentBackbufferIndex]->GetGPUVirtualAddress());
         memcpy(m_ConstantBufferAddressArray[m_CurrentBackbufferIndex], &m_ConstantBuffer, sizeof(ConstantBuffer));
-        return S_OK;
+        return true;
     }
 
-    return E_FAIL;
+    return false;
 }
 
 bool DX12Renderer::BindGenericBufferData(GenericBuffer& genericBuffer, const void* buffer, const size_t& bufferLength)
