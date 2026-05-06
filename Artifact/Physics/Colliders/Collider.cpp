@@ -21,11 +21,6 @@ Collider::~Collider()
 	}
 }
 
-Matrix4x4& Collider::GetOffsetMatrix()
-{
-	return m_OffsetMatrix;
-}
-
 const Entity& Collider::GetAttachedEntity() const
 {
 	return m_AttachedEntity;

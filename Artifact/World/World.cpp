@@ -16,7 +16,7 @@ World::World()
 {
 	m_EntityMap = EntityMap();
 	m_IsInitialised = false;
-	m_Octree = new OctreeNode(nullptr, 8192.0f, 0);
+	m_OctreeRoot = nullptr;
 }
 
 World::~World()
@@ -26,12 +26,13 @@ World::~World()
 
 bool World::Initialise()
 {
+	m_OctreeRoot = OctreeNode::BuildOctree(nullptr, Vector3(0.0f, 0.0f, 0.0f), 8192.0f, 0);
+
 	Entity* testRoom = CreateEntity("Test Room");
 	ModelRef ref = ServiceLocator::Locate<AssetManager>()->GetModel("Demo_Level.glb");
 	testRoom->SetModel(ref);
 	m_EntityMap.insert(std::make_pair(testRoom->GetID(), testRoom));
 
-	m_Octree->AddEntity({ testRoom });
 
 	m_IsInitialised = true;
 	return true;
@@ -91,6 +92,12 @@ Entity* World::CreateEntity()
 {
 	Entity* entity = new Entity();
 	m_EntityMap.insert(std::make_pair(entity->GetID(), entity));
+
+	if (m_OctreeRoot)
+	{
+		m_OctreeRoot->AddEntity({ entity });
+	}
+
 	return entity;
 }
 
@@ -403,8 +410,8 @@ void World::Render(Renderer& renderer)
 		}
 	}
 
-	if (m_Octree != nullptr)
+	if (m_OctreeRoot != nullptr)
 	{
-		m_Octree->Render(renderer);
+		OctreeNode::Render(renderer, m_OctreeRoot);
 	}
 }

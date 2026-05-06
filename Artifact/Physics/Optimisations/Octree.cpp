@@ -2,22 +2,68 @@
 #include "Octree.h"
 #include <World/Entity.h>
 #include <Rendering/Renderer.h>
+#include <System/ServiceLocator.h>
+#include <System/AssetManagement.h>
 
-OctreeNode::OctreeNode(OctreeNode* parent, const float colliderSize, const int depth) : m_Depth(depth), m_Parent(parent)
+ModelRef OctreeNode::m_Model = nullptr;
+
+OctreeNode* OctreeNode::BuildOctree(OctreeNode* parent, const Vector3& centre, const float& halfWidth, const int& depth)
 {
-	m_Entity = new Entity();
-	m_Entity->SetDisplayName("Collider Node");
+	OctreeNode* node = nullptr;
 
-	if (m_Parent != nullptr)
+	if (depth >= c_MaxOctreeNodeDepth)
 	{
-		Vector3 position = parent->m_Entity->GetPosition();
-		position.x += (colliderSize / 2.0f);
-		position.y += (colliderSize / 2.0f);
-		position.z += (colliderSize / 2.0f);
-		m_Entity->Translate(position);
+		return node;
+	}
+	else
+	{
+		if (m_Model == nullptr)
+		{
+			AssetManager* am = ServiceLocator::Locate<AssetManager>();
+			assert(am);
+			m_Model = am->GetModel("Colliders\\BoxCollider.glb");
+			assert(m_Model);
+		}
+
+		node = new OctreeNode(parent, centre, halfWidth, depth);
+
+		Vector3 offset = Vector3(0.0f, 0.0f, 0.0f);
+
+		float step = halfWidth * 0.5f;
+
+		Vector3 childCentre = Vector3(0.0f, 0.0f, 0.0f);
+		for (size_t i = 0; i < c_ChildCount; i++)
+		{
+			offset.x = ((i & 1) ? step : -step);
+			offset.y = ((i & 2) ? step : -step);
+			offset.z = ((i & 4) ? step : -step);
+
+			childCentre.x = centre.x + offset.x;
+			childCentre.y = centre.y + offset.y;
+			childCentre.z = centre.z + offset.z;
+			node->m_Children[i] = BuildOctree(node, childCentre, step, depth + 1);
+		}
 	}
 
-	m_Collider = new AABBCollider(*m_Entity, Vector3(colliderSize, colliderSize, colliderSize));
+	return node;
+}
+
+void OctreeNode::DestroyOctree(OctreeNode* root)
+{
+	UNREFERENCED_PARAMETER(root);
+	throw new std::exception("Not Implemented");
+}
+
+OctreeNode::OctreeNode(OctreeNode* parent, const Vector3& centre, const float& halfWidth, const int& depth) : m_Depth(depth), m_Parent(parent)
+{
+	m_CentreMatrix = IdentityMatrix;
+
+	DirectX::XMStoreFloat4x4(&m_CentreMatrix,
+		DirectX::XMMatrixScaling(halfWidth + halfWidth, halfWidth + halfWidth, halfWidth + halfWidth) *
+		DirectX::XMMatrixTranslation(centre.x, centre.y, centre.z)
+	);
+
+	m_HalfWidth = halfWidth;
 
 	for (size_t i = 0; i < c_ChildCount; i++)
 	{
@@ -36,18 +82,6 @@ OctreeNode::~OctreeNode()
 			delete m_Children[i];
 			m_Children[i] = nullptr;
 		}
-	}
-
-	if (m_Collider)
-	{
-		delete m_Collider;
-		m_Collider = nullptr;
-	}
-
-	if (m_Entity)
-	{
-		delete m_Entity;
-		m_Entity = nullptr;
 	}
 }
 
@@ -86,20 +120,22 @@ bool OctreeNode::SplitNode(const std::vector<Entity*>& entitiesToSort)
 	return true;
 }
 
-void OctreeNode::Render(Renderer& renderer)
+void OctreeNode::Render(Renderer& renderer, OctreeNode* root)
 {
-	if (HasSplit())
+	renderer.SetDebugDrawMode();
+
+	if (root->HasSplit())
 	{
 		for (size_t i = 0; i < c_ChildCount; i++)
 		{
-			if (m_Children[i] != nullptr) 
+			if (root->m_Children[i] != nullptr)
 			{
-				m_Children[i]->Render(renderer);
+				OctreeNode::Render(renderer, root->m_Children[i]);
 			}
 		}
 	}
 	else
 	{
-		m_Collider->Render(renderer);
+		renderer.Render(m_Model, root->m_CentreMatrix);
 	}
 }

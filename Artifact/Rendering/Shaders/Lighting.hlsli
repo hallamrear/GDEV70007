@@ -15,7 +15,7 @@ float CalculateAttenuation(float distance, float constantAtt, float linearAtt, f
 //Lambert's Cosine Law
 float CosineLaw(float3 toLightVector, float3 normal)
 {
-    return saturate(dot(normalize(toLightVector), normalize(normal)));
+    return saturate(dot(normalize(normal), normalize(toLightVector)));
 }
 
 float4 CalculateDirectionalLighting(Light light, float4 sampleColour, float3 worldPosition, float3 normal)

@@ -181,6 +181,7 @@ public:
 
 	static void WndProcCallback(const int& msg, LPARAM lParam, WPARAM wParam);
 	static void UpdateInputStates();
+	static void SetMousePosition(const Vector2& position);
 
 	static const MouseState& GetMouseState();
 	static const bool& GetKeyDown(const int& keycode);

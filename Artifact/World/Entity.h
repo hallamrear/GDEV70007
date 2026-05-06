@@ -38,6 +38,7 @@ public:
 
 	void SetPosition(const Vector3& position);
 	void Translate(const Vector3& translation);
+	void Rotate(const Vector3& rotation);
 	const Vector3& GetPosition() const;
 
 	void SetWorldMatrix(const Matrix4x4& worldMatrix);

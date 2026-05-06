@@ -201,6 +201,11 @@ void InputListener::UpdateMouseState()
 	m_MouseState.m_FrameDelta = Vector2(m_MouseState.m_Position.x - m_MouseState.m_LastPosition.x, m_MouseState.m_Position.y - m_MouseState.m_LastPosition.y);
 }
 
+void InputListener::SetMousePosition(const Vector2& position)
+{
+	SetCursorPos((int)position.x, (int)position.y);
+}
+
 void InputListener::UpdateControllerStates()
 {
 	for (int i = 0; i < MAX_CONTROLLERS; i++)

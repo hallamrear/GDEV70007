@@ -122,14 +122,6 @@ void Entity::SetColliderFromModel(const COLLIDER_TYPE& colliderType)
 			std::max(GetModel()->GetMeshes()[0]->GetMaxVertexLocalSpace().z, std::abs(GetModel()->GetMeshes()[0]->GetMinVertexLocalSpace().z)) * 2.0f
 		);
 
-		//Spheres need radii rather than extents.
-		if (colliderType == COLLIDER_TYPE_SPHERE)
-		{
-			newSize.x *= 0.5f;
-			newSize.y *= 0.5f;
-			newSize.z *= 0.5f;
-		}
-
 		GetCollider()->SetSize(newSize);
 	}
 }
@@ -153,6 +145,17 @@ void Entity::Translate(const Vector3& translation)
 	m_Rigidbody.Translation.x += translation.x;
 	m_Rigidbody.Translation.y += translation.y;
 	m_Rigidbody.Translation.z += translation.z;
+}
+
+void Entity::Rotate(const Vector3& rotation)
+{
+	DirectX::XMStoreFloat4(&m_Rigidbody.Rotation,
+		DirectX::XMQuaternionMultiply(XMLoadFloat4(&m_Rigidbody.Rotation),
+		DirectX::XMQuaternionRotationRollPitchYaw(rotation.x, rotation.y, rotation.z)));
+
+	DirectX::XMStoreFloat4(&m_Rigidbody.Rotation, DirectX::XMQuaternionNormalize(XMLoadFloat4(&m_Rigidbody.Rotation)));
+
+	UpdateWorldMatrix();
 }
 
 const Vector3& Entity::GetPosition() const
@@ -193,6 +196,14 @@ void Entity::Update(const float& deltaTime)
 	{
 		return;
 	}
+
+	if (m_DisplayName == "Test Room")
+	{
+		return;
+	}
+
+	//Rotate({ deltaTime * (rand() % 30), deltaTime * (rand() % 30), deltaTime * (rand() % 30) });
+	Rotate({ 0.0f, deltaTime * (rand() % 30), 0.0f });
 
 	m_Rigidbody.Update(deltaTime);
 }

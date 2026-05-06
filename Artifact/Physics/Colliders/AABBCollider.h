@@ -15,4 +15,9 @@ public:
 	/// </summary>
 	/// <param name="size">A vector3 dictating the half width of the cube.</param>
 	void SetSize(const Vector3& size);
+
+	Vector3 GetMaxCornerWorldSpace() const;
+	Vector3 GetMinCornerWorldSpace() const;
+	Vector3 GetMaxCornerLocalSpace() const;
+	Vector3 GetMinCornerLocalSpace() const;
 };

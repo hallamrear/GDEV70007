@@ -50,6 +50,8 @@ public:
 	HWND& GetWindowHandle();
 	const int& GetWindowWidth() const;
 	const int& GetWindowHeight() const;
+	const Vector2 GetWindowDimensions() const;
+	const Vector2 GetWindowCentre() const;
 
 	const bool& IsInitialised() const;
 

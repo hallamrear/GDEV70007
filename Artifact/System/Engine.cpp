@@ -207,6 +207,10 @@ void Engine::Update(const float& deltaTime)
 {
 	InputListener::UpdateInputStates();
 
+	//POINT windowCentre{ m_Renderer->GetWindowCentre().x, m_Renderer->GetWindowCentre().y };
+	//ScreenToClient(m_Renderer->GetWindowHandle(), &centre);
+	InputListener::SetMousePosition(m_Renderer->GetWindowCentre());
+
 	static float timeElapsed = 0.0f;
 	timeElapsed += deltaTime;
 
@@ -221,7 +225,7 @@ void Engine::Update(const float& deltaTime)
 	Vector3 right = m_Renderer->GetCamera().GetRightVector();
 	Vector3 up = m_Renderer->GetCamera().GetUpVector();
 
-	const float moveSpeed = +60.0f * deltaTime;
+	const float moveSpeed = +360.0f * deltaTime;
 	const float rotationSpeed = 5.0f * deltaTime;
 
 	if (m_InputListener.GetKeyDown(VK_KEY_W)) { m_Renderer->GetCamera().Move(Vector3(forward.x * moveSpeed, forward.y * moveSpeed, forward.z * moveSpeed)); }

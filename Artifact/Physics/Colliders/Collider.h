@@ -26,7 +26,7 @@ class Collider
 {
 public:
 
-private:
+protected:
 	COLLIDER_TYPE m_Type;
 	const Entity& m_AttachedEntity;
 	Matrix4x4 m_OffsetMatrix;
@@ -43,7 +43,6 @@ protected:
 public:
 	virtual ~Collider() = 0;
 
-	Matrix4x4& GetOffsetMatrix();
 	const Entity& GetAttachedEntity() const;
 
 	virtual void SetSize(const Vector3& size) = 0;

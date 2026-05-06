@@ -25,7 +25,7 @@ private:
 
 	bool m_IsInitialised;
 	EntityMap m_EntityMap;
-	OctreeNode* m_Octree;
+	OctreeNode* m_OctreeRoot;
 
 	bool Initialise();
 	bool Shutdown();

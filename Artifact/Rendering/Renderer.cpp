@@ -109,6 +109,16 @@ const int& Renderer::GetWindowHeight() const
 	return m_WindowHeight;
 }
 
+const Vector2 Renderer::GetWindowDimensions() const
+{
+	return Vector2((float)m_WindowWidth, (float)m_WindowHeight);
+}
+
+const Vector2 Renderer::GetWindowCentre() const
+{
+	return Vector2(m_WindowWidth * 0.5f, m_WindowHeight * 0.5f);
+}
+
 const Vector4& Renderer::GetClearColour() const
 {
 	return m_ClearColour;
