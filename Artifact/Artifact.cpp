@@ -112,7 +112,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance,
 
         lTime = cTime;
 
-        printf("Fixed Updates: %i\nVariable Updates: %i\n", fixedUpdates, variableUpdates);
+        printf("Fixed Updates: %i - Variable Updates: %i\n", fixedUpdates, variableUpdates);
         fixedUpdates = 0;
         variableUpdates = 0;
     }

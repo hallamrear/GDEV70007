@@ -1042,7 +1042,7 @@ bool ImGui_ImplDX12_Init(ID3D12Device* device, int num_frames_in_flight, DXGI_FO
     queueDesc.NodeMask = 1;
     HRESULT hr = device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&init_info.CommandQueue));
     IM_ASSERT(SUCCEEDED(hr));
-
+    UNREFERENCED_PARAMETER(hr);
     bool ret = ImGui_ImplDX12_Init(&init_info);
     ImGui_ImplDX12_Data* bd = ImGui_ImplDX12_GetBackendData();
     bd->commandQueueOwned = true;
@@ -1213,6 +1213,7 @@ static ImGui_ImplDX12_FrameContext* ImGui_WaitForNextFrameContext(ImGui_ImplDX12
     {
         HRESULT hr = bd->Fence->SetEventOnCompletion(frame_context->FenceValue, bd->FenceEvent);
         IM_ASSERT(hr == S_OK);
+        UNREFERENCED_PARAMETER(hr);
         HANDLE waitableObjects[] = { vd->SwapChainWaitableObject, bd->FenceEvent };
         ::WaitForMultipleObjects(2, waitableObjects, TRUE, INFINITE);
     }
@@ -1313,6 +1314,7 @@ static void ImGui_ImplDX12_RenderWindow(ImGuiViewport* viewport, void*)
 
     HRESULT hr = vd->CommandQueue->Signal(bd->Fence, ++bd->FenceLastSignaledValue);
     IM_ASSERT(hr == S_OK);
+    UNREFERENCED_PARAMETER(hr);
     frame_context->FenceValue = bd->FenceLastSignaledValue;
 }
 

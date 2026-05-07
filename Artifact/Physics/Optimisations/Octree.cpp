@@ -26,23 +26,6 @@ OctreeNode* OctreeNode::BuildOctree(OctreeNode* parent, const Vector3& centre, c
 		}
 
 		node = new OctreeNode(parent, centre, halfWidth, depth);
-
-		Vector3 offset = Vector3(0.0f, 0.0f, 0.0f);
-
-		float step = halfWidth * 0.5f;
-
-		Vector3 childCentre = Vector3(0.0f, 0.0f, 0.0f);
-		for (size_t i = 0; i < c_ChildCount; i++)
-		{
-			offset.x = ((i & 1) ? step : -step);
-			offset.y = ((i & 2) ? step : -step);
-			offset.z = ((i & 4) ? step : -step);
-
-			childCentre.x = centre.x + offset.x;
-			childCentre.y = centre.y + offset.y;
-			childCentre.z = centre.z + offset.z;
-			node->m_Children[i] = BuildOctree(node, childCentre, step, depth + 1);
-		}
 	}
 
 	return node;
@@ -56,6 +39,7 @@ void OctreeNode::DestroyOctree(OctreeNode* root)
 
 OctreeNode::OctreeNode(OctreeNode* parent, const Vector3& centre, const float& halfWidth, const int& depth) : m_Depth(depth), m_Parent(parent)
 {
+	m_Centre = centre;
 	m_CentreMatrix = IdentityMatrix;
 
 	DirectX::XMStoreFloat4x4(&m_CentreMatrix,
@@ -111,11 +95,28 @@ bool OctreeNode::SplitNode(const std::vector<Entity*>& entitiesToSort)
 {
 	UNREFERENCED_PARAMETER(entitiesToSort);
 
-	if ((m_Depth + 1) >= c_MaxOctreeNodeDepth)
+	Vector3 offset = Vector3(0.0f, 0.0f, 0.0f);
+
+	float step = m_HalfWidth * 0.5f;
+
+	Vector3 childCentre = Vector3(0.0f, 0.0f, 0.0f);
+	for (size_t i = 0; i < c_ChildCount; i++)
 	{
-		//m_Bucket.insert(m_Bucket.end(), entitiesToSort.begin(), entitiesToSort.end());
-		return false;
+		offset.x = ((i & 1) ? step : -step);
+		offset.y = ((i & 2) ? step : -step);
+		offset.z = ((i & 4) ? step : -step);
+
+		childCentre.x = m_Centre.x + offset.x;
+		childCentre.y = m_Centre.y + offset.y;
+		childCentre.z = m_Centre.z + offset.z;
+		m_Children[i] = BuildOctree(this, childCentre, step, m_Depth + 1);
 	}
+
+	for (size_t i = 0; i < c_ChildCount; i++)
+	{
+
+	}
+
 
 	return true;
 }

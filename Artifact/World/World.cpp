@@ -26,13 +26,37 @@ World::~World()
 
 bool World::Initialise()
 {
+	Vector3 position = Vector3(0.0f, 0.0f, 0.0f);
 	m_OctreeRoot = OctreeNode::BuildOctree(nullptr, Vector3(0.0f, 0.0f, 0.0f), 8192.0f, 0);
 
 	Entity* testRoom = CreateEntity("Test Room");
 	ModelRef ref = ServiceLocator::Locate<AssetManager>()->GetModel("Demo_Level.glb");
 	testRoom->SetModel(ref);
-	m_EntityMap.insert(std::make_pair(testRoom->GetID(), testRoom));
+	testRoom->AddColliderFromModel(COLLIDER_TYPE_SPHERE);
 
+	testRoom = CreateEntity("Ball");
+	ref = ServiceLocator::Locate<AssetManager>()->GetModel("Colliders/SphereCollider.glb");
+	testRoom->SetModel(ref);
+	testRoom->AddColliderFromModel(COLLIDER_TYPE_SPHERE);
+	position.x = (float)((rand() % 20) - 10);
+	position.y = (float)((rand() % 20) - 10);
+	position.z = (float)((rand() % 20) - 10);
+	testRoom->SetPosition(position);
+
+	/*Vector3 position = Vector3(0.0f, 0.0f, 0.0f);
+	Entity* entity = nullptr;
+	for (size_t i = 0; i < 10000; i++)
+	{
+		entity = CreateEntity("Test Room");
+		ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("Suzanne.glb");
+		entity->SetModel(suzaane);
+
+		position.x = (float)((rand() % 2000) - 1000);
+		position.y = (float)((rand() % 2000) - 1000);
+		position.z = (float)((rand() % 2000) - 1000);
+
+		entity->SetPosition(position);
+	}*/
 
 	m_IsInitialised = true;
 	return true;
@@ -121,6 +145,8 @@ void World::FixedUpdate()
 	DestroyDeadEntities();
 }
 
+#include <System/InputListener.h>
+#include <Physics/Collision Detection/CollisionDetection.h>
 void World::Update(const float& deltaTime)
 {
 	for (auto& entity : m_EntityMap)
@@ -128,6 +154,37 @@ void World::Update(const float& deltaTime)
 		if (entity.second != nullptr)
 		{
 			entity.second->Update(deltaTime);
+
+			if (entity.second->GetDisplayName() == "Ball")
+			{
+				float moveSpeed = 10.0f;
+				Vector3 forward = entity.second->GetForwardVector();
+				Vector3 right = entity.second->GetRightVector();
+				Vector3 up = entity.second->GetUpVector();
+
+				if (InputListener::GetKeyDown(VK_UP)) { entity.second->Translate(Vector3(forward.x * moveSpeed, forward.y * moveSpeed, forward.z * moveSpeed)); }
+				if (InputListener::GetKeyDown(VK_DOWN)) { entity.second->Translate(Vector3(forward.x * -moveSpeed, forward.y * -moveSpeed, forward.z * -moveSpeed)); }
+				if (InputListener::GetKeyDown(VK_LEFT)) { entity.second->Translate(Vector3(right.x * -moveSpeed, right.y * -moveSpeed, right.z * -moveSpeed)); }
+				if (InputListener::GetKeyDown(VK_RIGHT)) { entity.second->Translate(Vector3(right.x * moveSpeed, right.y * moveSpeed, right.z * moveSpeed)); }
+				if (InputListener::GetKeyDown(VK_END)) { entity.second->Translate(Vector3(up.x * -moveSpeed, up.y * -moveSpeed, up.z * -moveSpeed)); }
+				if (InputListener::GetKeyDown(VK_HOME)) { entity.second->Translate(Vector3(up.x * moveSpeed, up.y * moveSpeed, up.z * moveSpeed)); }
+			}
+		}
+
+		for (auto& other : m_EntityMap)
+		{
+			if (entity == other)
+				continue;
+
+			static CollisionManifold manifold{};
+
+			bool state = CollisionDetection::CheckCollision(other.second->GetCollider(), entity.second->GetCollider(), &manifold);
+
+			printf("Colliding? %s\n", state ? "True" : "False");
+
+			if (state)
+			{
+			}
 		}
 	}
 }
@@ -294,7 +351,7 @@ void World::RenderEntityDetails(Entity& entity)
 			{
 				if (ImGui::Button("Set Collider Size from current mesh\n"))
 				{
-					entity.SetColliderFromModel(entity.GetCollider()->GetType());
+					entity.AddColliderFromModel(entity.GetCollider()->GetType());
 				}
 			}
 		}
@@ -324,7 +381,7 @@ void World::RenderEntityDetails(Entity& entity)
 
 			if (ImGui::Button("Create selected collider"))
 			{
-				entity.SetCollider(selectedCollider);
+				entity.AddCollider(selectedCollider);
 			}
 		}
 

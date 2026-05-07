@@ -35,6 +35,8 @@ protected:
 
 	void SetColliderModel(const COLLIDER_TYPE& colliderType);
 
+	Collider* m_ChildCollider;
+
 protected:
 	Collider(const COLLIDER_TYPE& colliderType, const Entity& entity);
 
@@ -50,6 +52,10 @@ public:
 
 	const COLLIDER_TYPE& GetType() const;
 
-	void Render(Renderer& renderer);
+	void AddChildCollider(Collider* collider);
+	Collider* GetBottomCollider();
+	Collider* GetChildCollider();
+
+	virtual void Render(Renderer& renderer);
 };
 

@@ -14,6 +14,7 @@ private:
 	static ModelRef m_Model;
 	float m_HalfWidth;
 	Matrix4x4 m_CentreMatrix;
+	Vector3 m_Centre;
 
 	OctreeNode* m_Parent;
 	bool m_HasSplit;

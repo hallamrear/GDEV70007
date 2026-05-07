@@ -9,6 +9,7 @@ Collider::Collider(const COLLIDER_TYPE& colliderType, const Entity& entity) : m_
 {
 	m_OffsetMatrix = IdentityMatrix;
 	SetColliderModel(colliderType);
+	m_ChildCollider = nullptr;
 }
 
 Collider::~Collider()
@@ -72,6 +73,38 @@ const Vector3& Collider::GetSize() const
 const COLLIDER_TYPE& Collider::GetType() const
 {
 	return m_Type;
+}
+
+void Collider::AddChildCollider(Collider* collider)
+{
+	if (collider == nullptr)
+	{
+		return;
+	}
+
+	if (m_ChildCollider != nullptr)
+	{
+		m_ChildCollider->AddChildCollider(collider);
+	}
+	else
+	{
+		m_ChildCollider = collider;
+	}
+}
+
+Collider* Collider::GetBottomCollider()
+{
+	if (m_ChildCollider != nullptr)
+	{
+		return m_ChildCollider->GetBottomCollider();
+	}
+
+	return this;
+}
+
+Collider* Collider::GetChildCollider()
+{
+	return m_ChildCollider;
 }
 
 void Collider::Render(Renderer& renderer)

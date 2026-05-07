@@ -209,7 +209,7 @@ void Engine::Update(const float& deltaTime)
 
 	//POINT windowCentre{ m_Renderer->GetWindowCentre().x, m_Renderer->GetWindowCentre().y };
 	//ScreenToClient(m_Renderer->GetWindowHandle(), &centre);
-	InputListener::SetMousePosition(m_Renderer->GetWindowCentre());
+	//InputListener::SetMousePosition(m_Renderer->GetWindowCentre());
 
 	static float timeElapsed = 0.0f;
 	timeElapsed += deltaTime;
@@ -283,7 +283,9 @@ void Engine::Render()
 
 	m_World->Render(*m_Renderer);
 
+#if defined(_DEBUG)
 	m_Renderer->RenderIMGUIFrame();
+#endif
 
 	m_Renderer->PresentFrame();
 }

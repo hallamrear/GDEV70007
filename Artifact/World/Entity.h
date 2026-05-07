@@ -16,7 +16,12 @@ private:
 	Rigidbody m_Rigidbody;
 	ModelRef m_Model;
 	Matrix4x4 m_WorldMatrix;
+	Matrix4x4 m_RotationMatrix;
 	Collider* m_Collider;
+
+	Vector3 m_ForwardVector;
+	Vector3 m_UpVector;
+	Vector3 m_RightVector;
 
 	void UpdateWorldMatrix();
 
@@ -32,8 +37,8 @@ public:
 	const Rigidbody& GetRigidbody() const;
 
 	Collider* GetCollider() const;
-	void SetCollider(const COLLIDER_TYPE& colliderType);
-	void SetColliderFromModel(const COLLIDER_TYPE& colliderType);
+	void AddCollider(const COLLIDER_TYPE& colliderType);
+	void AddColliderFromModel(const COLLIDER_TYPE& colliderType);
 	void RemoveCollider();
 
 	void SetPosition(const Vector3& position);
@@ -57,4 +62,8 @@ public:
 
 	void Destroy();
 	const bool& IsPendingDestroy();
+
+	const Vector3& GetRightVector() const;
+	const Vector3& GetUpVector() const;
+	const Vector3& GetForwardVector() const;
 };

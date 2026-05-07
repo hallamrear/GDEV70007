@@ -72,7 +72,7 @@ Collider* Entity::GetCollider() const
 	return nullptr;
 }
 
-void Entity::SetCollider(const COLLIDER_TYPE& colliderType)
+void Entity::AddCollider(const COLLIDER_TYPE& colliderType)
 {
 	Vector3 size = Vector3(0.5f, 0.5f, 0.5f);
 
@@ -104,7 +104,7 @@ void Entity::SetCollider(const COLLIDER_TYPE& colliderType)
 	}
 }
 
-void Entity::SetColliderFromModel(const COLLIDER_TYPE& colliderType)
+void Entity::AddColliderFromModel(const COLLIDER_TYPE& colliderType)
 {
 	if (GetModel() == nullptr)
 	{
@@ -112,7 +112,7 @@ void Entity::SetColliderFromModel(const COLLIDER_TYPE& colliderType)
 		return;
 	}
 
-	SetCollider(colliderType);
+	AddCollider(colliderType);
 
 	if (GetCollider() != nullptr)
 	{
@@ -137,7 +137,8 @@ void Entity::RemoveCollider()
 
 void Entity::SetPosition(const Vector3& translation)
 {
-	m_Rigidbody.Translation = translation;
+	m_Rigidbody.Translation = translation;	
+	UpdateWorldMatrix();
 }
 
 void Entity::Translate(const Vector3& translation)
@@ -145,6 +146,7 @@ void Entity::Translate(const Vector3& translation)
 	m_Rigidbody.Translation.x += translation.x;
 	m_Rigidbody.Translation.y += translation.y;
 	m_Rigidbody.Translation.z += translation.z;
+	UpdateWorldMatrix();
 }
 
 void Entity::Rotate(const Vector3& rotation)
@@ -166,6 +168,7 @@ const Vector3& Entity::GetPosition() const
 void Entity::SetWorldMatrix(const Matrix4x4& worldMatrix)
 {
 	m_WorldMatrix = worldMatrix;
+	UpdateWorldMatrix();
 }
 
 const Matrix4x4& Entity::GetWorldMatrix() const
@@ -175,9 +178,17 @@ const Matrix4x4& Entity::GetWorldMatrix() const
 
 void Entity::UpdateWorldMatrix()
 {
+	DirectX::XMStoreFloat4x4(&m_RotationMatrix,
+		DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&m_Rigidbody.Rotation)));
+
 	DirectX::XMStoreFloat4x4(&m_WorldMatrix,
-		DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&m_Rigidbody.Rotation)) *
+		DirectX::XMLoadFloat4x4(&m_RotationMatrix) *
 		DirectX::XMMatrixTranslation(m_Rigidbody.Translation.x, m_Rigidbody.Translation.y, m_Rigidbody.Translation.z));
+
+	DirectX::XMStoreFloat3(&m_RightVector, DirectX::XMVector3Normalize(DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&BASIS_RIGHT_VECTOR), DirectX::XMLoadFloat4x4(&m_RotationMatrix))));
+	DirectX::XMStoreFloat3(&m_UpVector, DirectX::XMVector3Normalize(DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&BASIS_UP_VECTOR), DirectX::XMLoadFloat4x4(&m_RotationMatrix))));
+	DirectX::XMStoreFloat3(&m_ForwardVector, DirectX::XMVector3Normalize(DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&BASIS_FORWARD_VECTOR), DirectX::XMLoadFloat4x4(&m_RotationMatrix))));
+
 }
 
 void Entity::SetModel(ModelRef& model)
@@ -203,7 +214,7 @@ void Entity::Update(const float& deltaTime)
 	}
 
 	//Rotate({ deltaTime * (rand() % 30), deltaTime * (rand() % 30), deltaTime * (rand() % 30) });
-	Rotate({ 0.0f, deltaTime * (rand() % 30), 0.0f });
+	//Rotate({ 0.0f, deltaTime * (rand() % 30), 0.0f });
 
 	m_Rigidbody.Update(deltaTime);
 }
@@ -255,4 +266,19 @@ const bool& Entity::IsPendingDestroy()
 void Entity::Destroy()
 {
 	m_IsPendingDestroy = true;
+}
+
+const Vector3& Entity::GetForwardVector() const
+{
+	return m_ForwardVector;
+}
+
+const Vector3& Entity::GetRightVector() const
+{
+	return m_RightVector;
+}
+
+const Vector3& Entity::GetUpVector() const
+{
+	return m_UpVector;
 }

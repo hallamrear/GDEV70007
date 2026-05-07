@@ -82,21 +82,21 @@
     <IntDir>$(SolutionDir)Intermediate\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(SolutionDir)External\DirectX\include;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(SolutionDir)External\DirectX\include;$(SolutionDir)External\TinyGLTF;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)Builds\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)Intermediate\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(SolutionDir)External\DirectX\include;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(SolutionDir)External\DirectX\include;$(SolutionDir)External\TinyGLTF;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)Builds\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)Intermediate\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(SolutionDir)External\DirectX\include;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(SolutionDir)External\DirectX\include;$(SolutionDir)External\TinyGLTF;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

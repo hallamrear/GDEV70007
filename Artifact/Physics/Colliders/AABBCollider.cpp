@@ -47,3 +47,25 @@ Vector3 AABBCollider::GetMinCornerLocalSpace() const
 {
 	return Vector3(m_Size.x * -1.0f, m_Size.y * -1.0f, m_Size.z * -1.0f);
 }
+
+void AABBCollider::Render(Renderer& renderer)
+{
+	if (m_ColliderModel == nullptr)
+	{
+		printf("Trying to draw a collider that doesn't have a model.\n");
+		throw;
+	}
+
+	Matrix4x4 entityMatrix = IdentityMatrix;
+	DirectX::XMStoreFloat4x4(&entityMatrix,
+		DirectX::XMMatrixTranslation(m_AttachedEntity.GetPosition().x, m_AttachedEntity.GetPosition().y, m_AttachedEntity.GetPosition().z));
+
+	renderer.SetDebugDrawMode();
+	Matrix4x4 worldMatrix = IdentityMatrix;
+	DirectX::XMStoreFloat4x4(&worldMatrix,
+		DirectX::XMMatrixScaling(m_Size.x, m_Size.y, m_Size.z) *
+		DirectX::XMLoadFloat4x4(&entityMatrix) *
+		DirectX::XMLoadFloat4x4(&m_OffsetMatrix));
+	renderer.Render(m_ColliderModel, worldMatrix);
+	renderer.SetDefaultDrawMode();
+}

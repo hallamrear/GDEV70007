@@ -20,4 +20,6 @@ public:
 	Vector3 GetMinCornerWorldSpace() const;
 	Vector3 GetMaxCornerLocalSpace() const;
 	Vector3 GetMinCornerLocalSpace() const;
+
+	void Render(Renderer& renderer);
 };
