@@ -1,5 +1,6 @@
 #pragma once
 #include <Rendering/IMGUIRenderable.h>
+#include <Physics/PhysicsWorld.h>
 #include <unordered_map>
 #include <rpc.h>
 
@@ -19,6 +20,8 @@ class World : public IIMGUIRenderable
 {
 private:
 	typedef std::unordered_map<EntityID, Entity*, GUIDHasher> EntityMap;
+
+	PhysicsWorld m_PhysicsWorld;
 
 	World();
 	~World();

@@ -1,9 +1,9 @@
 #pragma once
-#include <Physics/Rigidbody.h>
 #include <Rendering/Geometry/Model.h>
 
 class Collider;
 enum COLLIDER_TYPE : int;
+class Rigidbody;
 
 class Entity
 {
@@ -13,7 +13,7 @@ private:
 	std::string m_DisplayName;
 	EntityID m_ID;
 	std::string m_IDString;
-	Rigidbody m_Rigidbody;
+	Rigidbody* m_Rigidbody;
 	ModelRef m_Model;
 	Matrix4x4 m_WorldMatrix;
 	Matrix4x4 m_RotationMatrix;
@@ -35,6 +35,7 @@ public:
 	void SetDisplayName(const std::string& displayName);
 	Rigidbody& GetRigidbody();
 	const Rigidbody& GetRigidbody() const;
+	void SetRigidbody(Rigidbody& rigidbody);
 
 	Collider* GetCollider() const;
 	void AddCollider(const COLLIDER_TYPE& colliderType);

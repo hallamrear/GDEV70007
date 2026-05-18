@@ -6,6 +6,7 @@
 #include <Rendering/IMGUIIncludes.h>
 #include <Physics/Colliders/Collider.h>
 #include <Physics/Optimisations/Octree.h>
+#include <Physics/Rigidbody.h>
 
 const bool& World::IsInitialised() const
 {
@@ -32,16 +33,10 @@ bool World::Initialise()
 	Entity* testRoom = CreateEntity("Test Room");
 	ModelRef ref = ServiceLocator::Locate<AssetManager>()->GetModel("Demo_Level.glb");
 	testRoom->SetModel(ref);
-	testRoom->AddColliderFromModel(COLLIDER_TYPE_SPHERE);
 
-	testRoom = CreateEntity("Ball");
-	ref = ServiceLocator::Locate<AssetManager>()->GetModel("Colliders/SphereCollider.glb");
+	testRoom = CreateEntity("AAA");
+	ref = ServiceLocator::Locate<AssetManager>()->GetModel("STACKING.glb");
 	testRoom->SetModel(ref);
-	testRoom->AddColliderFromModel(COLLIDER_TYPE_SPHERE);
-	position.x = (float)((rand() % 20) - 10);
-	position.y = (float)((rand() % 20) - 10);
-	position.z = (float)((rand() % 20) - 10);
-	testRoom->SetPosition(position);
 
 	/*Vector3 position = Vector3(0.0f, 0.0f, 0.0f);
 	Entity* entity = nullptr;
@@ -122,6 +117,8 @@ Entity* World::CreateEntity()
 		m_OctreeRoot->AddEntity({ entity });
 	}
 
+	entity->SetRigidbody(m_PhysicsWorld.GetFreshRigidbody());
+
 	return entity;
 }
 
@@ -143,32 +140,21 @@ void World::FixedUpdate()
 	}
 
 	DestroyDeadEntities();
+
+	m_PhysicsWorld.FixedUpdate();
 }
 
 #include <System/InputListener.h>
 #include <Physics/Collision Detection/CollisionDetection.h>
 void World::Update(const float& deltaTime)
 {
+	m_PhysicsWorld.Update(deltaTime);
+
 	for (auto& entity : m_EntityMap)
 	{
 		if (entity.second != nullptr)
 		{
 			entity.second->Update(deltaTime);
-
-			if (entity.second->GetDisplayName() == "Ball")
-			{
-				float moveSpeed = 10.0f;
-				Vector3 forward = entity.second->GetForwardVector();
-				Vector3 right = entity.second->GetRightVector();
-				Vector3 up = entity.second->GetUpVector();
-
-				if (InputListener::GetKeyDown(VK_UP)) { entity.second->Translate(Vector3(forward.x * moveSpeed, forward.y * moveSpeed, forward.z * moveSpeed)); }
-				if (InputListener::GetKeyDown(VK_DOWN)) { entity.second->Translate(Vector3(forward.x * -moveSpeed, forward.y * -moveSpeed, forward.z * -moveSpeed)); }
-				if (InputListener::GetKeyDown(VK_LEFT)) { entity.second->Translate(Vector3(right.x * -moveSpeed, right.y * -moveSpeed, right.z * -moveSpeed)); }
-				if (InputListener::GetKeyDown(VK_RIGHT)) { entity.second->Translate(Vector3(right.x * moveSpeed, right.y * moveSpeed, right.z * moveSpeed)); }
-				if (InputListener::GetKeyDown(VK_END)) { entity.second->Translate(Vector3(up.x * -moveSpeed, up.y * -moveSpeed, up.z * -moveSpeed)); }
-				if (InputListener::GetKeyDown(VK_HOME)) { entity.second->Translate(Vector3(up.x * moveSpeed, up.y * moveSpeed, up.z * moveSpeed)); }
-			}
 		}
 
 		for (auto& other : m_EntityMap)
@@ -178,16 +164,17 @@ void World::Update(const float& deltaTime)
 
 			static CollisionManifold manifold{};
 
-			bool state = CollisionDetection::CheckCollision(other.second->GetCollider(), entity.second->GetCollider(), &manifold);
+			//bool state = CollisionDetection::CheckCollision(other.second->GetCollider(), entity.second->GetCollider(), &manifold);
 
-			printf("Colliding? %s\n", state ? "True" : "False");
+			//printf("Colliding? %s\n", state ? "True" : "False");
 
-			if (state)
-			{
-			}
+			//if (state)
+			//{
+			//}
 		}
 	}
 }
+
 
 void World::OnIMGUIRender()
 {
