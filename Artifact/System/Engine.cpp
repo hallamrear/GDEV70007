@@ -235,6 +235,11 @@ void Engine::Update(const float& deltaTime)
 
 	if (m_InputListener.GetKeyDown(VK_LSHIFT)) { m_Renderer->GetCamera().Move(Vector3(up.x * -moveSpeed, up.y * -moveSpeed, up.z * -moveSpeed)); }
 	if (m_InputListener.GetKeyDown(VK_SPACE)) { m_Renderer->GetCamera().Move(Vector3(up.x * moveSpeed, up.y * moveSpeed, up.z * moveSpeed)); }
+	
+	if (m_InputListener.GetKeyDown(VK_LEFT)) { m_Renderer->GetCamera().RotateEulerDegrees(Vector3(0.0f, -rotationSpeed, 0.0f)); }
+	if (m_InputListener.GetKeyDown(VK_RIGHT)) { m_Renderer->GetCamera().RotateEulerDegrees(Vector3(0.0f, rotationSpeed, 0.0f)); }
+	if (m_InputListener.GetKeyDown(VK_UP)) { m_Renderer->GetCamera().RotateEulerDegrees(Vector3(rotationSpeed, 0.0f, 0.0f)); }
+	if (m_InputListener.GetKeyDown(VK_DOWN)) { m_Renderer->GetCamera().RotateEulerDegrees(Vector3(-rotationSpeed, 0.0f, 0.0f)); }
 
 	Vector2 delta = m_InputListener.GetMouseState().GetMouseDelta();
 	float sensitivity = 0.0f;
@@ -284,7 +289,7 @@ void Engine::Render()
 	m_World->Render(*m_Renderer);
 
 #if defined(_DEBUG)
-	m_Renderer->RenderIMGUIFrame();
+		m_Renderer->RenderIMGUIFrame();
 #endif
 
 	m_Renderer->PresentFrame();

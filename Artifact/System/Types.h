@@ -9,6 +9,7 @@
 
 #include <DirectXMath.h>
 typedef DirectX::XMFLOAT4X4 Matrix4x4;
+typedef DirectX::XMFLOAT3X3 Matrix3x3;
 typedef DirectX::XMFLOAT4 Vector4;
 typedef DirectX::XMFLOAT3 Vector3;
 typedef DirectX::XMFLOAT2 Vector2;

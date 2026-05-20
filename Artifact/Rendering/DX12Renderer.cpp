@@ -1694,7 +1694,7 @@ HRESULT DX12Renderer::CreateGraphicsPipelines()
     m_DefaultPipeline->SetName(L"Standard Graphics Pipeline");
 
     pipelineStateDesc.RasterizerState.FillMode = D3D12_FILL_MODE::D3D12_FILL_MODE_WIREFRAME;
-    pipelineStateDesc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_NONE;
+    pipelineStateDesc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_BACK;
     result = m_Device->CreateGraphicsPipelineState(&pipelineStateDesc, IID_PPV_ARGS(&m_DebugDrawPipeline));
 
     if (FAILED(result))
