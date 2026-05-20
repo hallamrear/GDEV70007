@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "SphereCollider.h"
+#include <World/Entity.h>
 
 SphereCollider::SphereCollider(const Entity& entity, const float& radius) : Collider(COLLIDER_TYPE::COLLIDER_TYPE_SPHERE, entity)
 {
@@ -23,4 +24,17 @@ void SphereCollider::SetSize(const Vector3& size)
 	m_Size.x = r;
 	m_Size.y = r;
 	m_Size.z = r;
+}
+
+/// <summary>
+/// Returns the furthest distance on the collider in a given direction. Point is given in world space.
+/// </summary>
+Vector3 SphereCollider::GetFurthestPointInDirection(const Vector3& direction)
+{
+	Vector3 furthestPoint(0.0f, 0.0f, 0.0f);
+	DirectX::XMStoreFloat3(&furthestPoint, DirectX::XMVectorScale(DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&direction)), m_Size.x));
+	furthestPoint.x += m_AttachedEntity.GetPosition().x;
+	furthestPoint.y += m_AttachedEntity.GetPosition().y;
+	furthestPoint.z += m_AttachedEntity.GetPosition().z;
+	return furthestPoint;
 }

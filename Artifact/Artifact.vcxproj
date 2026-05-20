@@ -189,6 +189,10 @@
   <ItemGroup>
     <ClInclude Include="Artifact.h" />
     <ClInclude Include="Physics\PhysicsWorld.h" />
+    <ClInclude Include="Physics\Quickhull\Quickhull.h" />
+    <ClInclude Include="Physics\Quickhull\QH_Face.h" />
+    <ClInclude Include="Physics\Quickhull\QH_HalfEdge.h" />
+    <ClInclude Include="Physics\Quickhull\QH_Vertex.h" />
     <ClInclude Include="System\Maths.h" />
     <ClInclude Include="Physics\Colliders\ConvexHullCollider.h" />
     <ClInclude Include="Rendering\Lighting\Light.h" />
@@ -238,6 +242,10 @@
   <ItemGroup>
     <ClCompile Include="Artifact.cpp" />
     <ClCompile Include="Physics\PhysicsWorld.cpp" />
+    <ClCompile Include="Physics\Quickhull\Quickhull.cpp" />
+    <ClCompile Include="Physics\Quickhull\QH_Face.cpp" />
+    <ClCompile Include="Physics\Quickhull\QH_HalfEdge.cpp" />
+    <ClCompile Include="Physics\Quickhull\QH_Vertex.cpp" />
     <ClCompile Include="System\Maths.cpp" />
     <ClCompile Include="Physics\Colliders\ConvexHullCollider.cpp" />
     <ClCompile Include="Rendering\Lighting\Light.cpp" />

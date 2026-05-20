@@ -107,6 +107,12 @@ Collider* Collider::GetChildCollider()
 	return m_ChildCollider;
 }
 
+Vector3 Collider::GetFurthestPointInDirection(const Vector3& direction)
+{
+	assert(true);
+	return Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
+}
+
 void Collider::Render(Renderer& renderer)
 {
 	if (m_ColliderModel == nullptr)

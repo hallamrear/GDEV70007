@@ -15,5 +15,7 @@ public:
 	/// </summary>
 	/// <param name="size">A vector3, of which the largest (absolute) component will be set as the radius</param>
 	void SetSize(const Vector3& size);
+
+	Vector3 GetFurthestPointInDirection(const Vector3& direction) override;
 };
 
