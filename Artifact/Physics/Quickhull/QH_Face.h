@@ -13,9 +13,18 @@ private:
 
 	void ComputeCentroid();
 	void ComputeNormal();
-	void ComputeNormalAndCentroid();
+	void ComputeNormalAndCentroid(float minArea = 0.0f);
+
+	QH_Face* CreateTriangle(QH_Vertex* v0, QH_Vertex* v1, QH_Vertex* v2, float minArea = 0.0f);
+
+	QH_HalfEdge* GetHalfEdge(const int& index);
+	QH_HalfEdge* FindEdge(QH_Vertex* startVertex, QH_Vertex* endVertex);
+	QH_HalfEdge* GetStartEdge();
 
 public:
+	QH_Face();
+	~QH_Face();
+
 	float PlaneOffset;
 	QH_FACE_VISIBILITY Visibility;
 	QH_Face* Prev;
@@ -29,4 +38,7 @@ public:
 	float Area;
 	QH_Vertex* Outside;
 
+	const Vector3& GetNormal() const;
+	const Vector3& GetCentre() const;
+	const int& GetVertexCount() const;
 };

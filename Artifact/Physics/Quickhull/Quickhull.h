@@ -1,4 +1,6 @@
 #pragma once
+#include <Physics/Quickhull/QH_HalfEdge.h>
+#include <Physics/Quickhull/QH_Vertex.h>
 
 struct QH_VertexList
 {

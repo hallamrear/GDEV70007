@@ -5,6 +5,9 @@
 #include <Physics/Colliders/AABBCollider.h>
 #include <Physics/Colliders/ConvexHullCollider.h>
 
+#include <Physics/GJK/GJK.h>
+#include <Physics/EPA/EPA.h>
+
 CollisionDetection::CollisionFunction CollisionDetection::s_CollisionFunctionArray[COLLIDER_TYPE::COLLIDER_TYPE_COUNT][COLLIDER_TYPE::COLLIDER_TYPE_COUNT] = 
 {
 	/* 0, 0 */										/* 0, 1 */									 /* 0, 2 */											/* 0, 3 */
@@ -25,6 +28,11 @@ bool CollisionDetection::SeperatingAxisTheorem(const Collider* colliderA, const 
 
 	assert(colliderA);
 	assert(colliderB);
+
+	if (manifold != nullptr)
+	{
+		printf("Collision manifold is valid but not being constructed.\n");
+	}
 
 	return false;
 }
@@ -75,6 +83,8 @@ bool CollisionDetection::BoxSphereCollision(const Collider* boxCollider, const C
 	UNREFERENCED_PARAMETER(boxCollider);
 	UNREFERENCED_PARAMETER(sphereCollider);
 	
+	
+
 	if (manifold != nullptr)
 	{
 		printf("Collision manifold is valid but not being constructed.\n");
@@ -88,13 +98,9 @@ bool CollisionDetection::BoxBoxCollision(const Collider* boxColliderA, const Col
 	UNREFERENCED_PARAMETER(boxColliderA);
 	UNREFERENCED_PARAMETER(boxColliderB);
 
-
-	if (manifold != nullptr)
-	{
-		printf("Collision manifold is valid but not being constructed.\n");
-	}
-
-	return false;
+	return  GJK::CheckCollision(*boxColliderA, *boxColliderB, manifold);
+	//return SeperatingAxisTheorem(boxColliderA, boxColliderB, manifold);
+	//return false;
 }
 
 bool CollisionDetection::ConvexHullSphereCollision(const Collider* convexHullCollider, const Collider* sphereCollider, CollisionManifold* manifold)

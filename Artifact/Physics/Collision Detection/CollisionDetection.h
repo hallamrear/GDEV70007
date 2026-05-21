@@ -1,4 +1,5 @@
 #pragma once
+#include <Physics/Structures.h>
 #include <Physics/Colliders/Collider.h>
 #include <array>
 #include <functional>
@@ -7,48 +8,6 @@ class AABBCollider;
 class SphereCollider;
 class ConvexHullCollider;
 class ComplexMeshCollider;
-
-struct Contact
-{
-	const Collider& SubjectA;
-	const Collider& SubjectB;
-	/// <summary>
-	/// Hit point is always relative to the position of subject A.
-	/// </summary>
-	const Vector3 HitPoint;
-	const Vector3 Normal;
-	const float Depth;
-
-	Contact(const Collider& subjectA, const Collider& subjectB, const Vector3 hitPoint, const Vector3 contactNormal, const float penetration) :
-		SubjectA(subjectA),
-		SubjectB(subjectB),
-		HitPoint(hitPoint),
-		Normal(contactNormal),
-		Depth(penetration)
-	{
-
-	}
-};
-
-struct CollisionManifold
-{
-	std::vector<Contact> ContactPoints;
-
-	CollisionManifold()
-	{
-		ContactPoints = std::vector<Contact>();
-	}
-
-	~CollisionManifold()
-	{
-		Reset();
-	}
-
-	void Reset()
-	{
-		ContactPoints.clear();
-	}
-};
 
 class CollisionDetection
 {

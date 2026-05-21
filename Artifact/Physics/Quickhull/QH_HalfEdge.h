@@ -19,4 +19,6 @@ public:
 
 	//Associated Face.
 	QH_Face* Face;
+
+	QH_HalfEdge(QH_Vertex* vertex, QH_Face* face);
 };

@@ -29,7 +29,7 @@ void SphereCollider::SetSize(const Vector3& size)
 /// <summary>
 /// Returns the furthest distance on the collider in a given direction. Point is given in world space.
 /// </summary>
-Vector3 SphereCollider::GetFurthestPointInDirection(const Vector3& direction)
+Vector3 SphereCollider::GetFurthestPointInDirection(const Vector3& direction) const
 {
 	Vector3 furthestPoint(0.0f, 0.0f, 0.0f);
 	DirectX::XMStoreFloat3(&furthestPoint, DirectX::XMVectorScale(DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&direction)), m_Size.x));

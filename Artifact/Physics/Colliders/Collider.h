@@ -56,7 +56,7 @@ public:
 	Collider* GetBottomCollider();
 	Collider* GetChildCollider();
 
-	virtual Vector3 GetFurthestPointInDirection(const Vector3& direction) = 0;
+	virtual Vector3 GetFurthestPointInDirection(const Vector3& direction) const = 0;
 
 	virtual void Render(Renderer& renderer);
 };

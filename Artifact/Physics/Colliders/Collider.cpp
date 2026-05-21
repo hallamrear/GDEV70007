@@ -107,8 +107,9 @@ Collider* Collider::GetChildCollider()
 	return m_ChildCollider;
 }
 
-Vector3 Collider::GetFurthestPointInDirection(const Vector3& direction)
+Vector3 Collider::GetFurthestPointInDirection(const Vector3& direction) const
 {
+	UNREFERENCED_PARAMETER(direction);
 	assert(true);
 	return Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
 }

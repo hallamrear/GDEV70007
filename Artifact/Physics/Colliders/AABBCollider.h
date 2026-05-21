@@ -21,5 +21,7 @@ public:
 	Vector3 GetMaxCornerLocalSpace() const;
 	Vector3 GetMinCornerLocalSpace() const;
 
+	Vector3 GetFurthestPointInDirection(const Vector3& direction) const override;
+
 	void Render(Renderer& renderer);
 };

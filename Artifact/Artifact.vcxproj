@@ -188,6 +188,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Artifact.h" />
+    <ClInclude Include="Physics\Structures.h">
+      <DeploymentContent>true</DeploymentContent>
+    </ClInclude>
+    <ClInclude Include="Physics\EPA\EPA.h">
+      <DeploymentContent>true</DeploymentContent>
+    </ClInclude>
+    <ClInclude Include="Physics\GJK\GJK.h">
+      <DeploymentContent>true</DeploymentContent>
+    </ClInclude>
     <ClInclude Include="Physics\PhysicsWorld.h" />
     <ClInclude Include="Physics\Quickhull\Quickhull.h" />
     <ClInclude Include="Physics\Quickhull\QH_Face.h" />
@@ -241,6 +250,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Artifact.cpp" />
+    <ClCompile Include="Physics\EPA\EPA.cpp">
+      <DeploymentContent>true</DeploymentContent>
+    </ClCompile>
+    <ClCompile Include="Physics\GJK\GJK.cpp">
+      <DeploymentContent>true</DeploymentContent>
+    </ClCompile>
     <ClCompile Include="Physics\PhysicsWorld.cpp" />
     <ClCompile Include="Physics\Quickhull\Quickhull.cpp" />
     <ClCompile Include="Physics\Quickhull\QH_Face.cpp" />

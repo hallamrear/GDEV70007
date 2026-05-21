@@ -10,6 +10,11 @@ QH_Face::QH_Face()
 	PlaneOffset = 0.0f;
 }
 
+QH_Face::~QH_Face()
+{
+
+}
+
 void QH_Face::ComputeCentroid()
 {
 	Centre = Vector3(0.0f, 0.0f, 0.0f);
@@ -65,12 +70,78 @@ void QH_Face::ComputeNormal()
 	DirectX::XMStoreFloat3(&Normal, DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&Normal)));
 }
 
-void QH_Face::ComputeNormalAndCentroid()
+void QH_Face::ComputeNormalAndCentroid(float minArea)
 {
+	UNREFERENCED_PARAMETER(minArea);
+
 	ComputeNormal();
 	ComputeCentroid();
 	Vector3 temp;
 	DirectX::XMStoreFloat3(&temp, DirectX::XMVector3Dot(DirectX::XMLoadFloat3(&Normal), DirectX::XMLoadFloat3(&Centre)));
 	PlaneOffset = temp.x;
+}
 
+QH_Face* QH_Face::CreateTriangle(QH_Vertex* v0, QH_Vertex* v1, QH_Vertex* v2, float minArea)
+{
+	QH_Face* face = new QH_Face();
+
+	QH_HalfEdge* halfedge0 = new QH_HalfEdge(v0, face);
+	QH_HalfEdge* halfedge1 = new QH_HalfEdge(v1, face);
+	QH_HalfEdge* halfedge2 = new QH_HalfEdge(v2, face);
+	halfedge0->Prev = halfedge2;
+	halfedge0->Next = halfedge1;
+	halfedge1->Prev = halfedge0;
+	halfedge1->Next = halfedge2;
+	halfedge2->Prev = halfedge1;
+	halfedge2->Next = halfedge0;
+	face->Edge = halfedge0;
+	face->ComputeNormalAndCentroid(minArea);
+
+	return face;
+}
+
+QH_HalfEdge* QH_Face::GetHalfEdge(const int& index)
+{
+	UNREFERENCED_PARAMETER(index);
+	//todo : not implemented
+	assert(true);
+	QH_HalfEdge* edge = Edge;
+	UNREFERENCED_PARAMETER(edge);
+	return nullptr;
+}
+
+QH_HalfEdge* QH_Face::FindEdge(QH_Vertex* startVertex, QH_Vertex* endVertex)
+{
+	QH_HalfEdge* edge = Edge;
+
+	do
+	{
+		if (edge->HeadVertex == startVertex && edge->Prev->HeadVertex == endVertex)
+		{
+
+		}
+	}
+	while (edge != Edge);
+
+	return nullptr;
+}
+
+QH_HalfEdge* QH_Face::GetStartEdge()
+{
+	return Edge;
+}
+
+const Vector3& QH_Face::GetNormal() const
+{
+	return Normal;
+}
+
+const Vector3& QH_Face::GetCentre() const
+{
+	return Centre;
+}
+
+const int& QH_Face::GetVertexCount() const
+{
+	return VertexCount;
 }

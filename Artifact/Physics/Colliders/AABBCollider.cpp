@@ -48,6 +48,12 @@ Vector3 AABBCollider::GetMinCornerLocalSpace() const
 	return Vector3(m_Size.x * -1.0f, m_Size.y * -1.0f, m_Size.z * -1.0f);
 }
 
+Vector3 AABBCollider::GetFurthestPointInDirection(const Vector3& direction) const
+{
+	UNREFERENCED_PARAMETER(direction);
+	return Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
+}
+
 void AABBCollider::Render(Renderer& renderer)
 {
 	if (m_ColliderModel == nullptr)
