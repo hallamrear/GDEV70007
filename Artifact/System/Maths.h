@@ -72,5 +72,19 @@ namespace Maths
 		uvw.x = 1.0f - uvw.y - uvw.z;
 		return uvw;
 	}
+
+	inline static float Dot(const Vector3& A, const Vector3& B)
+	{
+		float d = FLT_MAX;
+		DirectX::XMStoreFloat(&d, DirectX::XMVector3Dot(XMLoadFloat3(&A), XMLoadFloat3(&B)));
+		return d;
+	}
+
+	inline static Vector3 Cross(const Vector3& A, const Vector3& B)
+	{
+		Vector3 cross = Vector3(0.0f, 0.0f, 0.0f);
+		DirectX::XMStoreFloat3(&cross, DirectX::XMVector3Cross(XMLoadFloat3(&A), XMLoadFloat3(&B)));
+		return cross;
+	}
 };
 

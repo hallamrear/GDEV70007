@@ -60,6 +60,8 @@ private:
 	/// <param name="polytope"></param>
 	/// <param name="newVertex"></param>
 	static void ExtendPolytopeWithNewPoint(Polytope& polytope, const SupportVertex& newVertex);
+	static int GetFaceNormals(std::vector<Vector3>& normals, std::vector<float>& distances, const std::vector<SupportVertex>& simplex, const std::vector<size_t>& faces);
+	static void AddEdgeIfUnique(std::vector<std::pair<size_t, size_t>>& edgeList, const std::vector<size_t>& faceList, const size_t& indexA, const size_t& indexB);
 
 
 public:

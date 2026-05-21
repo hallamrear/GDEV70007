@@ -412,13 +412,14 @@ bool GJK::CheckCollision(const Collider& colliderA, const Collider& colliderB, C
 				Vector3 Bc = Maths::MultiplyScalar(BaryCentPointOnTri.z, CSO.Tri.Points[2].SupportVertexB);
 				Vector3 HitPointB = Vector3(Ba.x + Bb.x + Bc.x, Ba.y + Bb.y + Bc.y, Ba.z + Bb.z + Bc.z);
 
-				//manifold->ContactPoints[0].HitPoint = HitPointA;
 				manifold->ContactPoints.push_back(Contact());
+				manifold->ContactPoints[0].HitPoint = HitPointA;
 				manifold->ContactPoints[0].SubjectA = &colliderA;
 				manifold->ContactPoints[0].SubjectB = &colliderB;
 				manifold->ContactPoints[0].Normal = CSO.Tri.Normal;
 
 				manifold->ContactPoints.push_back(Contact());
+				manifold->ContactPoints[1].HitPoint = HitPointB;
 				manifold->ContactPoints[1].SubjectA = &colliderB;
 				manifold->ContactPoints[1].SubjectB = &colliderA;
 				manifold->ContactPoints[1].Normal = Vector3(-CSO.Tri.Normal.x, -CSO.Tri.Normal.y, -CSO.Tri.Normal.z);

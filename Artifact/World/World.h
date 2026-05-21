@@ -37,6 +37,9 @@ private:
 	void DestroyDeadEntities();
 
 public:
+	static Entity* TestBoxA;
+	static Entity* TestBoxB;
+
 	const bool& IsInitialised() const;
 
 	static World* CreateWorld();

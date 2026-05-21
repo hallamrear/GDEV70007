@@ -4,6 +4,7 @@
 class AABBCollider : public Collider
 {
 private:
+	static Vector3 Points[8];
 
 public:
 	AABBCollider(const Entity& entity, const Vector3& halfWidth = Vector3(0.5f, 0.5f, 0.5f));

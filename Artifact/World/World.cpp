@@ -7,6 +7,13 @@
 #include <Physics/Colliders/Collider.h>
 #include <Physics/Optimisations/Octree.h>
 #include <Physics/Rigidbody.h>
+#include <Physics/GJK/GJK.h>
+
+Entity* World::TestBoxA = nullptr;
+Entity* World::TestBoxB = nullptr;
+static CollisionManifold manifold{};
+static bool state = false;
+static bool resolveCollision = false;
 
 const bool& World::IsInitialised() const
 {
@@ -30,13 +37,23 @@ bool World::Initialise()
 	Vector3 position = Vector3(0.0f, 0.0f, 0.0f);
 	m_OctreeRoot = OctreeNode::BuildOctree(nullptr, Vector3(0.0f, 0.0f, 0.0f), 8192.0f, 0);
 
-	Entity* testRoom = CreateEntity("Test Room");
-	ModelRef ref = ServiceLocator::Locate<AssetManager>()->GetModel("Demo_Level.glb");
-	testRoom->SetModel(ref);
+	//Entity* testRoom = CreateEntity("Test Room");
+	//ModelRef ref = ServiceLocator::Locate<AssetManager>()->GetModel("Demo_Level.glb");
+	//testRoom->SetModel(ref);
 
-	testRoom = CreateEntity("AAA");
-	ref = ServiceLocator::Locate<AssetManager>()->GetModel("STACKING.glb");
-	testRoom->SetModel(ref);
+	//testRoom = CreateEntity("AAA");
+	//ref = ServiceLocator::Locate<AssetManager>()->GetModel("STACKING.glb");
+	//testRoom->SetModel(ref);
+
+	TestBoxA = CreateEntity("Box A");
+	TestBoxA->AddCollider(COLLIDER_TYPE_AABB);
+	TestBoxA->GetCollider()->SetSize(Vector3(10.0f, 10.0f, 10.0f));
+	TestBoxA->SetPosition(Vector3(-30.0f, 0.0f, 0.0f));
+
+	TestBoxB = CreateEntity("Box B");
+	TestBoxB->AddCollider(COLLIDER_TYPE_AABB);
+	TestBoxB->GetCollider()->SetSize(Vector3(7.0f, 3.0f, 5.0f));
+	TestBoxB->SetPosition(Vector3(10.0f, 5.0f, -3.0f));
 
 	/*Vector3 position = Vector3(0.0f, 0.0f, 0.0f);
 	Entity* entity = nullptr;
@@ -157,27 +174,97 @@ void World::Update(const float& deltaTime)
 			entity.second->Update(deltaTime);
 		}
 
-		for (auto& other : m_EntityMap)
+		/*for (auto& other : m_EntityMap)
 		{
 			if (entity == other)
 				continue;
 
-			static CollisionManifold manifold{};
+			if (entity.second == nullptr || other.second == nullptr)
+				continue;
 
-			//bool state = CollisionDetection::CheckCollision(other.second->GetCollider(), entity.second->GetCollider(), &manifold);
+			Collider* colliderA = other.second->GetCollider();
+			Collider* colliderB = entity.second->GetCollider();
 
-			//printf("Colliding? %s\n", state ? "True" : "False");
+			if (colliderA != nullptr && colliderB != nullptr)
+			{
+				state = GJK::CheckCollision(*colliderA, *colliderB, &manifold);
+			}
+		}*/
+	}
 
-			//if (state)
-			//{
-			//}
-		}
+
+	state = false;
+	manifold.Reset();
+	Collider* colliderA = TestBoxA->GetCollider();
+	Collider* colliderB = TestBoxB->GetCollider();
+	if (colliderA != nullptr && colliderB != nullptr)
+	{
+		state = GJK::CheckCollision(*colliderA, *colliderB, &manifold);
+	}
+
+	if (resolveCollision && state)
+	{
+		float halfDepth = -manifold.Depth * 0.5f;
+		Vector3 displacement = Vector3(
+			manifold.ContactPoints[0].Normal.x * halfDepth,
+			manifold.ContactPoints[0].Normal.y * halfDepth,
+			manifold.ContactPoints[0].Normal.z * halfDepth);
+
+		TestBoxA->Translate(displacement);
+
+		displacement = Vector3(
+			manifold.ContactPoints[1].Normal.x * halfDepth,
+			manifold.ContactPoints[1].Normal.y * halfDepth,
+			manifold.ContactPoints[1].Normal.z * halfDepth);
+
+		TestBoxB->Translate(displacement);
 	}
 }
 
-
 void World::OnIMGUIRender()
 {
+	ImGui::Begin("Test Collision");
+
+	ImGui::Checkbox("Resolve Collision?", &resolveCollision);
+
+	ImGui::Text(state ? "Colliding" : "Not Colliding");
+
+	ImGui::SeparatorText("Manifold Details");
+	if (state)
+	{
+		ImGui::Text("Depth : %f", manifold.Depth);
+
+		if (ImGui::BeginTable("Hit Points", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
+		{
+			ImGui::TableSetupColumn("Index");
+			ImGui::TableSetupColumn("Hit Point");
+			ImGui::TableSetupColumn("Normal");
+			ImGui::TableHeadersRow();
+
+
+			for (size_t i = 0; i < manifold.ContactPoints.size(); i++)
+			{
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+				ImGui::Text("%i", i);
+
+				ImGui::TableSetColumnIndex(1);
+				ImGui::Text("%f %f %f\n", manifold.ContactPoints[i].HitPoint.x, manifold.ContactPoints[i].HitPoint.y, manifold.ContactPoints[i].HitPoint.z);
+
+				ImGui::TableSetColumnIndex(2);
+				ImGui::Text("%f %f %f\n", manifold.ContactPoints[i].Normal.x, manifold.ContactPoints[i].Normal.y, manifold.ContactPoints[i].Normal.z);
+			}
+
+			ImGui::EndTable();
+		}
+	}
+	else
+	{
+		ImGui::Text("No collision.");
+	}
+
+	ImGui::End();
+
 	ImGui::Begin("World");
 
 	if (ImGui::Button("Create New Entity"))

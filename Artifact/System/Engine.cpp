@@ -4,6 +4,8 @@
 #include <System/AssetManagement.h>
 #include <World/World.h>
 
+#include <World/Entity.h>
+
 std::filesystem::path Engine::m_ContentFolderLocation = std::filesystem::path();
 std::filesystem::path Engine::m_ExecutableLocation = std::filesystem::path();
 
@@ -270,6 +272,43 @@ void Engine::Update(const float& deltaTime)
 			thumbstickRight.y >(0.0f + FLT_EPSILON) || thumbstickRight.y < (0.0f - FLT_EPSILON))
 		{
 			m_Renderer->GetCamera().RotateEulerDegrees(Vector3(rotationSpeed * -thumbstickRight.y, rotationSpeed * thumbstickRight.x, 0.0f));
+		}
+
+		if (m_World->TestBoxA != nullptr)
+		{
+			Vector3 localForward = m_World->TestBoxA->GetForwardVector();
+			Vector3 localRight = m_World->TestBoxA->GetRightVector();
+			Vector3 localUp = m_World->TestBoxA->GetUpVector();
+
+			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_DPAD_UP))
+			{
+				m_World->TestBoxA->Translate(Vector3(localForward.x * moveSpeed * 5 * FIXED_TIMESTEP, localForward.y * moveSpeed * 5 * FIXED_TIMESTEP, localForward.z * moveSpeed * 5 * FIXED_TIMESTEP));
+			}
+
+			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_DPAD_RIGHT))
+			{
+				m_World->TestBoxA->Translate(Vector3(localRight.x * moveSpeed * 5 * FIXED_TIMESTEP, localRight.y * moveSpeed * 5 * FIXED_TIMESTEP, localRight.z * moveSpeed * 5 * FIXED_TIMESTEP));
+			}
+
+			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_DPAD_DOWN))
+			{
+				m_World->TestBoxA->Translate(Vector3(-localForward.x * moveSpeed * 5 * FIXED_TIMESTEP, -localForward.y * moveSpeed * 5 * FIXED_TIMESTEP, -localForward.z * moveSpeed * 5 * FIXED_TIMESTEP));
+			}
+
+			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_DPAD_LEFT))
+			{
+				m_World->TestBoxA->Translate(Vector3(-localRight.x * moveSpeed * 5 * FIXED_TIMESTEP, -localRight.y * moveSpeed * 5 * FIXED_TIMESTEP, -localRight.z * moveSpeed * 5 * FIXED_TIMESTEP));
+			}
+
+			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_LEFT_SHOULDER))
+			{
+				m_World->TestBoxA->Translate(Vector3(-localUp.x * moveSpeed * 5 * FIXED_TIMESTEP, -localUp.y * moveSpeed * 5 * FIXED_TIMESTEP, -localUp.z * moveSpeed * 5 * FIXED_TIMESTEP));
+			}
+
+			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_RIGHT_SHOULDER))
+			{
+				m_World->TestBoxA->Translate(Vector3(localUp.x * moveSpeed * 5 * FIXED_TIMESTEP, localUp.y * moveSpeed * 5 * FIXED_TIMESTEP, localUp.z * moveSpeed * 5 * FIXED_TIMESTEP));
+			}
 		}
 	}
 

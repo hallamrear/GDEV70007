@@ -2,6 +2,18 @@
 #include "AABBCollider.h"
 #include <World/Entity.h>
 
+Vector3 AABBCollider::Points[8] =
+{
+	Vector3(+0.5f, +0.5f, +0.5f),
+	Vector3(-0.5f, +0.5f, +0.5f),
+	Vector3(-0.5f, +0.5f, -0.5f),
+	Vector3(+0.5f, +0.5f, -0.5f),
+	Vector3(+0.5f, -0.5f, +0.5f),
+	Vector3(-0.5f, -0.5f, +0.5f),
+	Vector3(-0.5f, -0.5f, -0.5f),
+	Vector3(+0.5f, -0.5f, -0.5f),
+};
+
 AABBCollider::AABBCollider(const Entity& entity, const Vector3& halfWidth) : Collider(COLLIDER_TYPE::COLLIDER_TYPE_AABB, entity)
 {
 	SetSize(halfWidth);
@@ -50,8 +62,29 @@ Vector3 AABBCollider::GetMinCornerLocalSpace() const
 
 Vector3 AABBCollider::GetFurthestPointInDirection(const Vector3& direction) const
 {
-	UNREFERENCED_PARAMETER(direction);
-	return Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
+	Vector3 maxPoint = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
+	Vector3 corner = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
+	Vector3 scaledPoint = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
+	float maxDistance = -FLT_MAX;
+	float distance = -FLT_MAX;
+
+	for (int i = 0; i < 8; i++)
+	{
+		scaledPoint = Vector3(Points[i].x * m_Size.x, Points[i].y * m_Size.y, Points[i].z * m_Size.z);
+
+		DirectX::XMStoreFloat3(&corner,
+		DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&scaledPoint), DirectX::XMLoadFloat4x4(&m_AttachedEntity.GetWorldMatrix())));
+
+		DirectX::XMStoreFloat(&distance, DirectX::XMVector3Dot(DirectX::XMLoadFloat3(&corner), DirectX::XMLoadFloat3(&direction)));
+
+		if (distance >= maxDistance)
+		{
+			maxDistance = distance;
+			maxPoint = corner;
+		}
+	}
+
+	return maxPoint;
 }
 
 void AABBCollider::Render(Renderer& renderer)
