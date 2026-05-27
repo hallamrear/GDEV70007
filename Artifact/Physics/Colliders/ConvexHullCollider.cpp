@@ -14,3 +14,8 @@ void ConvexHullCollider::SetSize(const Vector3& size)
 {
 	UNREFERENCED_PARAMETER(size);
 }
+
+Matrix4x4 ConvexHullCollider::GetTransformMatrix() const
+{
+	return IdentityMatrix;
+}

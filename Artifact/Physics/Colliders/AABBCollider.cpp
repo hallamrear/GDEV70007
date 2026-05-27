@@ -38,15 +38,33 @@ void AABBCollider::SetSize(const Vector3& halfWidth)
 
 Vector3 AABBCollider::GetMaxCornerWorldSpace() const
 {
+	Matrix4x4 entityMatrix = IdentityMatrix;
+	DirectX::XMStoreFloat4x4(&entityMatrix,
+		DirectX::XMMatrixTranslation(m_AttachedEntity.GetPosition().x, m_AttachedEntity.GetPosition().y, m_AttachedEntity.GetPosition().z));
+
 	Vector3 max = m_Size;
-	XMStoreFloat3(&max, DirectX::XMVector3TransformCoord(DirectX::XMLoadFloat3(&max), DirectX::XMLoadFloat4x4(&GetAttachedEntity().GetWorldMatrix())));
+	XMStoreFloat3(&max, DirectX::XMVector3TransformCoord(DirectX::XMLoadFloat3(&max), DirectX::XMLoadFloat4x4(&entityMatrix)));
 	return max;
+}
+
+Matrix4x4 AABBCollider::GetTransformMatrix() const
+{
+	Matrix4x4 transformMatrix = IdentityMatrix;
+	DirectX::XMStoreFloat4x4(&transformMatrix,
+		DirectX::XMMatrixScaling(m_Size.x, m_Size.y, m_Size.z) *
+		DirectX::XMMatrixTranslation(m_AttachedEntity.GetPosition().x, m_AttachedEntity.GetPosition().y, m_AttachedEntity.GetPosition().z) *
+		DirectX::XMLoadFloat4x4(&m_OffsetMatrix));
+	return transformMatrix;
 }
 
 Vector3 AABBCollider::GetMinCornerWorldSpace() const
 {
+	Matrix4x4 entityMatrix = IdentityMatrix;
+	DirectX::XMStoreFloat4x4(&entityMatrix,
+		DirectX::XMMatrixTranslation(m_AttachedEntity.GetPosition().x, m_AttachedEntity.GetPosition().y, m_AttachedEntity.GetPosition().z));
+
 	Vector3 min = GetMinCornerLocalSpace();
-	XMStoreFloat3(&min, DirectX::XMVector3TransformCoord(DirectX::XMLoadFloat3(&min), DirectX::XMLoadFloat4x4(&GetAttachedEntity().GetWorldMatrix())));
+	XMStoreFloat3(&min, DirectX::XMVector3TransformCoord(DirectX::XMLoadFloat3(&min), DirectX::XMLoadFloat4x4(&entityMatrix)));
 	return min;
 }
 
@@ -68,14 +86,14 @@ Vector3 AABBCollider::GetFurthestPointInDirection(const Vector3& direction) cons
 	float maxDistance = -FLT_MAX;
 	float distance = -FLT_MAX;
 
+	Matrix4x4 transformMatrix = GetTransformMatrix();
+
 	for (int i = 0; i < 8; i++)
 	{
-		scaledPoint = Vector3(Points[i].x * m_Size.x, Points[i].y * m_Size.y, Points[i].z * m_Size.z);
-
 		DirectX::XMStoreFloat3(&corner,
-		DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&scaledPoint), DirectX::XMLoadFloat4x4(&m_AttachedEntity.GetWorldMatrix())));
+			DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&Points[i]), DirectX::XMLoadFloat4x4(&transformMatrix)));
 
-		DirectX::XMStoreFloat(&distance, DirectX::XMVector3Dot(DirectX::XMLoadFloat3(&corner), DirectX::XMLoadFloat3(&direction)));
+		distance = Maths::Dot(corner, direction);
 
 		if (distance >= maxDistance)
 		{
@@ -87,24 +105,21 @@ Vector3 AABBCollider::GetFurthestPointInDirection(const Vector3& direction) cons
 	return maxPoint;
 }
 
-void AABBCollider::Render(Renderer& renderer)
+void AABBCollider::GetPoints(std::vector<Vector3>& points) const
 {
-	if (m_ColliderModel == nullptr)
+	points.clear();
+	points.resize(8);
+	Matrix4x4 transformMatrix = GetTransformMatrix();
+
+	for (int i = 0; i < 8; i++)
 	{
-		printf("Trying to draw a collider that doesn't have a model.\n");
-		throw;
+		DirectX::XMStoreFloat3(&points[i], DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&Points[i]), DirectX::XMLoadFloat4x4(&transformMatrix)));
 	}
+}
 
-	Matrix4x4 entityMatrix = IdentityMatrix;
-	DirectX::XMStoreFloat4x4(&entityMatrix,
-		DirectX::XMMatrixTranslation(m_AttachedEntity.GetPosition().x, m_AttachedEntity.GetPosition().y, m_AttachedEntity.GetPosition().z));
-
-	renderer.SetDebugDrawMode();
-	Matrix4x4 worldMatrix = IdentityMatrix;
-	DirectX::XMStoreFloat4x4(&worldMatrix,
-		DirectX::XMMatrixScaling(m_Size.x, m_Size.y, m_Size.z) *
-		DirectX::XMLoadFloat4x4(&entityMatrix) *
-		DirectX::XMLoadFloat4x4(&m_OffsetMatrix));
-	renderer.Render(m_ColliderModel, worldMatrix);
-	renderer.SetDefaultDrawMode();
+Vector3 AABBCollider::ClosestPoint()
+{
+	//https://www.youtube.com/watch?v=VmtNPguCTjQ
+	//17:40
+	return Vector3();
 }

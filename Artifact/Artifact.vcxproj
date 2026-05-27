@@ -188,6 +188,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Artifact.h" />
+    <ClInclude Include="Physics\Colliders\OBBCollider.h" />
     <ClInclude Include="Physics\Structures.h">
       <DeploymentContent>true</DeploymentContent>
     </ClInclude>
@@ -202,6 +203,7 @@
     <ClInclude Include="Physics\Quickhull\QH_Face.h" />
     <ClInclude Include="Physics\Quickhull\QH_HalfEdge.h" />
     <ClInclude Include="Physics\Quickhull\QH_Vertex.h" />
+    <ClInclude Include="Physics\SAT\SeparatingAxisTheorem.h" />
     <ClInclude Include="System\Maths.h" />
     <ClInclude Include="Physics\Colliders\ConvexHullCollider.h" />
     <ClInclude Include="Rendering\Lighting\Light.h" />
@@ -250,6 +252,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Artifact.cpp" />
+    <ClCompile Include="Physics\Colliders\OBBCollider.cpp" />
     <ClCompile Include="Physics\EPA\EPA.cpp">
       <DeploymentContent>true</DeploymentContent>
     </ClCompile>
@@ -261,6 +264,7 @@
     <ClCompile Include="Physics\Quickhull\QH_Face.cpp" />
     <ClCompile Include="Physics\Quickhull\QH_HalfEdge.cpp" />
     <ClCompile Include="Physics\Quickhull\QH_Vertex.cpp" />
+    <ClCompile Include="Physics\SAT\SeparatingAxisTheorem.cpp" />
     <ClCompile Include="System\Maths.cpp" />
     <ClCompile Include="Physics\Colliders\ConvexHullCollider.cpp" />
     <ClCompile Include="Rendering\Lighting\Light.cpp" />

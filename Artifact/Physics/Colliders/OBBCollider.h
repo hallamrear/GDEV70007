@@ -1,7 +1,7 @@
 #pragma once
 #include <Physics/Colliders/Collider.h>
 
-class AABBCollider : public Collider
+class OBBCollider : public Collider
 {
 private:
 	static Vector3 Points[8];
@@ -10,9 +10,9 @@ protected:
 	Matrix4x4 GetTransformMatrix() const override;
 
 public:
-	AABBCollider(const Entity& entity, const Vector3& halfWidth = Vector3(0.5f, 0.5f, 0.5f));
-	AABBCollider(const Entity& entity, const Vector3& max, const Vector3& min);
-	~AABBCollider();
+	OBBCollider(const Entity& entity, const Vector3& halfWidth = Vector3(0.5f, 0.5f, 0.5f));
+	OBBCollider(const Entity& entity, const Vector3& max, const Vector3& min);
+	~OBBCollider();
 
 	/// <summary>
 	/// Sets the size of the box collider.
@@ -25,8 +25,6 @@ public:
 	Vector3 GetMaxCornerLocalSpace() const;
 	Vector3 GetMinCornerLocalSpace() const;
 
-	Vector3 GetFurthestPointInDirection(const Vector3& direction) const override;
 	void GetPoints(std::vector<Vector3>& points) const override;
-
-	Vector3 ClosestPoint();
+	Vector3 GetFurthestPointInDirection(const Vector3& direction) const override;
 };

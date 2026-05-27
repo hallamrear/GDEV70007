@@ -177,6 +177,12 @@
     <ClInclude Include="Physics\Structures.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Physics\SAT\SeparatingAxisTheorem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Physics\Colliders\OBBCollider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Artifact.cpp">
@@ -312,6 +318,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Physics\GJK\GJK.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Physics\SAT\SeparatingAxisTheorem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Physics\Colliders\OBBCollider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

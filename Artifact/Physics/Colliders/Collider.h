@@ -9,15 +9,17 @@ enum COLLIDER_TYPE : int
 {
 	COLLIDER_TYPE_SPHERE = 0,
 	COLLIDER_TYPE_AABB = 1,
-	COLLIDER_TYPE_CONVEX_HULL = 2,
-	COLLIDER_TYPE_MESH = 3,
-	COLLIDER_TYPE_COUNT = 4
+	COLLIDER_TYPE_OBB = 2,
+	COLLIDER_TYPE_CONVEX_HULL = 3,
+	COLLIDER_TYPE_MESH = 4,
+	COLLIDER_TYPE_COUNT = 5
 };
 
 static const std::string c_ColliderTypeNames[COLLIDER_TYPE::COLLIDER_TYPE_COUNT] =
 {
 	"Sphere Collider",
 	"Axis Aligned Bounding Box",
+	"Oriented Bounding Box",
 	"Convex Hull Collider",
 	"Mesh Collider",
 };
@@ -39,8 +41,9 @@ protected:
 
 protected:
 	Collider(const COLLIDER_TYPE& colliderType, const Entity& entity);
-
 	Vector3 m_Size;
+	virtual Matrix4x4 GetTransformMatrix() const = 0;
+
 
 public:
 	virtual ~Collider() = 0;
@@ -57,6 +60,7 @@ public:
 	Collider* GetChildCollider();
 
 	virtual Vector3 GetFurthestPointInDirection(const Vector3& direction) const = 0;
+	virtual void GetPoints(std::vector<Vector3>& points) const = 0;
 
 	virtual void Render(Renderer& renderer);
 };

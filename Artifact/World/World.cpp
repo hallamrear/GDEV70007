@@ -162,7 +162,7 @@ void World::FixedUpdate()
 }
 
 #include <System/InputListener.h>
-#include <Physics/Collision Detection/CollisionDetection.h>
+#include <Physics/SAT/SeparatingAxisTheorem.h>
 void World::Update(const float& deltaTime)
 {
 	m_PhysicsWorld.Update(deltaTime);
@@ -199,7 +199,7 @@ void World::Update(const float& deltaTime)
 	Collider* colliderB = TestBoxB->GetCollider();
 	if (colliderA != nullptr && colliderB != nullptr)
 	{
-		state = GJK::CheckCollision(*colliderA, *colliderB, &manifold);
+		state = SeparatingAxisTheorem::CheckCollision(*colliderA, *colliderB, &manifold);
 	}
 
 	if (resolveCollision && state)
@@ -240,7 +240,6 @@ void World::OnIMGUIRender()
 			ImGui::TableSetupColumn("Hit Point");
 			ImGui::TableSetupColumn("Normal");
 			ImGui::TableHeadersRow();
-
 
 			for (size_t i = 0; i < manifold.ContactPoints.size(); i++)
 			{

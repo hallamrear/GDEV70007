@@ -2,6 +2,11 @@
 #include "SphereCollider.h"
 #include <World/Entity.h>
 
+Matrix4x4 SphereCollider::GetTransformMatrix() const
+{
+	return IdentityMatrix;
+}
+
 SphereCollider::SphereCollider(const Entity& entity, const float& radius) : Collider(COLLIDER_TYPE::COLLIDER_TYPE_SPHERE, entity)
 {
 	SetSize(Vector3(radius, 0.0f, 0.0f));
@@ -37,4 +42,10 @@ Vector3 SphereCollider::GetFurthestPointInDirection(const Vector3& direction) co
 	furthestPoint.y += m_AttachedEntity.GetPosition().y;
 	furthestPoint.z += m_AttachedEntity.GetPosition().z;
 	return furthestPoint;
+}
+
+void SphereCollider::GetPoints(std::vector<Vector3>& points) const
+{
+	points.clear();
+	throw new std::exception("Function not implemented.");
 }

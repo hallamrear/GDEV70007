@@ -44,7 +44,10 @@ void Collider::SetColliderModel(const COLLIDER_TYPE& colliderType)
 
 	switch (colliderType)
 	{
-	case COLLIDER_TYPE_AABB: m_ColliderModel = assetManager->GetModel("Colliders\\BoxCollider.glb"); break;
+	case COLLIDER_TYPE_OBB:
+	case COLLIDER_TYPE_AABB: 
+		m_ColliderModel = assetManager->GetModel("Colliders\\BoxCollider.glb"); 
+		break;
 
 	case COLLIDER_TYPE_SPHERE: m_ColliderModel = assetManager->GetModel("Colliders\\SphereCollider.glb"); break;
 
@@ -123,11 +126,6 @@ void Collider::Render(Renderer& renderer)
 	}
 
 	renderer.SetDebugDrawMode();
-	Matrix4x4 worldMatrix = IdentityMatrix;
-	DirectX::XMStoreFloat4x4(&worldMatrix, 
-		DirectX::XMMatrixScaling(m_Size.x, m_Size.y, m_Size.z) *
-		DirectX::XMLoadFloat4x4(&m_AttachedEntity.GetWorldMatrix()) * 
-		DirectX::XMLoadFloat4x4(&m_OffsetMatrix));
-	renderer.Render(m_ColliderModel, worldMatrix);
+	renderer.Render(m_ColliderModel, GetTransformMatrix());
 	renderer.SetDefaultDrawMode();
 }

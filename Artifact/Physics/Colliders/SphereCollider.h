@@ -5,6 +5,9 @@ class SphereCollider : public Collider
 {
 private:
 
+protected:
+	Matrix4x4 GetTransformMatrix() const override;
+
 public:
 	SphereCollider(const Entity& entity, const float& radius);
 	SphereCollider(const Entity& entity, const Vector3& size);
@@ -17,5 +20,6 @@ public:
 	void SetSize(const Vector3& size);
 
 	Vector3 GetFurthestPointInDirection(const Vector3& direction) const override;
+	void GetPoints(std::vector<Vector3>& points) const override;
 };
 

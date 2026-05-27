@@ -41,5 +41,6 @@
 #include <System/Defines.h>
 #include <System/Types.h>
 #include <System/ServiceLocator.h>
+#include <System/Maths.h>
 
 #endif //PCH_H

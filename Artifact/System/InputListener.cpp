@@ -332,7 +332,7 @@ const float InputListener::GetControllerAnalogValue(const int& controllerIndex, 
 
 void InputListener::OnIMGUIRender()
 {
-	ImGui::Begin("Input Debug\n");
+	ImGui::Begin("Input Debug");
 
 	ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
 
