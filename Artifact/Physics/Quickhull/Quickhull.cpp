@@ -16,15 +16,15 @@ struct EqualPredicate {
 struct LessThanPredicate {
 	bool operator()(const Vector3& l, const Vector3& r)
 	{
-		if (l.x > r.x) return l.x < r.x;
-		if (l.y > r.y) return l.y < r.y;
+		if (l.x != r.x) return l.x < r.x;
+		if (l.y != r.y) return l.y < r.y;
 		return l.z < r.z;
 	}
 };
 
 ConvexHull* Quickhull::GenerateConvexHull(PointCloud& pointCloud)
 {
-	ConvexHull* convexHull = new ConvexHull();
+	ConvexHull* convexHull = new ConvexHull(pointCloud.size());
 
 	float epsilon = Calculate3DEpsilonFromExtents(pointCloud);
 	Vector4 searchDirection = Vector4();
@@ -33,6 +33,8 @@ ConvexHull* Quickhull::GenerateConvexHull(PointCloud& pointCloud)
 	assert(simplex.size() == 4);
 
 	ConstructInitialHullFromSimplex(*convexHull, pointCloud, simplex, searchDirection);
+
+	//HERE!!
 
 	ConvexHullVertex* conflictVertex = nullptr;
 	ConvexHullFace* conflictFace = nullptr;
@@ -175,7 +177,7 @@ void Quickhull::BuildNewFaces(std::list<ConvexHullHalfEdge*>& horizon, std::vect
 		newEdges.push_back(edge0);
 		newEdges.push_back(edge2);
 		newFaces.push_back(face);
-		convexHull.AddFace(face);
+		convexHull.AddFaceToHull(face);
 		
 		//Setting up twin pairs for new edges.
 		/*for (ConvexHullHalfEdge* newEdge : newEdges)
@@ -288,7 +290,7 @@ void Quickhull::MergeFaces(std::vector<ConvexHullFace*>& newFaces, ConvexHull& c
 	{
 		ConvexHullFace* face = newFaces[i];
 
-		if (face == nullptr)
+		if (face->Dead)
 			continue;
 
 		std::unordered_set<ConvexHullHalfEdge*> visitedEdges;
@@ -447,7 +449,7 @@ void Quickhull::UpdateExistingFaces(std::vector<ConvexHullFace*>& newFaces, std:
 
 void Quickhull::AddAndResolveNewVertexInHull(ConvexHull& convexHull, ConvexHullFace*& conflictFace, ConvexHullVertex*& conflictVertex, const float& scaledEpsilon)
 {
-	convexHull.AddVertex(conflictVertex);
+	convexHull.AddVertexToHull(conflictVertex);
 
 	//Build new horizon
 	std::list<ConvexHullHalfEdge*> horizon = std::list<ConvexHullHalfEdge*>();
@@ -633,19 +635,17 @@ void Quickhull::ConstructInitialHullFromSimplex(ConvexHull& convexHull, PointClo
 	static EqualPredicate equal;
 	static LessThanPredicate lessThan;
 
-	std::_Erase_remove_if(pointCloud, [&](const auto& p) {return std::find(simplex.begin(), simplex.end(), p) != simplex.end(); });
-
 	////Remove simplex from point cloud list
-	//for (size_t i = 0; i < simplex.size(); i++)
-	//{
-	//	const Vector3& p = simplex[i];
-	//	auto itr = std::find_if(pointCloud.begin(), pointCloud.end(), [&p](const Vector3& arg) { return equal(arg, p); });
 
-	//	if (itr != pointCloud.end())
-	//	{
-	//		pointCloud.erase(itr);
-	//	}
-	//}
+	for (int i = 0; i < simplex.size(); i++)
+	{
+		auto itr = std::find(pointCloud.begin(), pointCloud.end(), simplex[i]);
+
+		if (itr != pointCloud.end())
+		{
+			pointCloud.erase(itr);
+		}
+	}
 
 	//std::unique erasing requires a sorted list.
 	std::sort(pointCloud.begin(), pointCloud.end(), lessThan);
@@ -653,23 +653,21 @@ void Quickhull::ConstructInitialHullFromSimplex(ConvexHull& convexHull, PointClo
 	//Remove duplicates (happens with indexed business.
 	pointCloud.erase(std::unique(pointCloud.begin(), pointCloud.end(), equal), pointCloud.end());
 
-	ConvexHullVertex* p0 = new ConvexHullVertex();
+	ConvexHullVertex* p0 = convexHull.GetNewVertex();
 	p0->Vertex = simplex[0];
-	convexHull.AddVertex(p0);
+	convexHull.AddVertexToHull(p0);
 
-	ConvexHullVertex* p1 = new ConvexHullVertex();
+	ConvexHullVertex* p1 = convexHull.GetNewVertex();
 	p1->Vertex = simplex[1];
-	convexHull.AddVertex(p1);
+	convexHull.AddVertexToHull(p1);
 
-	ConvexHullVertex* p2 = new ConvexHullVertex();
+	ConvexHullVertex* p2 = convexHull.GetNewVertex();
 	p2->Vertex = simplex[2];
-	convexHull.AddVertex(p2);
+	convexHull.AddVertexToHull(p2);
 
-	ConvexHullVertex* p3 = new ConvexHullVertex();
+	ConvexHullVertex* p3 = convexHull.GetNewVertex();
 	p3->Vertex = simplex[3];
-	convexHull.AddVertex(p3);
-
-	ConvexHullFace* simplexFaces[4];
+	convexHull.AddVertexToHull(p3);
 
 	Vector3 constructionPlaneNormal = { constructionDirection.x, constructionDirection.y, constructionDirection.z };
 	float constructionPlaneOffset = constructionDirection.w;
@@ -678,30 +676,30 @@ void Quickhull::ConstructInitialHullFromSimplex(ConvexHull& convexHull, PointClo
 	//Clockwise.
 	if (Dot(simplex[3], constructionPlaneNormal) - constructionPlaneOffset < 0)
 	{
-		simplexFaces[0] = CreateHullFace(convexHull, p0, p1, p2);
-		simplexFaces[1] = CreateHullFace(convexHull, p3, p1, p0);
-		simplexFaces[2] = CreateHullFace(convexHull, p3, p2, p1);
-		simplexFaces[3] = CreateHullFace(convexHull, p3, p0, p2);
+		convexHull.AddFaceToHull(CreateHullFace(convexHull, p0, p1, p2));
+		convexHull.AddFaceToHull(CreateHullFace(convexHull, p3, p1, p0));
+		convexHull.AddFaceToHull(CreateHullFace(convexHull, p3, p2, p1));
+		convexHull.AddFaceToHull(CreateHullFace(convexHull, p3, p0, p2));
 	}
 	else
 	{
-		simplexFaces[0] = CreateHullFace(convexHull, p0, p2, p1);
-		simplexFaces[1] = CreateHullFace(convexHull, p3, p0, p1);
-		simplexFaces[2] = CreateHullFace(convexHull, p3, p1, p2);
-		simplexFaces[3] = CreateHullFace(convexHull, p3, p2, p0);
+		convexHull.AddFaceToHull(CreateHullFace(convexHull, p0, p2, p1));
+		convexHull.AddFaceToHull(CreateHullFace(convexHull, p3, p0, p1));
+		convexHull.AddFaceToHull(CreateHullFace(convexHull, p3, p1, p2));
+		convexHull.AddFaceToHull(CreateHullFace(convexHull, p3, p2, p0));
 	}
 
 	//Populate twin edges
 	//todo : ensure this isn't broken.
-	for (ConvexHullFace* subjectFace : convexHull.Faces)
+	ConvexHullFace* face = convexHull.FacesListHead;
+	do
 	{
-		ConvexHullHalfEdge* edge = subjectFace->Edge;
+		ConvexHullHalfEdge* edge = face->Edge;
 
-		do
+		for (size_t e = 0; e < 3; ++e)
 		{
-			if (edge->Twin != nullptr)
+			if (edge->Twin)
 			{
-				edge = edge->Next;
 				continue;
 			}
 
@@ -709,8 +707,10 @@ void Quickhull::ConstructInitialHullFromSimplex(ConvexHull& convexHull, PointClo
 			assert(edge->Twin);
 			edge->Twin->Twin = edge;
 			edge = edge->Next;
-		} while (edge != subjectFace->Edge);
-	}
+		}
+
+		face = face->Next;
+	} while (face != convexHull.FacesListHead);
 	
 	//Put all remaining points into the conflict lists.
 	//for (auto itr = pointCloud.begin(); itr != pointCloud.end();)
@@ -719,17 +719,17 @@ void Quickhull::ConstructInitialHullFromSimplex(ConvexHull& convexHull, PointClo
 		ConvexHullFace* furthestFace = nullptr;
 		float furthestDistance = 0.0f;
 		Vector3 point = pointCloud[i];
-		//Vector3 point = *itr;
 
-		for (ConvexHullFace* subjectFace : convexHull.Faces)
+		ConvexHullFace* face = convexHull.FacesListHead;
+		do
 		{
-			Plane facePlane = GetNormalisedSurfacePlaneFromHullFace(*subjectFace);
+			Plane facePlane = GetNormalisedSurfacePlaneFromHullFace(*face);
 			float distanceToPlane = Dot(facePlane.Normal, point);
 
 			if (distanceToPlane > furthestDistance)
 			{
 				furthestDistance = distanceToPlane;
-				furthestFace = subjectFace;
+				furthestFace = face;
 			}
 
 			if (furthestFace == nullptr)
@@ -738,11 +738,11 @@ void Quickhull::ConstructInitialHullFromSimplex(ConvexHull& convexHull, PointClo
 				continue;
 			}
 
-			ConvexHullVertex* vertex = new ConvexHullVertex();
+			ConvexHullVertex* vertex = convexHull.GetNewVertex();
 			vertex->Vertex = point;
 			furthestFace->ConflictList.push_back(vertex);
-			//itr = pointCloud.erase(itr);
-		}
+		} while (face != convexHull.FacesListHead);
+
 		assert(furthestFace != nullptr);
 	}
 }
@@ -750,13 +750,13 @@ void Quickhull::ConstructInitialHullFromSimplex(ConvexHull& convexHull, PointClo
 //Create a new face and setup initial edges.
 ConvexHullFace* Quickhull::CreateHullFace(ConvexHull& convexHull, ConvexHullVertex*& vertexA, ConvexHullVertex*& vertexB, ConvexHullVertex*& vertexC)
 {
-	ConvexHullFace* face = new ConvexHullFace();
+	ConvexHullFace* face = convexHull.GetNewFace();
 
 	ConvexHullHalfEdge* edges[3] = 
 	{
-		new ConvexHullHalfEdge(),
-		new ConvexHullHalfEdge(),
-		new ConvexHullHalfEdge(),
+		convexHull.GetNewEdge(),
+		convexHull.GetNewEdge(),
+		convexHull.GetNewEdge(),
 	};
 
 	face->Edge = edges[0];
@@ -771,12 +771,10 @@ ConvexHullFace* Quickhull::CreateHullFace(ConvexHull& convexHull, ConvexHullVert
 	edges[1]->Prev = edges[0];
 	edges[1]->Next = edges[2];
 
-	edges[2]->Face = face;
 	edges[2]->Tail = vertexC;
+	edges[2]->Face = face;
 	edges[2]->Prev = edges[1];
 	edges[2]->Next = edges[0];
-
-	convexHull.AddFace(face);
 
 	return face;
 }
@@ -785,9 +783,8 @@ ConvexHullFace* Quickhull::CreateHullFace(ConvexHull& convexHull, ConvexHullVert
 // Finds the back facing twin edge for a specific edge.
 ConvexHullHalfEdge* Quickhull::FindTwinEdge(const ConvexHull& convexHull, const ConvexHullHalfEdge* edge)
 {
-	ConvexHullFace* face = convexHull.Faces[0];
+	ConvexHullFace* face = convexHull.FacesListHead;
 
-	//todo : convert to face : hull.faces itr
 	do
 	{
 		if (face == edge->Face)
@@ -813,10 +810,9 @@ ConvexHullHalfEdge* Quickhull::FindTwinEdge(const ConvexHull& convexHull, const 
 		} while (possibleTwin != face->Edge);
 
 		face = face->Next;
-	} while (face != convexHull.Faces[0]);
+	} while (face != convexHull.FacesListHead);
 
 	throw new std::exception("Failed to find a twin edge.");
-	//return nullptr;
 }
 
 /// Finds edge twin pairs within a given list rather than the hull.
@@ -847,48 +843,168 @@ ConvexHullHalfEdge* Quickhull::FindTwinEdgeOfEyeVertex(const std::vector<ConvexH
 	return twinEdge;
 }
 
-void ConvexHull::AddVertex(ConvexHullVertex* vertex)
+ConvexHullVertex* ConvexHull::GetNewVertex()
 {
-	Vertices.push_back(vertex);
-
-	int vertexCount = (int)Vertices.size();
-	if (vertexCount > 1)
+	ConvexHullVertex* newVertex = nullptr;
+	if (m_FreeVertices.size() > 0)
 	{
-		ConvexHullVertex* back = Vertices[vertexCount - 2];
+		newVertex = m_FreeVertices.top();
+		m_FreeVertices.pop();
+	}
+	else
+	{
+		newVertex = &m_VertexBuffer[m_AllocatedVertexCount++];
+	}
+
+	return newVertex;
+}
+
+ConvexHullHalfEdge* ConvexHull::GetNewEdge()
+{
+	ConvexHullHalfEdge* newEdge = nullptr;
+	
+	if (m_FreeEdges.size() > 0)
+	{
+		newEdge = m_FreeEdges.top();
+		m_FreeEdges.pop();
+	}
+	else
+	{
+		newEdge = &m_EdgeBuffer[m_AllocatedEdgeCount++];
+	}
+	++EdgeCount;
+	
+	return newEdge;
+}
+
+ConvexHullFace* ConvexHull::GetNewFace()
+{
+	ConvexHullFace* newFace = nullptr;
+
+	if (m_FreeFaces.size() > 0)
+	{
+		newFace = m_FreeFaces.top();
+		m_FreeFaces.pop();
+	}
+	else
+	{
+		newFace = &m_FaceBuffer[m_AllocatedFaceCount++];
+	}
+	return newFace;
+}
+
+void ConvexHull::DestroyVertex(ConvexHullVertex* vertex)
+{
+	if (vertex->Prev)
+	{
+		RemoveVertexFromHull(vertex);
+	}
+
+	m_FreeVertices.push(vertex);
+}
+
+void ConvexHull::DestroyHalfEdge(ConvexHullHalfEdge* edge)
+{
+	edge->Dead = true;
+	m_FreeEdges.push(edge);
+	--EdgeCount;
+}
+
+void ConvexHull::DestroyFace(ConvexHullFace* face)
+{
+	RemoveFaceFromHull(face);
+	face->Dead = true;
+	m_FreeFaces.push(face);
+}
+
+
+void ConvexHull::AddVertexToHull(ConvexHullVertex* vertex)
+{
+	if (VerticesListHead != nullptr)
+	{
+		ConvexHullVertex* back = VerticesListHead->Prev;
 		back->Next = vertex;
 		vertex->Prev = back;
 	}
-
-	Vertices[0]->Prev = vertex;
-	vertex->Next = Vertices[0];
-}
-
-void ConvexHull::AddFace(ConvexHullFace* face)
-{
-	Faces.push_back(face);
-
-	int faceCount = (int)Faces.size();
-	if (faceCount > 1)
+	else
 	{
-		ConvexHullFace* back = Faces[faceCount - 2];
-		back->Next = face;
-		face->Prev = back;
+		VerticesListHead = vertex;
 	}
 
-	Faces[0]->Prev = face;
-	face->Next = Faces[0];
+	vertex->Next = VerticesListHead;
+	VerticesListHead->Prev = vertex;
+
+	++VertexCount;
 }
 
-void ConvexHull::RemoveVertex(ConvexHullVertex* vertex)
+void ConvexHull::AddFaceToHull(ConvexHullFace* face)
 {
-	auto itr = std::find(Vertices.begin(), Vertices.end(), vertex);
-	Vertices.erase(itr);
-	//std::erase(Vertices, itr);
+	if (FacesListHead != nullptr)
+	{
+		ConvexHullFace* back = FacesListHead->Prev;
+		back->Next = face;
+		face->Prev = face;
+	}
+	else
+	{
+		FacesListHead = face;
+	}
+
+	face->Next = FacesListHead;
+	FacesListHead->Prev = face;
+	++FaceCount;
 }
 
-void ConvexHull::RemoveFace(ConvexHullFace* face)
+void ConvexHull::AddEdgeToHull(ConvexHullHalfEdge* edge)
 {
-	auto itr = std::find(Faces.begin(), Faces.end(), face);
-	Faces.erase(itr);
-	//std::erase(Faces, itr);
+	if (EdgesListHead != nullptr)
+	{
+		ConvexHullHalfEdge* back = EdgesListHead->Prev;
+		back->Next = edge;
+		edge->Prev = edge;
+	}
+	else
+	{
+		EdgesListHead = edge;
+	}
+
+	edge->Next = EdgesListHead;
+	EdgesListHead->Prev = edge;
+	++EdgeCount;
+}
+
+void ConvexHull::RemoveVertexFromHull(ConvexHullVertex* vertex)
+{
+	if (VerticesListHead == vertex)
+	{
+		VerticesListHead = VerticesListHead->Next;
+	}
+
+	vertex->Prev->Next = vertex->Next;
+	vertex->Next->Prev = vertex->Prev;
+	--VertexCount;
+}
+
+void ConvexHull::RemoveFaceFromHull(ConvexHullFace* face)
+{
+	if (FacesListHead == face)
+	{
+		FacesListHead = FacesListHead->Next;
+	}
+
+	face->Prev->Next = face->Next;
+	face->Next->Prev = face->Prev;
+	--FaceCount;
+}
+
+void ConvexHull::RemoveEdgeFromHull(ConvexHullHalfEdge* edge)
+{
+	if (EdgesListHead == edge)
+	{
+		EdgesListHead = EdgesListHead->Next;
+	}
+
+	edge->Prev->Next = edge->Next;
+	edge->Next->Prev = edge->Prev;
+	--EdgeCount;
 }

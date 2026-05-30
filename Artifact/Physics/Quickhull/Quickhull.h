@@ -2,21 +2,20 @@
 #include <list>
 #include <unordered_set>
 #include <type_traits>
+#include <stack>
 
 struct ConvexHullFace;
-struct ConvexHullVertex;
-typedef std::vector<Vector3> PointCloud;
-typedef std::vector<Vector3> Simplex;
-typedef std::vector<ConvexHullVertex*> ConflictList;
 
 struct ConvexHullVertex
 {
+	friend ConvexHull;
 	int VertexID = -1;
 	ConvexHullVertex* Next = nullptr;
 	ConvexHullVertex* Prev = nullptr;
 	Vector3 Vertex = Vector3(0.0f, 0.0f, 0.0f);
 	bool Dead = false;
 
+protected:
 	ConvexHullVertex()
 	{
 		static int counter = 0;
@@ -25,8 +24,13 @@ struct ConvexHullVertex
 	}
 };
 
+typedef std::vector<Vector3> PointCloud;
+typedef std::vector<Vector3> Simplex;
+typedef std::vector<ConvexHullVertex*> ConflictList;
+
 struct ConvexHullHalfEdge
 {
+	friend ConvexHull;
 	int EdgeID = -1;
 	ConvexHullHalfEdge* Prev = nullptr;
 	ConvexHullHalfEdge* Next = nullptr;
@@ -36,6 +40,7 @@ struct ConvexHullHalfEdge
 
 	bool Dead = false;
 
+protected:
 	ConvexHullHalfEdge()
 	{
 		static int counter = 0;
@@ -46,6 +51,7 @@ struct ConvexHullHalfEdge
 
 struct ConvexHullFace
 {
+	friend ConvexHull;
 	int FaceID = -1;
 	ConvexHullFace* Prev = nullptr;
 	ConvexHullFace* Next = nullptr;
@@ -53,6 +59,7 @@ struct ConvexHullFace
 	ConflictList ConflictList;
 	bool Dead = false;
 
+protected:
 	ConvexHullFace()
 	{
 		static int counter = 0;
@@ -64,20 +71,76 @@ struct ConvexHullFace
 //Half-edge based convex hull.
 class ConvexHull
 {
+
 private:
-	//Todo : I can probably preallocate these.
+	ConvexHullVertex* m_VertexBuffer;
+	ConvexHullFace* m_FaceBuffer;
+	ConvexHullHalfEdge* m_EdgeBuffer;
+
+	std::stack<ConvexHullVertex*> m_FreeVertices;
+	std::stack<ConvexHullFace*> m_FreeFaces;
+	std::stack<ConvexHullHalfEdge*> m_FreeEdges;
+	int m_AllocatedVertexCount;
+	int m_AllocatedFaceCount;
+	int m_AllocatedEdgeCount;
 
 public:
-	std::vector<ConvexHullVertex*> Vertices;
-	std::vector<ConvexHullFace*> Faces;
-	void AddVertex(ConvexHullVertex* vertex);
-	void AddFace(ConvexHullFace* face);
+	ConvexHullVertex* VerticesListHead;
+	ConvexHullFace* FacesListHead;
+	ConvexHullHalfEdge* EdgesListHead;
 
-	void RemoveVertex(ConvexHullVertex* vertex);
-	void RemoveFace(ConvexHullFace* face);
+	int EdgeCount;
+	int VertexCount;
+	int FaceCount;
 
-	ConvexHull() {};
-	~ConvexHull() {};
+	ConvexHullVertex* GetNewVertex();
+	ConvexHullHalfEdge* GetNewEdge();
+	ConvexHullFace* GetNewFace();
+	void DestroyVertex(ConvexHullVertex* vertex);
+	void DestroyHalfEdge(ConvexHullHalfEdge* edge);
+	void DestroyFace(ConvexHullFace* face);
+
+	void AddVertexToHull(ConvexHullVertex* vertex);
+	void AddEdgeToHull(ConvexHullHalfEdge* edge);
+	void AddFaceToHull(ConvexHullFace* face);
+	void RemoveVertexFromHull(ConvexHullVertex* vertex);
+	void RemoveEdgeFromHull(ConvexHullHalfEdge* edge);
+	void RemoveFaceFromHull(ConvexHullFace* face);
+
+	ConvexHull(const int& expectedSize) 
+	{
+		m_VertexBuffer = new ConvexHullVertex[expectedSize * 2];
+		m_EdgeBuffer = new ConvexHullHalfEdge[(3 * expectedSize - 6) * 2 * 2];
+		m_FaceBuffer = new ConvexHullFace[(2 * expectedSize - 4) * 2];
+		m_AllocatedVertexCount = 0;
+		m_AllocatedEdgeCount = 0;
+		m_AllocatedFaceCount = 0;
+	};
+
+	~ConvexHull()
+	{
+		if (m_VertexBuffer)
+		{
+			delete[] m_VertexBuffer;
+			m_VertexBuffer = nullptr;
+		}
+
+		if (m_EdgeBuffer)
+		{
+			delete[] m_EdgeBuffer;
+			m_EdgeBuffer = nullptr;
+		}
+
+		if (m_FaceBuffer)
+		{
+			delete[] m_FaceBuffer;
+			m_FaceBuffer = nullptr;
+		}
+
+		m_AllocatedVertexCount = 0;
+		m_AllocatedEdgeCount = 0;
+		m_AllocatedFaceCount = 0;
+	};
 };
 
 
