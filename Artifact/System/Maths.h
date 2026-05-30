@@ -27,6 +27,15 @@ struct equal_to {
 	}
 };
 
+bool operator<(const Vector3& lhs, const Vector3& rhs)
+{
+	if (lhs.x != rhs.x)
+		return lhs.x < rhs.x;
+	if (lhs.y != rhs.y)
+		return lhs.y < rhs.y;
+	return lhs.z < rhs.z;
+};
+
 namespace Maths
 {
 	inline static Vector3 Add(const Vector3& A, const Vector3& B)

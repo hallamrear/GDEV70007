@@ -16,8 +16,8 @@ struct EqualPredicate {
 struct LessThanPredicate {
 	bool operator()(const Vector3& l, const Vector3& r)
 	{
-		if (l.x != r.x) return l.x < r.x;
-		if (l.y != r.y) return l.y < r.y;
+		if (l.x > r.x) return l.x < r.x;
+		if (l.y > r.y) return l.y < r.y;
 		return l.z < r.z;
 	}
 };
@@ -37,18 +37,15 @@ ConvexHull* Quickhull::GenerateConvexHull(PointCloud& pointCloud)
 	ConvexHullVertex* conflictVertex = nullptr;
 	ConvexHullFace* conflictFace = nullptr;
 
-	conflictVertex = GetNextConflictVertex(convexHull, conflictFace);
-
-	while (conflictVertex != nullptr)
+	while ((conflictVertex = GetNextConflictVertex(convexHull, conflictFace)))
 	{
 		AddAndResolveNewVertexInHull(*convexHull, conflictFace, conflictVertex, epsilon);
-		conflictVertex = GetNextConflictVertex(convexHull, conflictFace);
 	}
 
 	return convexHull;
 }
 
-ConvexHullVertex* Quickhull::GetNextConflictVertex(ConvexHull* convexHull, ConvexHullFace*& conflictVertexFace)
+ConvexHullVertex* Quickhull::GetNextConflictVertex(ConvexHull*& convexHull, ConvexHullFace*& conflictVertexFace)
 {
 	ConvexHullVertex* vertex =  nullptr;
 	conflictVertexFace = nullptr;
@@ -121,9 +118,29 @@ void Quickhull::DetermineHorizonRecursiveSearch(std::unordered_set<ConvexHullFac
 	}
 }
 
-void Quickhull::BuildNewFaces(std::list<ConvexHullHalfEdge*>& horizon, std::vector<ConvexHullFace*> newFaces, ConvexHull& convexHull, ConvexHullVertex* conflictVertex)
+void Quickhull::BuildNewFaces(std::list<ConvexHullHalfEdge*>& horizon, std::vector<ConvexHullFace*>& newFaces, ConvexHull& convexHull, ConvexHullVertex*& conflictVertex)
 {
 	std::vector<ConvexHullHalfEdge*> newEdges = std::vector<ConvexHullHalfEdge*>();
+
+	//pairs newly created edges with their twins
+	const auto& FindTwinA = [&](ConvexHullHalfEdge* edge)->ConvexHullHalfEdge*
+		{
+			const auto twin{ std::find_if(newEdges.begin(), newEdges.end(), [&](ConvexHullHalfEdge* potentialTwin)->bool
+				{
+					//edge begins at eye, find twin edge that terminates at the vertex and begins at the shared horizon vertex
+					if (edge->Tail->VertexID == conflictVertex->VertexID)
+						return potentialTwin->Tail == edge->Next->Tail;
+
+					//edge terminates at eye, find twin edge that terminates ate shared horizon vertex beginning from eye
+					return potentialTwin->Tail == conflictVertex && potentialTwin->Prev->Next->Tail == edge->Tail;
+				}) };
+
+			if (twin == newEdges.end())
+				return nullptr;
+
+			return *twin;
+		};
+
 
 	//Triangle construct using edge as base.
 	for (ConvexHullHalfEdge* edge : horizon)
@@ -141,9 +158,9 @@ void Quickhull::BuildNewFaces(std::list<ConvexHullHalfEdge*>& horizon, std::vect
 		edge2->Face = face;
 
 		//Put eye vertex on far point
-		edge0->Tail = conflictVertex;
 		edge0->Prev = edge2;
 		edge0->Next = edge1;
+		edge0->Tail = conflictVertex;
 
 		//Avoid dangin pointer by assigning before changing horizon.
 		edge2->Tail = edge->Next->Tail;
@@ -151,6 +168,7 @@ void Quickhull::BuildNewFaces(std::list<ConvexHullHalfEdge*>& horizon, std::vect
 		//Attach remainder of edges.
 		edge1->Prev = edge0;
 		edge1->Next = edge2;
+
 		edge2->Prev = edge1;
 		edge2->Next = edge0;
 
@@ -160,27 +178,110 @@ void Quickhull::BuildNewFaces(std::list<ConvexHullHalfEdge*>& horizon, std::vect
 		convexHull.AddFace(face);
 		
 		//Setting up twin pairs for new edges.
-		for (ConvexHullHalfEdge* newEdge : newEdges)
+		/*for (ConvexHullHalfEdge* newEdge : newEdges)
 		{
-			ConvexHullHalfEdge* newEdgeTwin = FindTwinEdgeOfEyeVertex(newEdges, newEdge, conflictVertex);
+			newEdge->Twin = FindTwinEdgeOfEyeVertex(newEdges, newEdge, conflictVertex);
 
-			if (newEdgeTwin != nullptr)
+			if (newEdge->Twin != nullptr)
 			{
-				newEdge->Twin = newEdgeTwin;
 				newEdge->Twin->Twin = newEdge;
 			}
+			else
+			{
+				printf("miss");
+			}
+		}*/
+
+		for (auto& newEdge : newEdges)
+		{
+			newEdge->Twin = FindTwinA(newEdge);
+			if (newEdge->Twin)
+				newEdge->Twin->Twin = newEdge;
 		}
 	}
+
+	
 
 	//todo : potential issues here!
 }
 
-bool Quickhull::AreFacesConvex(const ConvexHullFace& faceA, const ConvexHullFace& faceB, const float& epsilon)
+bool Quickhull::AreFacesConvex(const ConvexHullFace& faceA, const ConvexHullFace& faceB, const float& scaledEpsilon)
 {
-	return false;
+	//calculate centroid	
+	Vector3 centre = Vector3(0.0f, 0.0f, 0.0f);
+	int centroidVertexCount = GetFaceVertexCount(faceA);
+	ConvexHullHalfEdge* faceEdge = faceA.Edge;
+
+	for (int edge = 0; edge < centroidVertexCount; ++edge)
+	{
+		centre.x += faceEdge->Tail->Vertex.x;
+		centre.y += faceEdge->Tail->Vertex.y;
+		centre.z += faceEdge->Tail->Vertex.z;
+
+		faceEdge = faceEdge->Next;
+	}
+
+	centre.x /= centroidVertexCount;
+	centre.y /= centroidVertexCount;
+	centre.z /= centroidVertexCount;
+
+	//calculate face plane		
+	Plane surfacePlane = GetNormalisedSurfacePlaneFromHullFace(faceB);
+
+	return Dot(surfacePlane.Normal, centre) < -scaledEpsilon;
 }
 
-void Quickhull::MergeFaces(std::vector<ConvexHullFace*> newFaces, ConvexHull& convexHull, ConvexHullFace* conflictFace, const float& scaledEpsilon)
+int Quickhull::GetFaceVertexCount(const ConvexHullFace& face)
+{
+	int result{ 1 };
+	for (auto edge{ face.Edge->Next }; edge != face.Edge; edge = edge->Next)
+		++result;
+
+	return result;
+
+	//int vertexCount = 1;
+	//for (ConvexHullHalfEdge* edge = face.Edge->Next; edge != face.Edge; edge = edge->Next)
+	//{
+	//	++vertexCount;
+	//}
+	//return vertexCount;
+}
+
+void Quickhull::MergeConcaveFaces(ConvexHull& convexHull, ConvexHullFace& conflictFace, ConvexHullHalfEdge*& edge)
+{
+	//Dangler.
+	edge->Face->Edge = edge->Prev;
+
+	//loop through old edges and collate into new face.
+	for (ConvexHullHalfEdge* twinEdge = edge->Twin->Next; twinEdge != edge->Twin; twinEdge = twinEdge->Next)
+	{
+		twinEdge->Face = edge->Face;
+	}
+
+	//Linkup edges :)
+	edge->Prev->Next = edge->Twin->Next;
+	edge->Next->Prev = edge->Twin->Prev;
+	edge->Twin->Prev->Next = edge->Next;
+	edge->Twin->Next->Prev = edge->Prev;
+
+	//Very shit cleanup.
+	ConvexHullFace* twinFace = edge->Twin->Face;
+	convexHull.RemoveFace(twinFace);
+	edge->Dead = true;
+	edge->Twin->Dead = true;
+	edge->Twin->Face->Dead = true;
+
+	//delete edge->Twin;
+	//edge->Twin = nullptr;
+	//delete edge;
+	//edge = nullptr;
+	//if deallocated face has any conflict points add them to the conflict face to be resolved with other orphaned points
+	conflictFace.ConflictList.insert(conflictFace.ConflictList.end(), twinFace->ConflictList.begin(), twinFace->ConflictList.end());
+	//delete twinFace;
+	//twinFace = nullptr;
+}
+
+void Quickhull::MergeFaces(std::vector<ConvexHullFace*>& newFaces, ConvexHull& convexHull, ConvexHullFace*& conflictFace, const float& scaledEpsilon)
 {
 	size_t faceCount = newFaces.size();
 	for (size_t i = 0; i < faceCount; i++)
@@ -198,7 +299,7 @@ void Quickhull::MergeFaces(std::vector<ConvexHullFace*> newFaces, ConvexHull& co
 		{
 			visitedEdges.insert(edge);
 
-			if (edge->Face == nullptr || edge->Twin->Face == nullptr)
+			if (edge->Face->Dead || edge->Twin->Face->Dead)
 			{
 				edge = edge->Next;
 				continue;
@@ -215,7 +316,7 @@ void Quickhull::MergeFaces(std::vector<ConvexHullFace*> newFaces, ConvexHull& co
 			}
 
 			//One/Both faces are concave.
-			MergeConcaveFaces(edge);
+			MergeConcaveFaces(convexHull, *conflictFace, edge);
 
 			//Check if the merging has created a geometric invariances.
 			ConvexHullHalfEdge* start = face->Edge;
@@ -230,21 +331,23 @@ void Quickhull::MergeFaces(std::vector<ConvexHullFace*> newFaces, ConvexHull& co
 
 				if (currentFace == nextFace)
 				{
-					int currentFaceCount = GetFaceVertexCount(currentFace);
-					int twinFaceCount = GetFaceVertexCount(nextFace);
+					int twinFaceCount = GetFaceVertexCount(*nextFace);
 
-					//No longer a quad.
+					printf("v %i f %i\n", (int)convexHull.Vertices.size(), (int)convexHull.Faces.size());
+
 					if (twinFaceCount >= 4)
 					{
-						TopoCorretion2(current, next);
+						FixAdditionalPointInvariance(convexHull, conflictFace, current, next);
 					}
 					else
 					{
-						TopoCorretion1(current, next);
+						FixInternalPointInvariance(convexHull, conflictFace, current, next);
 					}
 
 					start = face->Edge;
 					current = face->Edge;
+
+					printf("v %i f %i\n", (int)convexHull.Vertices.size(), (int)convexHull.Faces.size());
 				}
 
 				current = current->Next;
@@ -255,11 +358,86 @@ void Quickhull::MergeFaces(std::vector<ConvexHullFace*> newFaces, ConvexHull& co
 			edge = edge->Next;
 		}
 	}
-
-
 }
 
-void Quickhull::UpdateExistingFaces(std::vector<ConvexHullFace*> newFaces, std::vector<ConvexHullFace*>& visibleFaces, ConvexHull& convexHull, ConvexHullFace* conflictFace)
+/// <summary>
+/// Face has more than 3 vertices so remove one of the edges and remerge.
+/// </summary>
+void Quickhull::FixAdditionalPointInvariance(ConvexHull& convexHull, ConvexHullFace*& conflictFace, ConvexHullHalfEdge*& incoming, ConvexHullHalfEdge*& outgoing)
+{
+	UNREFERENCED_PARAMETER(conflictFace);
+
+	ConvexHullFace* face = incoming->Face;
+	face->Edge = incoming->Prev;
+
+	//ConvexHullFace* twinFace = incoming->Twin->Face;
+	///*todo : ? */twinFace->Edge = incoming->Twin->Next;
+	incoming->Next = outgoing->Next;
+	outgoing->Next->Prev = incoming;
+	outgoing->Twin->Next = incoming->Twin->Next;
+	incoming->Twin->Next->Prev = outgoing->Twin;
+
+	//todo : fix cleanup
+	outgoing->Dead = true;
+	incoming->Twin->Dead = true;
+	convexHull.RemoveVertex(outgoing->Tail);
+	//delete outgoing->Tail;
+	//outgoing->Tail = nullptr;
+	incoming->Twin = outgoing->Twin;
+	outgoing->Twin->Twin = incoming;
+}
+
+//Fixing interal point invariance by merging the spare edge into a face.
+void Quickhull::FixInternalPointInvariance(ConvexHull& convexHull, ConvexHullFace*& conflictFace, ConvexHullHalfEdge*& edgeA, ConvexHullHalfEdge*& edgeB)
+{
+	ConvexHullFace* face = edgeA->Face;
+	face->Edge = edgeA->Prev;
+
+	//Finding opposite edge from triangel.
+	ConvexHullHalfEdge* thirdEdge = edgeA->Twin;
+	while (thirdEdge == edgeB->Twin || thirdEdge == edgeA->Twin)
+	{
+		thirdEdge = thirdEdge->Next;
+	}
+
+	//Repointing surrounding edges.
+	edgeA->Prev->Next = thirdEdge;
+	edgeB->Next->Prev = thirdEdge;
+	thirdEdge->Prev = edgeA->Prev;
+	thirdEdge->Next = edgeB->Next;
+	thirdEdge->Face = face;
+
+	ConvexHullFace* twinFace = edgeA->Twin->Face;
+	conflictFace->ConflictList.insert(conflictFace->ConflictList.end(), twinFace->ConflictList.begin(), twinFace->ConflictList.end());
+
+	//todo : fix cleanup.
+	convexHull.RemoveVertex(edgeA->Tail);
+
+	//delete edgeA;
+	//edgeA = nullptr;
+	edgeA->Dead = true;
+	//delete edgeB;
+	//edgeB = nullptr;
+	edgeB->Dead = true;
+
+	//delete edgeA->Twin;
+	//edgeA->Twin = nullptr;
+	edgeA->Twin->Dead = true;
+
+	//delete edgeB->Twin;
+	//edgeB->Twin = nullptr;
+	edgeB->Twin->Dead = true;
+
+	//delete edgeB->Tail;
+	//edgeB->Tail = nullptr;
+	edgeB->Tail->Dead = true;
+
+	//delete edgeA->Twin->Face;
+	//edgeA->Twin->Face = nullptr;
+	edgeA->Twin->Face->Dead = true;
+}
+
+void Quickhull::UpdateExistingFaces(std::vector<ConvexHullFace*>& newFaces, std::vector<ConvexHullFace*>& visibleFaces, ConvexHull& convexHull, ConvexHullFace*& conflictFace)
 {
 	UNREFERENCED_PARAMETER(newFaces);
 	UNREFERENCED_PARAMETER(visibleFaces);
@@ -267,7 +445,7 @@ void Quickhull::UpdateExistingFaces(std::vector<ConvexHullFace*> newFaces, std::
 	UNREFERENCED_PARAMETER(conflictFace);
 }
 
-void Quickhull::AddAndResolveNewVertexInHull(ConvexHull& convexHull, ConvexHullFace* conflictFace, ConvexHullVertex* conflictVertex, const float& scaledEpsilon)
+void Quickhull::AddAndResolveNewVertexInHull(ConvexHull& convexHull, ConvexHullFace*& conflictFace, ConvexHullVertex*& conflictVertex, const float& scaledEpsilon)
 {
 	convexHull.AddVertex(conflictVertex);
 
@@ -280,10 +458,10 @@ void Quickhull::AddAndResolveNewVertexInHull(ConvexHull& convexHull, ConvexHullF
 	assert(horizon.size() != 0);
 
 	std::vector<ConvexHullFace*> newFaces = std::vector<ConvexHullFace*>();
-	BuildNewFaces(horizon, visibleFaces, convexHull, conflictVertex);
+	BuildNewFaces(horizon, newFaces, convexHull, conflictVertex);
 
 	//Merge Faces
-	MergeFaces(newFaces, convexHull, conflictFace);
+	MergeFaces(newFaces, convexHull, conflictFace, scaledEpsilon);
 
 	//remove old faces
 	//std::erase_if()?
@@ -299,11 +477,7 @@ Plane Quickhull::GetNormalisedSurfacePlaneFromHullFace(const ConvexHullFace& fac
 {
 	Plane result;
 
-	int vertexCount = 1;
-	for (ConvexHullHalfEdge* edge = face.Edge->Next; edge != face.Edge; edge = edge->Next)
-	{
-		++vertexCount;
-	}
+	int vertexCount = GetFaceVertexCount(face);
 
 	if (vertexCount > 3)
 	{
@@ -360,7 +534,7 @@ const Simplex Quickhull::BuildInitialSimplex(const PointCloud& pointCloud, Vecto
 			vertexDifference = { vertexB.x - vertexA.x, vertexB.y - vertexA.y, vertexB.z - vertexA.z };
 			float distance = MagnitudeSqr(vertexDifference);
 
-			if (distance > furthestDistance)
+			if (distance >= furthestDistance)
 			{
 				furthestDistance = distance;
 				furthestPointPairIndices.first = (int)x;
@@ -459,17 +633,19 @@ void Quickhull::ConstructInitialHullFromSimplex(ConvexHull& convexHull, PointClo
 	static EqualPredicate equal;
 	static LessThanPredicate lessThan;
 
-	//Remove simplex from point cloud list
-	for (size_t i = 0; i < simplex.size(); i++)
-	{
-		const Vector3& p = simplex[i];
-		auto itr = std::find_if(pointCloud.begin(), pointCloud.end(), [&p](const Vector3& arg) { return equal(arg, p); });
+	std::_Erase_remove_if(pointCloud, [&](const auto& p) {return std::find(simplex.begin(), simplex.end(), p) != simplex.end(); });
 
-		if (itr != pointCloud.end())
-		{
-			pointCloud.erase(itr);
-		}
-	}
+	////Remove simplex from point cloud list
+	//for (size_t i = 0; i < simplex.size(); i++)
+	//{
+	//	const Vector3& p = simplex[i];
+	//	auto itr = std::find_if(pointCloud.begin(), pointCloud.end(), [&p](const Vector3& arg) { return equal(arg, p); });
+
+	//	if (itr != pointCloud.end())
+	//	{
+	//		pointCloud.erase(itr);
+	//	}
+	//}
 
 	//std::unique erasing requires a sorted list.
 	std::sort(pointCloud.begin(), pointCloud.end(), lessThan);
@@ -572,7 +748,7 @@ void Quickhull::ConstructInitialHullFromSimplex(ConvexHull& convexHull, PointClo
 }
 
 //Create a new face and setup initial edges.
-ConvexHullFace* Quickhull::CreateHullFace(ConvexHull& convexHull, ConvexHullVertex* vertexA, ConvexHullVertex* vertexB, ConvexHullVertex* vertexC)
+ConvexHullFace* Quickhull::CreateHullFace(ConvexHull& convexHull, ConvexHullVertex*& vertexA, ConvexHullVertex*& vertexB, ConvexHullVertex*& vertexC)
 {
 	ConvexHullFace* face = new ConvexHullFace();
 
@@ -644,7 +820,7 @@ ConvexHullHalfEdge* Quickhull::FindTwinEdge(const ConvexHull& convexHull, const 
 }
 
 /// Finds edge twin pairs within a given list rather than the hull.
-ConvexHullHalfEdge* Quickhull::FindTwinEdgeOfEyeVertex(const std::vector<ConvexHullHalfEdge*>& edgeList, const ConvexHullHalfEdge* edge, const ConvexHullVertex* eyeVertex)
+ConvexHullHalfEdge* Quickhull::FindTwinEdgeOfEyeVertex(const std::vector<ConvexHullHalfEdge*>& edgeList, const ConvexHullHalfEdge*& edge, const ConvexHullVertex*& eyeVertex)
 {
 	ConvexHullHalfEdge* twinEdge = nullptr;
 
@@ -701,4 +877,18 @@ void ConvexHull::AddFace(ConvexHullFace* face)
 
 	Faces[0]->Prev = face;
 	face->Next = Faces[0];
+}
+
+void ConvexHull::RemoveVertex(ConvexHullVertex* vertex)
+{
+	auto itr = std::find(Vertices.begin(), Vertices.end(), vertex);
+	Vertices.erase(itr);
+	//std::erase(Vertices, itr);
+}
+
+void ConvexHull::RemoveFace(ConvexHullFace* face)
+{
+	auto itr = std::find(Faces.begin(), Faces.end(), face);
+	Faces.erase(itr);
+	//std::erase(Faces, itr);
 }
