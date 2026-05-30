@@ -100,6 +100,7 @@ private:
 
 	ID3D12PipelineState* m_DefaultPipeline;
 	ID3D12PipelineState* m_DebugDrawPipeline;
+	ID3D12PipelineState* m_LineDrawPipeline;
 	HRESULT CreateGraphicsPipelines();
 	void DestroyGraphicsPipelines();
 
@@ -146,6 +147,7 @@ public:
 	struct D3D12_GPU_DESCRIPTOR_HANDLE GetMainSRVDescriptorHeapStartGPU() const;
 
 	bool SetDebugDrawMode();
+	bool SetLineDrawMode();
 	bool SetDefaultDrawMode();
 
 	bool UpdateWorldMatrix(const Matrix4x4& worldMatrix);

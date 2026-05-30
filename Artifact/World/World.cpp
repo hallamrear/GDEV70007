@@ -44,11 +44,14 @@ bool World::Initialise()
 	//testRoom = CreateEntity("AAA");
 	//ref = ServiceLocator::Locate<AssetManager>()->GetModel("STACKING.glb");
 	//testRoom->SetModel(ref);
+	
 
 	TestBoxA = CreateEntity("Box A");
-	TestBoxA->AddCollider(COLLIDER_TYPE_AABB);
-	TestBoxA->GetCollider()->SetSize(Vector3(10.0f, 10.0f, 10.0f));
+	TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
+	//TestBoxA->GetCollider()->SetSize(Vector3(10.0f, 10.0f, 10.0f));
 	TestBoxA->SetPosition(Vector3(-30.0f, 0.0f, 0.0f));
+	ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("Suzanne.glb");
+	TestBoxA->SetModel(suzaane);
 
 	TestBoxB = CreateEntity("Box B");
 	TestBoxB->AddCollider(COLLIDER_TYPE_AABB);

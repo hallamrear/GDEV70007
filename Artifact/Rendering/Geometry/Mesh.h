@@ -3,6 +3,8 @@
 #include <Rendering/VertexBuffer.h>
 #include <Rendering/IndexBuffer.h>
 
+class ConvexHull;
+
 class Mesh
 {
 private:
@@ -15,8 +17,10 @@ private:
 	MESH_TOPOLOGY m_Topology;
 	std::vector<TextureRef> m_Textures;
 
+	ConvexHull* m_ConvexHull;
 	VertexBuffer m_VertexBuffer;
 	IndexBuffer m_IndexBuffer;
+	Vector3 m_Centroid;
 
 protected:
 
@@ -24,6 +28,7 @@ public:
 	Mesh();
 	~Mesh();
 
+	const Vector3& GetCentroid() const;
 	const Matrix4x4& GetOffsetMatrix() const;
 	const IndexBuffer& GetIndexBuffer() const;
 	const VertexBuffer& GetVertexBuffer() const;

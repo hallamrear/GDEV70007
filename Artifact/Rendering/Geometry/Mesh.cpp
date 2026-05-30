@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Mesh.h"
+#include <Physics/Quickhull/Quickhull.h>
 
 Mesh::Mesh()
 {
@@ -9,6 +10,7 @@ Mesh::Mesh()
 	m_OffsetMatrix = Matrix4x4();
 	m_Topology = MESH_TOPOLOGY::MESH_TOPOLOGY_UNDEFINED;
 	m_Textures = std::vector<TextureRef>();
+	m_ConvexHull = nullptr;
 }
 
 Mesh::~Mesh()
@@ -18,6 +20,12 @@ Mesh::~Mesh()
 	m_MinVertex = Vector3();
 	m_OffsetMatrix = Matrix4x4();
 	m_Topology = MESH_TOPOLOGY::MESH_TOPOLOGY_UNDEFINED;
+
+	if (m_ConvexHull != nullptr)
+	{
+		delete m_ConvexHull;
+		m_ConvexHull = nullptr;
+	}
 
 	if (m_Textures.size() >= 0)
 	{
@@ -33,6 +41,11 @@ Mesh::~Mesh()
 	{
 		m_IndexBuffer.Destroy();
 	}
+}
+
+const Vector3& Mesh::GetCentroid() const
+{
+	return m_Centroid;
 }
 
 const Matrix4x4& Mesh::GetOffsetMatrix() const

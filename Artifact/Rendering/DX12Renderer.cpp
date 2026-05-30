@@ -55,6 +55,7 @@ DX12Renderer::DX12Renderer() : Renderer()
     m_DefaultVertexShaderBlob = nullptr;
     m_DefaultPipeline = nullptr;
     m_DebugDrawPipeline = nullptr;
+    m_LineDrawPipeline = nullptr;
     m_RootSignature = nullptr;
     m_PushConstants = nullptr;
     m_CBVHeaps = new ID3D12DescriptorHeap * [m_SwapChainBufferCount];
@@ -1704,6 +1705,23 @@ HRESULT DX12Renderer::CreateGraphicsPipelines()
     }
     m_DebugDrawPipeline->SetName(L"Debug Drawing Graphics Pipeline");
 
+
+    pipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE::D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+    pipelineStateDesc.RasterizerState.FillMode = D3D12_FILL_MODE::D3D12_FILL_MODE_WIREFRAME;
+    pipelineStateDesc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_BACK;
+    result = m_Device->CreateGraphicsPipelineState(&pipelineStateDesc, IID_PPV_ARGS(&m_LineDrawPipeline));
+
+    if (FAILED(result))
+    {
+        printf("Failed to create Line graphics pipeline state.\n");
+        return result;
+    }
+    m_LineDrawPipeline->SetName(L"Line Drawing Graphics Pipeline");
+
+
+
+
+
     return result;
 }
 
@@ -1719,6 +1737,12 @@ void DX12Renderer::DestroyGraphicsPipelines()
     {
         m_DebugDrawPipeline->Release();
         m_DebugDrawPipeline = nullptr;
+    }
+
+    if (m_LineDrawPipeline != nullptr)
+    {
+        m_LineDrawPipeline->Release();
+        m_LineDrawPipeline = nullptr;
     }
 }
 
@@ -1778,6 +1802,19 @@ bool DX12Renderer::SetDebugDrawMode()
     }
 
     m_CommandList->SetPipelineState(m_DebugDrawPipeline);
+
+    return true;
+}
+
+bool DX12Renderer::SetLineDrawMode()
+{
+    if (m_LineDrawPipeline == nullptr || m_CommandList == nullptr)
+    {
+        printf("Error setting line draw mode. Parameter invalid.\n");
+        return false;
+    }
+
+    m_CommandList->SetPipelineState(m_LineDrawPipeline);
 
     return true;
 }

@@ -129,3 +129,70 @@ bool SeparatingAxisTheorem::CheckCollision(const Collider& colliderA, const Coll
 
 	return true;
 }
+
+//typedef std::pair<int, float> Query;
+//
+//Query QueryFaceDirections(const Collider& colliderA, const Collider& colliderB)
+//{
+//	int furthestIndex = -1;
+//	float maxDistance = -INFINITY;
+//
+//	for (int i = 0; i < colliderA.FaceCount; ++i)
+//	{
+//		Plane planeA = colliderA.GetFace(i);
+//		Vector3 vertexB = colliderB.GetFurthestPointInDirection(-planeA.Normal);
+//		float d = DistanceFromPlane(planeA, vertexB);
+//
+//		if (d > maxDistance)
+//		{
+//			maxDistance = d;
+//			furthestIndex = i;
+//		}
+//	}
+//
+//	return {furthestIndex, maxDistance };
+//}
+//
+//typedef EdgeQuery;
+//typedef QEInterval;
+//
+//EdgeQuery QueryEdgeDirection_BruteForce(const Collider& colliderA, const Collider& colliderB)
+//{
+//	for (int x = 0; x < colliderA.EdgeCount; ++x)
+//	{
+//		Edge* edge1 = colliderA.GetEdge(x);
+//		for (int y = 0; y < colliderB.EdgeCount; ++y)
+//		{
+//			Edge* edge2 = colliderB.GetEdge(y);
+//
+//			Vector3 axis = Cross(edge1.Direction, edge2.Direction);
+//			Normalise(axis);
+//
+//			QEInterval intervalA = colliderA.Project(axis);
+//			QEInterval intervalB = colliderB.Project(axis);
+//			float seperation = Compare(intervalA, intervalB);
+//		}
+//	}
+//}
+//
+//bool Overlap(const Collider& colliderA, const Collider& colliderB)
+//{
+//	Query queryA = QueryFaceDirections(colliderA, colliderB);
+//	if (queryA.second >= 0.0f)
+//	{
+//		return false;
+//	}
+//
+//	Query queryB = QueryFaceDirections(colliderB, colliderA);
+//	if (queryB.second >= 0.0f)
+//	{
+//		return false;
+//	}
+//
+//	return true;
+//}
+
+
+/*
+
+*/

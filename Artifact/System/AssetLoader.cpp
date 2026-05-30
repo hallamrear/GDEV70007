@@ -3,6 +3,7 @@
 #include <Rendering/Renderer.h>
 #include <Rendering/Vertex.h>
 #include <Rendering/Geometry/Mesh.h>
+#include <Physics/Quickhull/Quickhull.h>
 #include <System/AssetManagement.h>
 
 #define TINYGLTF_IMPLEMENTATION
@@ -514,9 +515,14 @@ bool AssetLoader::GetVertexDataFromGLTFPrimitive(Mesh& mesh, const tinygltf::Mod
 	bool hasTangents = GetElementDataFromGLTFBuffer("TANGENT", tangentData, gltfModel, primitive);
 	bool hasTexCoords = GetElementDataFromGLTFBuffer("TEXCOORD_0", texCoordData, gltfModel, primitive);
 
+	Vector3 centroid = Vector3(0.0f, 0.0f, 0.0f);
+
 	std::vector<Vertex> vertices = std::vector<Vertex>();
 	size_t vertexCount = positions.count;
 	vertices.resize(vertexCount);
+
+	std::vector<Vector3> points = std::vector<Vector3>();
+	points.resize(vertexCount);
 
 	for (size_t v = 0; v < vertexCount; v++)
 	{
@@ -524,7 +530,16 @@ bool AssetLoader::GetVertexDataFromGLTFPrimitive(Mesh& mesh, const tinygltf::Mod
 		vertices[v].Normal =	hasNormals	 ? *(Vector3*)(  normalData + (sizeof(Vector3) * v)) : Vector3();
 		vertices[v].Tangent =	hasTangents  ? *(Vector3*)( tangentData + (sizeof(Vector3) * v)) : Vector3();
 		vertices[v].UV =		hasTexCoords ? *(Vector2*)(texCoordData + (sizeof(Vector2) * v)) : Vector2();
+
+		points[v] = vertices[v].Position;
+		centroid.x += points[v].x;
+		centroid.y += points[v].y;
+		centroid.z += points[v].z;
 	}	
+
+	centroid.x /= vertexCount;
+	centroid.y /= vertexCount;
+	centroid.z /= vertexCount;
 
 	size_t vertexBufferLength = sizeof(Vertex) * vertices.size();
 	
@@ -544,11 +559,15 @@ bool AssetLoader::GetVertexDataFromGLTFPrimitive(Mesh& mesh, const tinygltf::Mod
 
 	std::wstring vertexBufferName = std::wstring(gltfMesh.name.begin(), gltfMesh.name.end()) + L" Vertex Buffer";
 	mesh.m_VertexBuffer.GetResource()->SetName(vertexBufferName.c_str());
-
 	mesh.m_MaxVertex = Vector3((float)positions.maxValues[0], (float)positions.maxValues[1], (float)positions.maxValues[2]);
 	mesh.m_MinVertex = Vector3((float)positions.minValues[0], (float)positions.minValues[1], (float)positions.minValues[2]);
 	mesh.m_Topology = foundTopology;
 	mesh.m_DisplayName = gltfMesh.name;
+
+	if (points.size() > 0)
+	{
+		mesh.m_ConvexHull = Quickhull::GenerateConvexHull(points);
+	}
 
 	return true;
 }

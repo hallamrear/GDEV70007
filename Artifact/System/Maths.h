@@ -4,6 +4,29 @@
 #define DEGREES_TO_RADIANS (float)(M_PI / 180.0f)
 #define RADIANS_TO_DEGREES (float)(180.0f / M_PI)
 
+//todo : add to distance from surface functions.
+struct Plane
+{
+	Vector3 Normal = { Vector3(0.0f, 0.0f, 0.0f) };
+	float Offset = 0.0f;
+};
+
+struct Triangle
+{
+	Vector3 Vertices[3] = { Vector3(0.0f, 0.0f, 0.0f) };
+};
+
+// Source - https://stackoverflow.com/a/61862608
+// Posted by bolov, modified by community. See post 'Timeline' for change history
+// Retrieved 2026-05-30, License - CC BY-SA 4.0
+template <class T = void>
+struct equal_to {
+	constexpr bool operator()(const T& lhs, const T& rhs) const
+	{
+		return lhs == rhs;
+	}
+};
+
 namespace Maths
 {
 	inline static Vector3 Add(const Vector3& A, const Vector3& B)
@@ -82,13 +105,23 @@ namespace Maths
 	
 	inline static Vector3 GetNormalOfTriangle(const Vector3& A, const Vector3& B, const Vector3& C)
 	{
-		Vector3 normal = Vector3(0.0f, 0.0f, 0.0f);
 		Vector3 AB = Vector3(B.x - A.x, B.y - A.y, B.z - A.z);
 		Vector3 AC = Vector3(C.x - A.x, C.y - A.y, C.z - A.z);
-		
-		normal = Cross(AB, AC);
-		Normalise(normal);
-		return normal;
+		return Normalised(Cross(AB, AC));
+	}
+
+	inline static Vector3 GetNormalOfTriangle(const Triangle& triangle)
+	{
+		return GetNormalOfTriangle(triangle.Vertices[0], triangle.Vertices[1], triangle.Vertices[2]);
+	}
+
+	inline static Plane GetPlaneFromTriangle(const Triangle& triangle)
+	{
+		Plane plane;
+		//todo : this is halfed in the example?
+		plane.Normal = Normalised(GetNormalOfTriangle(triangle));
+		plane.Offset = Dot(MultiplyScalar(-1.0f, plane.Normal), triangle.Vertices[0]);
+		return plane;
 	}
 
 	//Compute barycentric coordinates for pointOnTri with respect to triangle (a, b, c)
