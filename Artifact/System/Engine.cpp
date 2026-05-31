@@ -224,8 +224,8 @@ void Engine::FixedUpdate()
 
 	if (m_InputListener.GetKeyDown(VK_LEFT)) { m_Renderer->GetCamera().RotateEulerDegrees(Vector3(0.0f, -rotationSpeed, 0.0f)); }
 	if (m_InputListener.GetKeyDown(VK_RIGHT)) { m_Renderer->GetCamera().RotateEulerDegrees(Vector3(0.0f, rotationSpeed, 0.0f)); }
-	if (m_InputListener.GetKeyDown(VK_UP)) { m_Renderer->GetCamera().RotateEulerDegrees(Vector3(rotationSpeed, 0.0f, 0.0f)); }
-	if (m_InputListener.GetKeyDown(VK_DOWN)) { m_Renderer->GetCamera().RotateEulerDegrees(Vector3(-rotationSpeed, 0.0f, 0.0f)); }
+	if (m_InputListener.GetKeyDown(VK_UP)) { m_Renderer->GetCamera().RotateEulerDegrees(Vector3(-rotationSpeed, 0.0f, 0.0f)); }
+	if (m_InputListener.GetKeyDown(VK_DOWN)) { m_Renderer->GetCamera().RotateEulerDegrees(Vector3(rotationSpeed, 0.0f, 0.0f)); }
 
 	Vector2 delta = m_InputListener.GetMouseState().GetMouseDelta();
 	float sensitivity = 0.0f;
