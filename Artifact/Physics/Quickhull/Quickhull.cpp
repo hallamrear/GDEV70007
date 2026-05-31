@@ -936,7 +936,6 @@ void ConvexHull::AddFaceToHull(ConvexHullFace* face)
 	{
 		ConvexHullFace* back = FacesListHead->Prev;
 		back->Next = face;
-		face->Prev = face;
 		face->Prev = back;
 	}
 	else
@@ -955,7 +954,6 @@ void ConvexHull::AddEdgeToHull(ConvexHullHalfEdge* edge)
 	{
 		ConvexHullHalfEdge* back = EdgesListHead->Prev;
 		back->Next = edge;
-		edge->Prev = edge;
 		edge->Prev = back;
 	}
 	else
