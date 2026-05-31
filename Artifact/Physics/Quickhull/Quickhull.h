@@ -106,16 +106,16 @@ public:
 	ConvexHullVertex* GetNewVertex();
 	ConvexHullHalfEdge* GetNewEdge();
 	ConvexHullFace* GetNewFace();
-	void DestroyVertex(ConvexHullVertex* vertex);
-	void DestroyHalfEdge(ConvexHullHalfEdge* edge);
-	void DestroyFace(ConvexHullFace* face);
+	void DestroyVertex(ConvexHullVertex*& vertex);
+	void DestroyHalfEdge(ConvexHullHalfEdge*& edge);
+	void DestroyFace(ConvexHullFace*& face);
 
-	void AddVertexToHull(ConvexHullVertex* vertex);
-	void AddEdgeToHull(ConvexHullHalfEdge* edge);
-	void AddFaceToHull(ConvexHullFace* face);
-	void RemoveVertexFromHull(ConvexHullVertex* vertex);
-	void RemoveEdgeFromHull(ConvexHullHalfEdge* edge);
-	void RemoveFaceFromHull(ConvexHullFace* face);
+	void AddVertexToHull(ConvexHullVertex*& vertex);
+	void AddEdgeToHull(ConvexHullHalfEdge*& edge);
+	void AddFaceToHull(ConvexHullFace*& face);
+	void RemoveVertexFromHull(ConvexHullVertex*& vertex);
+	void RemoveEdgeFromHull(ConvexHullHalfEdge*& edge);
+	void RemoveFaceFromHull(ConvexHullFace*& face);
 
 	ConvexHull(const int& expectedSize) 
 	{
@@ -129,8 +129,8 @@ public:
 		m_FaceBuffer = new ConvexHullFace[m_FaceBufferElementCount];
 
 		m_AllocatedVertexCount = 0;
-		m_AllocatedEdgeCount = 0;
 		m_AllocatedFaceCount = 0;
+		m_AllocatedEdgeCount = 0;
 		VerticesListHead = nullptr;
 		FacesListHead = nullptr;
 		EdgesListHead = nullptr;
@@ -188,7 +188,9 @@ private:
 private:
 
 	static void AddAndResolveNewVertexInHull(ConvexHull& convexHull, ConvexHullFace*& conflictFace, ConvexHullVertex*& conflictVertex, const float& scaledEpsilon);
+	static Plane CreateNewellPlaneFromTriangle(int planarVertexCount, const ConvexHullFace& face);
 	static ConvexHullVertex* GetNextConflictVertex(ConvexHull*& convexHull, ConvexHullFace*& conflictVertexFace);
+	static std::vector<ConvexHullFace*>  DetermineHorizon(std::list<ConvexHullHalfEdge*>& horizon, ConvexHullFace*& conflictFace, ConvexHullVertex* conflictVertex, const float& scaledEpsilon);
 	static void DetermineHorizonRecursiveSearch(std::unordered_set<ConvexHullFace*>& visitedFaces, std::list<ConvexHullHalfEdge*>& horizon, std::vector<ConvexHullFace*>& visibleFaceList, ConvexHullFace* conflictFace, ConvexHullVertex* conflictVertex, const float& scaledEpsilon);
 	static void BuildNewFaces(std::list<ConvexHullHalfEdge*>& horizon, std::vector<ConvexHullFace*>& newFaces, ConvexHull& convexHull, ConvexHullVertex*& conflictVertex);
 	static void MergeFaces(std::vector<ConvexHullFace*>& newFaces, ConvexHull& convexHull, ConvexHullFace*& conflictFace, const float& scaledEpsilon);

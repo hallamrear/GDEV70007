@@ -16,8 +16,10 @@ struct EqualPredicate {
 struct LessThanPredicate {
 	bool operator()(const Vector3& l, const Vector3& r)
 	{
-		if (l.x != r.x) return l.x < r.x;
-		if (l.y != r.y) return l.y < r.y;
+		if (l.x != r.x)
+			return l.x < r.x;
+		if (l.y != r.y)
+			return l.y < r.y;
 		return l.z < r.z;
 	}
 };
@@ -59,7 +61,7 @@ ConvexHullVertex* Quickhull::GetNextConflictVertex(ConvexHull*& convexHull, Conv
 
 		for (ConvexHullVertex* conflictVertex : subjectFace->ConflictList)
 		{
-			float distanceToPlane = Dot(facePlane, conflictVertex->Vertex);
+			float distanceToPlane = DotPoint(facePlane, conflictVertex->Vertex); 
 			//point is furthest
 			if (distanceToPlane > furthestDistance)
 			{
@@ -71,7 +73,7 @@ ConvexHullVertex* Quickhull::GetNextConflictVertex(ConvexHull*& convexHull, Conv
 	} while (subjectFace != convexHull->FacesListHead);
 
 	//remove result from face
-	if (conflictVertexFace != nullptr && vertex != nullptr)
+	if (vertex != nullptr)
 	{
 		std::erase(conflictVertexFace->ConflictList, vertex);
 	}
@@ -82,44 +84,8 @@ ConvexHullVertex* Quickhull::GetNextConflictVertex(ConvexHull*& convexHull, Conv
 bool Quickhull::IsFaceVisible(const ConvexHullFace& face, const ConvexHullVertex& eyeVertex, const float& scaledEpsilon)
 {
 	Plane facePlane = GetNormalisedSurfacePlaneFromHullFace(face);
-	return Dot(facePlane, eyeVertex.Vertex) > -scaledEpsilon;
-}
-
-/// <summary>
-/// Determine the horizon using a depth first search 
-/// </summary>
-void Quickhull::DetermineHorizonRecursiveSearch(std::unordered_set<ConvexHullFace*>& visitedFaces, std::list<ConvexHullHalfEdge*>& horizon, std::vector<ConvexHullFace*>& visibleFaceList, ConvexHullFace* conflictFace, ConvexHullVertex* conflictVertex, const float& scaledEpsilon)
-{
-	//If we havent see the face before in the search, drop it in.
-	if (visitedFaces.find(conflictFace) == visitedFaces.end())
-	{
-		visibleFaceList.push_back(conflictFace);
-		visitedFaces.insert(conflictFace);
-
-		std::unordered_set<ConvexHullHalfEdge*> visitedEdgs;
-
-		ConvexHullHalfEdge* edge = conflictFace->Edge;
-
-		//Loop through all edges until we find ourselves.
-		while (visitedEdgs.find(edge) == visitedEdgs.end())
-		{
-			visitedEdgs.insert(edge);
-
-			ConvexHullFace* nextFace = edge->Twin->Face;
-
-			//Is the paired face visible?
-			if (IsFaceVisible(*nextFace, *conflictVertex, scaledEpsilon))
-			{
-				DetermineHorizonRecursiveSearch(visitedFaces, horizon, visibleFaceList, nextFace, conflictVertex, scaledEpsilon);
-			}
-			else
-			{
-				horizon.push_back(edge);
-			}
-
-			edge = edge->Next;
-		}
-	}
+	float d = DotPoint(facePlane, eyeVertex.Vertex);
+	return d > -scaledEpsilon;
 }
 
 /// Finds edge twin pairs within a given list rather than the hull.
@@ -199,10 +165,6 @@ void Quickhull::BuildNewFaces(std::list<ConvexHullHalfEdge*>& horizon, std::vect
 			{
 				newEdge->Twin->Twin = newEdge;
 			}
-			else
-			{
-				printf("miss");
-			}
 		}
 	}
 
@@ -232,7 +194,7 @@ bool Quickhull::AreFacesConvex(const ConvexHullFace& faceA, const ConvexHullFace
 	//calculate face plane		
 	Plane surfacePlane = GetNormalisedSurfacePlaneFromHullFace(otherFace);
 
-	return Dot(surfacePlane, centre) < -scaledEpsilon;
+	return DotPoint(surfacePlane, centre) < -scaledEpsilon;
 }
 
 int Quickhull::GetFaceVertexCount(const ConvexHullFace& face)
@@ -259,14 +221,15 @@ void Quickhull::MergeConcaveFaces(ConvexHull& convexHull, ConvexHullFace& confli
 	}
 
 	//Linkup edges :)
-	edge->Prev->Next = edge->Twin->Next;
-	edge->Next->Prev = edge->Twin->Prev;
-	edge->Twin->Prev->Next = edge->Next;
-	edge->Twin->Next->Prev = edge->Prev;
+	edge->Prev->Next = edge->Twin->Next; 		
+	edge->Next->Prev = edge->Twin->Prev; 		
+	edge->Twin->Prev->Next = edge->Next; 		
+	edge->Twin->Next->Prev = edge->Prev; 		
 
 	//Very shit cleanup.
 	convexHull.DestroyHalfEdge(edge);
 	convexHull.DestroyHalfEdge(edge->Twin);
+
 	//if deallocated face has any conflict points add them to the conflict face to be resolved with other orphaned points
 	ConvexHullFace* twinFace = edge->Twin->Face;
 	conflictFace.ConflictList.insert(conflictFace.ConflictList.end(), twinFace->ConflictList.begin(), twinFace->ConflictList.end());
@@ -315,11 +278,13 @@ void Quickhull::MergeFaces(std::vector<ConvexHullFace*>& newFaces, ConvexHull& c
 			//Check if the merging has created a geometric invariances.
 			ConvexHullHalfEdge* start = face->Edge;
 			ConvexHullHalfEdge* current = start;
+			ConvexHullHalfEdge* next = current;
 
 			//Loop through all connecting edges.
 			do 
 			{
-				ConvexHullHalfEdge* next = current->Next;
+				next = current->Next;
+
 				ConvexHullFace* currentTwinFace = current->Twin->Face;
 				ConvexHullFace* nextTwinFace = next->Twin->Face;
 
@@ -340,6 +305,7 @@ void Quickhull::MergeFaces(std::vector<ConvexHullFace*>& newFaces, ConvexHull& c
 					current = face->Edge;
 				}
 				current = current->Next;
+
 			} while (current != start);
 
 			visitedEdges.clear();
@@ -360,8 +326,8 @@ void Quickhull::FixAdditionalPointInvariance(ConvexHull& convexHull, ConvexHullF
 	face->Edge = incoming->Prev;
 
 	/* todo : ? */
-	//ConvexHullFace* twinFace = incoming->Twin->Face;
-	//twinFace->Edge = incoming->Twin->Next;
+	ConvexHullFace* twinFace = incoming->Twin->Face;
+	twinFace->Edge = incoming->Twin->Next;
 
 	incoming->Next = outgoing->Next;
 	outgoing->Next->Prev = incoming;
@@ -387,11 +353,15 @@ void Quickhull::FixInternalPointInvariance(ConvexHull& convexHull, ConvexHullFac
 	ConvexHullFace* face = edgeA->Face;
 	face->Edge = edgeA->Prev;
 
+	static int x = 0;
 	//Finding opposite edge from triangel.
-	ConvexHullHalfEdge* thirdEdge = edgeA->Twin;
+	ConvexHullHalfEdge*& thirdEdge = edgeA->Twin;
 	while (thirdEdge == edgeB->Twin || thirdEdge == edgeA->Twin)
 	{
 		thirdEdge = thirdEdge->Next;
+		x++;
+		if (x > 10)
+			return;
 	}
 
 	//Repointing surrounding edges.
@@ -402,14 +372,14 @@ void Quickhull::FixInternalPointInvariance(ConvexHull& convexHull, ConvexHullFac
 	thirdEdge->Face = face;
 
 	convexHull.DestroyHalfEdge(edgeA);
-	convexHull.DestroyHalfEdge(edgeA->Twin);
 	convexHull.DestroyHalfEdge(edgeB);
+	convexHull.DestroyHalfEdge(edgeA->Twin);
 	convexHull.DestroyHalfEdge(edgeB->Twin);
 	convexHull.DestroyVertex(edgeB->Tail);
 
 	ConvexHullFace* twinFace = edgeA->Twin->Face;
 	conflictFace->ConflictList.insert(conflictFace->ConflictList.end(), twinFace->ConflictList.begin(), twinFace->ConflictList.end());
-	convexHull.DestroyFace(twinFace);
+	convexHull.DestroyFace(edgeA->Twin->Face);
 }
 
 void Quickhull::UpdateExistingFaces(std::vector<ConvexHullFace*>& newFaces, std::vector<ConvexHullFace*>& visibleFaces, ConvexHull& convexHull, ConvexHullFace*& conflictFace)
@@ -440,7 +410,7 @@ void Quickhull::ResolveOrphanPoints(ConvexHull& convexHull, std::vector<ConvexHu
 		for (auto& face : newFaces)
 		{
 			Plane facePlane = GetNormalisedSurfacePlaneFromHullFace(*face);
-			float distance = Dot(facePlane, subjectPoint->Vertex);
+			float distance = DotPoint(facePlane, subjectPoint->Vertex);
 
 			if (distance > furthestDistance)
 			{
@@ -465,10 +435,9 @@ void Quickhull::AddAndResolveNewVertexInHull(ConvexHull& convexHull, ConvexHullF
 	convexHull.AddVertexToHull(conflictVertex);
 
 	//Build new horizon
+
 	std::list<ConvexHullHalfEdge*> horizon = std::list<ConvexHullHalfEdge*>();
-	std::vector<ConvexHullFace*> visibleFaces = std::vector<ConvexHullFace*>();
-	std::unordered_set<ConvexHullFace*> visitedFaces = std::unordered_set<ConvexHullFace*>();
-	DetermineHorizonRecursiveSearch(visitedFaces, horizon, visibleFaces, conflictFace, conflictVertex, scaledEpsilon);
+	std::vector<ConvexHullFace*> visibleFaces = DetermineHorizon(horizon, conflictFace, conflictVertex, scaledEpsilon);
 
 	assert(horizon.size() != 0);
 
@@ -495,6 +464,73 @@ void Quickhull::AddAndResolveNewVertexInHull(ConvexHull& convexHull, ConvexHullF
 	//EnsureConvexity(convexHull);
 }
 
+std::vector<ConvexHullFace*>  Quickhull::DetermineHorizon(std::list<ConvexHullHalfEdge*>& horizon, ConvexHullFace*& conflictFace, ConvexHullVertex* conflictVertex, const float& scaledEpsilon)
+{
+	std::vector<ConvexHullFace*> visibleFaces;
+	std::unordered_set<ConvexHullFace*> visitedFaces;
+	DetermineHorizonRecursiveSearch(visitedFaces, horizon, visibleFaces, conflictFace, conflictVertex, scaledEpsilon);
+	return visibleFaces;
+}
+
+/// <summary>
+/// Determine the horizon using a depth first search 
+/// </summary>
+void Quickhull::DetermineHorizonRecursiveSearch(std::unordered_set<ConvexHullFace*>& visitedFaces, std::list<ConvexHullHalfEdge*>& horizon, std::vector<ConvexHullFace*>& visibleFaceList, ConvexHullFace* conflictFace, ConvexHullVertex* conflictVertex, const float& scaledEpsilon)
+{
+	//If we havent see the face before in the search, drop it in.
+	if (visitedFaces.find(conflictFace) == visitedFaces.end())
+	{
+		visibleFaceList.push_back(conflictFace);
+		visitedFaces.insert(conflictFace);
+
+		std::unordered_set<ConvexHullHalfEdge*> visitedEdgs;
+
+		ConvexHullHalfEdge* edge = conflictFace->Edge;
+
+		//Loop through all edges until we find ourselves.
+		while (visitedEdgs.find(edge) == visitedEdgs.end())
+		{
+			visitedEdgs.insert(edge);
+
+			ConvexHullFace* nextFace = edge->Twin->Face;
+
+			//Is the paired face visible?
+			if (IsFaceVisible(*nextFace, *conflictVertex, scaledEpsilon))
+			{
+				DetermineHorizonRecursiveSearch(visitedFaces, horizon, visibleFaceList, nextFace, conflictVertex, scaledEpsilon);
+			}
+			else
+			{
+				horizon.push_back(edge);
+			}
+
+			edge = edge->Next;
+		}
+	}
+}
+
+
+Plane Quickhull::CreateNewellPlaneFromTriangle(int planarVertexCount, const ConvexHullFace& face)
+{
+	Vector3 normal = { 0.0f, 0.0f, 0.0f };
+	ConvexHullHalfEdge* faceEdge = face.Edge;
+
+	for (auto edge{ 0 }; edge < planarVertexCount; ++edge)
+	{
+		Vector3 currentVertex = faceEdge->Tail->Vertex;
+		Vector3 nextVertex = faceEdge->Next->Tail->Vertex;
+		normal.x += (currentVertex.y - nextVertex.y) * (currentVertex.z + nextVertex.z);
+		normal.y += (currentVertex.z - nextVertex.z) * (currentVertex.x + nextVertex.x);
+		normal.z += (currentVertex.x - nextVertex.x) * (currentVertex.y + nextVertex.y);
+		faceEdge = faceEdge->Next;
+	}
+
+	float offset = Dot(MultiplyScalar(-1.0f, normal), face.Edge->Tail->Vertex);
+	normal = Normalised(normal);
+
+	return Plane(normal, offset);
+}
+
 Plane Quickhull::GetNormalisedSurfacePlaneFromHullFace(const ConvexHullFace& face)
 {
 	Plane result;
@@ -503,9 +539,7 @@ Plane Quickhull::GetNormalisedSurfacePlaneFromHullFace(const ConvexHullFace& fac
 
 	if (vertexCount > 3)
 	{
-		//todo : implement
-		//result = NewellPlane(planarVertexCount, face);
-		throw;
+		result = CreateNewellPlaneFromTriangle(vertexCount, face);
 	}
 	else
 	{
@@ -514,7 +548,8 @@ Plane Quickhull::GetNormalisedSurfacePlaneFromHullFace(const ConvexHullFace& fac
 		triangle.Vertices[0] = face.Edge->Tail->Vertex;
 		triangle.Vertices[1] = face.Edge->Next->Tail->Vertex;
 		triangle.Vertices[2] = face.Edge->Prev->Tail->Vertex;
-		result = GetPlaneFromTriangle(triangle);		
+		result = GetPlaneFromTriangle(triangle);
+		result = Normalised(result);
 	}
 
 	return result;
@@ -542,58 +577,99 @@ const Simplex Quickhull::BuildInitialSimplex(const PointCloud& pointCloud, Vecto
 
 	Simplex initialHull = Simplex();
 
-	std::pair<int, int> furthestPointPairIndices = { -1, -1 };
-	float furthestDistance = -INFINITY;
+	//std::pair<int, int> furthestPointPairIndices = { -1, -1 };
+	//float furthestDistance = -INFINITY;
 
-	Vector3 vertexDifference = { 0.0f, 0.0f, 0.0f };
+	//Vector3 vertexDifference = { 0.0f, 0.0f, 0.0f };
 
-	for (size_t x = 0; x < pointCount; x++)
-	{
-		for (size_t y = 0; y < pointCount; y++)
+	//for (int x = 0; x < pointCount; x++)
+	//{
+	//	for (int y = 0; y < pointCount; y++)
+	//	{
+	//		const Vector3& vertexA = pointCloud[x];
+	//		const Vector3& vertexB = pointCloud[y];
+	//		vertexDifference = { vertexB.x - vertexA.x, vertexB.y - vertexA.y, vertexB.z - vertexA.z };
+	//		float distance = MagnitudeSqr(vertexDifference);
+	//		printf("%f\n", distance);
+
+	//		if (distance >= furthestDistance)
+	//		{
+	//			furthestDistance = distance;
+	//			furthestPointPairIndices.first = x;
+	//			furthestPointPairIndices.second = y;
+	//		}
+	//	}
+	//	
+
+	//assert(furthestPointPairIndices.first != -1);
+	//assert(furthestPointPairIndices.second != -1);
+	//}
+
+	const auto cloudsize{ pointCloud.size() };
+	Vector2* pairIndices = new Vector2[cloudsize * cloudsize];
+	float* pairDistances{ new float[cloudsize * cloudsize] };
+
+	int ix = 0;
+	int iy = 0;
+	auto pair{ 0 };
+	auto index{ 0 };
+	auto currentDistance{ -INFINITY };
+	for (auto p0{ 0 }; p0 < cloudsize; ++p0)
+		for (auto p1{ 0 }; p1 < cloudsize; ++p1)
 		{
-			const Vector3& vertexA = pointCloud[x];
-			const Vector3& vertexB = pointCloud[y];
-			vertexDifference = { vertexB.x - vertexA.x, vertexB.y - vertexA.y, vertexB.z - vertexA.z };
-			float distance = MagnitudeSqr(vertexDifference);
-
-			if (distance >= furthestDistance)
+			pairIndices[pair] = { (float)p0,(float)p1 };
+			const Vector3& vertexA = pointCloud[p0];
+			const Vector3& vertexB = pointCloud[p1];
+			Vector3 vertexDifference = { vertexB.x - vertexA.x, vertexB.y - vertexA.y, vertexB.z - vertexA.z };
+			pairDistances[pair] = MagnitudeSqr(vertexDifference);
+			if (pairDistances[pair] >= currentDistance)
 			{
-				furthestDistance = distance;
-				furthestPointPairIndices.first = (int)x;
-				furthestPointPairIndices.second = (int)y;
+				ix = p0;
+				iy = p1;
+				index = pair;
+				currentDistance = pairDistances[pair];
 			}
+			++pair;
 		}
-	}
 
-	assert(furthestPointPairIndices.first != -1);
-	assert(furthestPointPairIndices.second != -1);
 
 	//Construct a line between the two furthest points.
-	initialHull.push_back(pointCloud[furthestPointPairIndices.first]);
-	initialHull.push_back(pointCloud[furthestPointPairIndices.second]);
+	Vector3 p0{ pointCloud[(int)pairIndices[index].x] };
+	Vector3 p1{ pointCloud[(int)pairIndices[index].y] };
+	initialHull.push_back(p0);
+	initialHull.push_back(p1);
+	std::pair<int, int> furthestPointPairIndices = { (int)pairIndices[index].x, (int)pairIndices[index].y };
+	delete[] pairDistances;
+	delete[] pairIndices;
 
-	Vector3 simplex01 = 
+
+
+
+
+	//Construct a line between the two furthest points.
+	//initialHull.push_back(pointCloud[furthestPointPairIndices.first]);
+	//initialHull.push_back(pointCloud[furthestPointPairIndices.second]);
+
+	Vector3 AB = 
 		{ initialHull[1].x - initialHull[0].x,
 		  initialHull[1].y - initialHull[0].y,
 		  initialHull[1].z - initialHull[0].z };
-	Normalise(simplex01);
+	Normalise(AB);
 
 	int furthestPointFromLineIndex = -1;
-	float furthestPointFromLineDistance = -INFINITY;
+	float furthestPointFromLineDistance = 0.0f;
 	Vector3 furthestPointFromLineDirection = Vector3();
+	EqualPredicate equal;
 
 	//Finding furthest point from line.
 	for (size_t i = 0; i < pointCount; i++)
 	{
-		if (i == furthestPointPairIndices.first || i == furthestPointPairIndices.second)
-			continue;
-
 		const Vector3& p = pointCloud[i];
 		Vector3 pointToLineStart = { p.x - initialHull[0].x, p.y - initialHull[0].y, p.z - initialHull[0].z };
-		Vector3 cross = Cross(simplex01, pointToLineStart);
+		Vector3 cross = Cross(pointToLineStart, AB);
 		float lengthSqr = MagnitudeSqr(cross);
 
-		if (lengthSqr > furthestPointFromLineDistance)
+		if (lengthSqr > furthestPointFromLineDistance && (!equal(p, initialHull[0])) && (!equal(p, initialHull[1])))
 		{
 			furthestPointFromLineIndex = (int)i;
 			furthestPointFromLineDistance = lengthSqr;
@@ -603,13 +679,12 @@ const Simplex Quickhull::BuildInitialSimplex(const PointCloud& pointCloud, Vecto
 
 	assert(furthestPointFromLineIndex != -1);
 
-	int thirdPointIndex = furthestPointFromLineIndex;
 	initialHull.push_back(pointCloud[furthestPointFromLineIndex]);
 	
 	//Recompute normal to ensure its flipped.
 	Normalise(furthestPointFromLineDirection);
-	float dot = Dot(furthestPointFromLineDirection, simplex01);
-	Vector3 scaledNormalAlong01 = MultiplyScalar(dot, simplex01);
+	float dot = Dot(furthestPointFromLineDirection, AB);
+	Vector3 scaledNormalAlong01 = MultiplyScalar(dot, AB);
 	Vector3 delta = {
 		furthestPointFromLineDirection.x - scaledNormalAlong01.x,
 		furthestPointFromLineDirection.y - scaledNormalAlong01.y,
@@ -617,13 +692,13 @@ const Simplex Quickhull::BuildInitialSimplex(const PointCloud& pointCloud, Vecto
 	furthestPointFromLineDirection = Normalised(delta);
 
 	furthestPointFromLineIndex = -1;
-	furthestPointFromLineDistance = -INFINITY;
+	furthestPointFromLineDistance = 0.0f;
 	float simplex3Dist = Dot(furthestPointFromLineDirection, initialHull[2]);
 
 	//Finding furthest point from line (except simplex[2]).
 	for (size_t i = 0; i < pointCount; i++)
 	{
-		if (i == furthestPointPairIndices.first || i == furthestPointPairIndices.second || i == thirdPointIndex)
+		if ((equal(pointCloud[i], initialHull[0])) || (equal(pointCloud[i], initialHull[1])) || (equal(pointCloud[i], initialHull[2])))
 			continue;
 
 		//Projected distance of point onto new normal.
@@ -695,20 +770,27 @@ void Quickhull::ConstructInitialHullFromSimplex(ConvexHull& convexHull, PointClo
 
 	//Determine winding order based on side of construction plane.
 	//Clockwise.
+	ConvexHullFace* newFaces[4] = { nullptr };
+
 	if (Dot(simplex[3], constructionPlaneNormal) - constructionPlaneOffset < 0)
 	{
-		convexHull.AddFaceToHull(CreateHullFace(convexHull, p0, p1, p2));
-		convexHull.AddFaceToHull(CreateHullFace(convexHull, p3, p1, p0));
-		convexHull.AddFaceToHull(CreateHullFace(convexHull, p3, p2, p1));
-		convexHull.AddFaceToHull(CreateHullFace(convexHull, p3, p0, p2));
+		newFaces[0] = CreateHullFace(convexHull, p0, p1, p2);
+		newFaces[1] = CreateHullFace(convexHull, p3, p1, p0);
+		newFaces[2] = CreateHullFace(convexHull, p3, p2, p1);
+		newFaces[3] = CreateHullFace(convexHull, p3, p0, p2);
 	}
 	else
 	{
-		convexHull.AddFaceToHull(CreateHullFace(convexHull, p0, p2, p1));
-		convexHull.AddFaceToHull(CreateHullFace(convexHull, p3, p0, p1));
-		convexHull.AddFaceToHull(CreateHullFace(convexHull, p3, p1, p2));
-		convexHull.AddFaceToHull(CreateHullFace(convexHull, p3, p2, p0));
+		newFaces[0] = CreateHullFace(convexHull, p0, p2, p1);
+		newFaces[1] = CreateHullFace(convexHull, p3, p0, p1);
+		newFaces[2] = CreateHullFace(convexHull, p3, p1, p2);
+		newFaces[3] = CreateHullFace(convexHull, p3, p2, p0);
 	}
+
+	convexHull.AddFaceToHull(newFaces[0]);
+	convexHull.AddFaceToHull(newFaces[1]);
+	convexHull.AddFaceToHull(newFaces[2]);
+	convexHull.AddFaceToHull(newFaces[3]);
 
 	//Populate twin edges
 	//todo : ensure this isn't broken.
@@ -745,7 +827,7 @@ void Quickhull::ConstructInitialHullFromSimplex(ConvexHull& convexHull, PointClo
 		do
 		{
 			Plane facePlane = GetNormalisedSurfacePlaneFromHullFace(*testFace);
-			float distanceToPlane = Dot(facePlane, point);
+			float distanceToPlane = DotPoint(facePlane, point);
 
 			if (distanceToPlane > furthestDistance)
 			{
@@ -865,6 +947,7 @@ ConvexHullHalfEdge* ConvexHull::GetNewEdge()
 	{
 		newEdge = &m_EdgeBuffer[m_AllocatedEdgeCount++];
 	}
+
 	++EdgeCount;
 	
 	return newEdge;
@@ -886,7 +969,7 @@ ConvexHullFace* ConvexHull::GetNewFace()
 	return newFace;
 }
 
-void ConvexHull::DestroyVertex(ConvexHullVertex* vertex)
+void ConvexHull::DestroyVertex(ConvexHullVertex*& vertex)
 {
 	if (vertex->Prev)
 	{
@@ -896,14 +979,14 @@ void ConvexHull::DestroyVertex(ConvexHullVertex* vertex)
 	m_FreeVertices.push(vertex);
 }
 
-void ConvexHull::DestroyHalfEdge(ConvexHullHalfEdge* edge)
+void ConvexHull::DestroyHalfEdge(ConvexHullHalfEdge*& edge)
 {
 	edge->Dead = true;
 	m_FreeEdges.push(edge);
 	--EdgeCount;
 }
 
-void ConvexHull::DestroyFace(ConvexHullFace* face)
+void ConvexHull::DestroyFace(ConvexHullFace*& face)
 {
 	RemoveFaceFromHull(face);
 	face->Dead = true;
@@ -911,7 +994,7 @@ void ConvexHull::DestroyFace(ConvexHullFace* face)
 }
 
 
-void ConvexHull::AddVertexToHull(ConvexHullVertex* vertex)
+void ConvexHull::AddVertexToHull(ConvexHullVertex*& vertex)
 {
 	if (VerticesListHead != nullptr)
 	{
@@ -930,7 +1013,7 @@ void ConvexHull::AddVertexToHull(ConvexHullVertex* vertex)
 	++VertexCount;
 }
 
-void ConvexHull::AddFaceToHull(ConvexHullFace* face)
+void ConvexHull::AddFaceToHull(ConvexHullFace*& face)
 {
 	if (FacesListHead != nullptr)
 	{
@@ -948,7 +1031,7 @@ void ConvexHull::AddFaceToHull(ConvexHullFace* face)
 	++FaceCount;
 }
 
-void ConvexHull::AddEdgeToHull(ConvexHullHalfEdge* edge)
+void ConvexHull::AddEdgeToHull(ConvexHullHalfEdge*& edge)
 {
 	if (EdgesListHead != nullptr)
 	{
@@ -966,7 +1049,7 @@ void ConvexHull::AddEdgeToHull(ConvexHullHalfEdge* edge)
 	++EdgeCount;
 }
 
-void ConvexHull::RemoveVertexFromHull(ConvexHullVertex* vertex)
+void ConvexHull::RemoveVertexFromHull(ConvexHullVertex*& vertex)
 {
 	if (VerticesListHead == vertex)
 	{
@@ -978,7 +1061,7 @@ void ConvexHull::RemoveVertexFromHull(ConvexHullVertex* vertex)
 	--VertexCount;
 }
 
-void ConvexHull::RemoveFaceFromHull(ConvexHullFace* face)
+void ConvexHull::RemoveFaceFromHull(ConvexHullFace*& face)
 {
 	if (FacesListHead == face)
 	{
@@ -994,25 +1077,28 @@ void ConvexHull::GetEdgesAsLineList(std::vector<Vector3>& lineList)
 {
 	lineList.clear();
 
-	for (size_t i = 0; i < m_EdgeBufferElementCount; i++)
-	{
-		if (m_EdgeBuffer[i].Dead == false)
-		{
-			if (m_EdgeBuffer[i].Tail == nullptr)
-				continue;
+	ConvexHullFace* face = FacesListHead;
 
-			Vector3 lineStart = m_EdgeBuffer[i].Tail->Vertex;
-			Vector3 lineEnd = m_EdgeBuffer[i].Twin->Tail->Vertex;
+	do
+	{
+		ConvexHullHalfEdge* edge = face->Edge;
+		do
+		{
+			Vector3 lineStart = edge->Tail->Vertex;
+			Vector3 lineEnd = edge->Next->Tail->Vertex;
 			lineList.push_back(lineStart);
 			lineList.push_back(lineEnd);
-		}
-	}
+			edge = edge->Next;
+		} while (edge != face->Edge);
+
+		face = face->Next;
+	} while (face != FacesListHead);
 
 	static EqualPredicate equal;
 	static LessThanPredicate lessThan;
 }
 
-void ConvexHull::RemoveEdgeFromHull(ConvexHullHalfEdge* edge)
+void ConvexHull::RemoveEdgeFromHull(ConvexHullHalfEdge*& edge)
 {
 	if (EdgesListHead == edge)
 	{

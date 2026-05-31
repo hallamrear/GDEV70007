@@ -660,12 +660,12 @@ void DX12Renderer::Render(const ModelRef& model, const Matrix4x4& worldMatrix)
 
         if (mesh->GetIndexBuffer().IsLoaded())
         {
-            GetCommandList()->IASetIndexBuffer(&mesh->GetIndexBuffer().GetBufferView());
-            GetCommandList()->DrawIndexedInstanced(mesh->GetIndexBuffer().GetElementCount(), 1, 0, 0, 0);
+            //GetCommandList()->IASetIndexBuffer(&mesh->GetIndexBuffer().GetBufferView());
+            //GetCommandList()->DrawIndexedInstanced(mesh->GetIndexBuffer().GetElementCount(), 1, 0, 0, 0);
         }
         else
         {
-            GetCommandList()->DrawInstanced(mesh->GetVertexBuffer().GetElementCount(), 1, 0, 0);
+            //GetCommandList()->DrawInstanced(mesh->GetVertexBuffer().GetElementCount(), 1, 0, 0);
         }
 
         if (mesh->GetConvexHull() != nullptr)

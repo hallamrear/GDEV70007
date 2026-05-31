@@ -1,15 +1,10 @@
 #pragma once
 #include <math.h>
 
+#include <System/Maths/Plane.h>
+
 #define DEGREES_TO_RADIANS (float)(M_PI / 180.0f)
 #define RADIANS_TO_DEGREES (float)(180.0f / M_PI)
-
-//todo : add to distance from surface functions.
-struct Plane
-{
-	Vector3 Normal = { Vector3(0.0f, 0.0f, 0.0f) };
-	float Offset = 0.0f;
-};
 
 struct Triangle
 {
@@ -50,9 +45,7 @@ namespace Maths
 
 	inline static float MagnitudeSqr(const Vector3& vec)
 	{
-		float mag = 0.0f;
-		DirectX::XMStoreFloat(&mag, DirectX::XMVector3LengthSq(DirectX::XMLoadFloat3(&vec)));
-		return mag;
+		return vec.x * vec.x + vec.y * vec.y + vec.z * vec.z;
 	}
 
 	inline static float Magnitude(const Vector3& vec)
@@ -69,11 +62,6 @@ namespace Maths
 		return d;
 	}
 	
-	inline static float Dot(const Plane& plane, const Vector3& vector)
-	{
-		return plane.Normal.x * vector.x + plane.Normal.y * vector.y + plane.Normal.z * vector.z + plane.Offset;
-	}
-
 	inline static bool SameDirection(const Vector3& A, const Vector3& B)
 	{
 		return Dot(A, B) > 0;
@@ -82,13 +70,6 @@ namespace Maths
 	inline static void Normalise(Vector3& vec)
 	{
 		DirectX::XMStoreFloat3(&vec, DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&vec)));
-	}
-
-	inline static void Normalise(Plane& plane)
-	{
-		float invMag = 1.0f / Magnitude(plane.Normal);
-		plane.Normal = MultiplyScalar(invMag, plane.Normal);
-		plane.Offset *= invMag;
 	}
 
 	inline static Vector3 Normalised(const Vector3& vec)
@@ -100,10 +81,21 @@ namespace Maths
 
 	inline static Vector3 Cross(const Vector3& A, const Vector3& B)
 	{
-		Vector3 cross = Vector3(0.0f, 0.0f, 0.0f);
-		DirectX::XMStoreFloat3(&cross, DirectX::XMVector3Cross(DirectX::XMVector3Normalize(XMLoadFloat3(&A)), DirectX::XMVector3Normalize(XMLoadFloat3(&B))));
-		Normalise(cross);
-		return cross;
+		//Vector3 cross = Vector3(0.0f, 0.0f, 0.0f);
+		//DirectX::XMStoreFloat3(&cross, DirectX::XMVector3Cross(XMLoadFloat3(&A), XMLoadFloat3(&B)));
+		//return cross;
+
+		return Vector3
+		{
+			A.y * B.z - A.z * B.y ,
+			A.z * B.x - A.x * B.z ,
+			A.x * B.y - A.y * B.x
+		};
+	}
+
+	inline static Vector3 CrossNormalised(const Vector3& A, const Vector3& B)
+	{
+		return Normalised(Cross(A, B));
 	}
 
 	static inline unsigned int RoundToNearestBaseTwo(const unsigned int& integer)
@@ -128,7 +120,7 @@ namespace Maths
 	{
 		Vector3 AB = Vector3(B.x - A.x, B.y - A.y, B.z - A.z);
 		Vector3 AC = Vector3(C.x - A.x, C.y - A.y, C.z - A.z);
-		return Cross(AB, AC);
+		return Cross(AC, AB);
 	}
 
 	inline static Vector3 GetNormalOfTriangle(const Triangle& triangle)
@@ -136,13 +128,42 @@ namespace Maths
 		return GetNormalOfTriangle(triangle.Vertices[0], triangle.Vertices[1], triangle.Vertices[2]);
 	}
 
+	//returns a normalized plane such that ||n||=1
+	inline static Plane Normalised(const Plane& plane)
+	{
+		const auto surfaceNormal{ reinterpret_cast<const Vector3&>(plane.x) };
+		const auto iNormalMag{ 1.0f / Maths::Magnitude(surfaceNormal) };
+
+		Plane out = plane;
+		out.x *= iNormalMag;
+		out.y *= iNormalMag;
+		out.z *= iNormalMag;
+		out.w *= iNormalMag;
+		return out;
+	}
+
+	//returns the signed distance orthogonal to the plane from the point
+	inline static const float DotPoint(const Plane& f, const Vector3& p)
+	{
+		return f.x * p.x + f.y * p.y + f.z * p.z + f.w;//*1.0f;
+	}
+
 	inline static Plane GetPlaneFromTriangle(const Triangle& triangle)
 	{
-		Plane plane;
-		//todo : this is halfed in the example?
-		plane.Normal = GetNormalOfTriangle(triangle);
-		plane.Offset = Dot(MultiplyScalar(-1.0f, plane.Normal), triangle.Vertices[0]);
-		Normalise(plane);
+		//halved in the example?
+		Vector3 normal = GetNormalOfTriangle(triangle);
+		normal.x *= 0.5f;
+		normal.y *= 0.5f;
+		normal.z *= 0.5f;
+
+		Vector3 invertedNormal = normal;
+		invertedNormal.x *= -1.0f;
+		invertedNormal.y *= -1.0f;
+		invertedNormal.z *= -1.0f;
+		
+		float offset = Dot(invertedNormal, triangle.Vertices[0]);
+
+		Plane plane = Plane(normal, offset);
 		return plane;
 	}
 

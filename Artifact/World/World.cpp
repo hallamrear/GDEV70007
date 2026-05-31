@@ -35,7 +35,7 @@ World::~World()
 bool World::Initialise()
 {
 	Vector3 position = Vector3(0.0f, 0.0f, 0.0f);
-	m_OctreeRoot = OctreeNode::BuildOctree(nullptr, Vector3(0.0f, 0.0f, 0.0f), 8192.0f, 0);
+	//m_OctreeRoot = OctreeNode::BuildOctree(nullptr, Vector3(0.0f, 0.0f, 0.0f), 8192.0f, 0);
 
 	//Entity* testRoom = CreateEntity("Test Room");
 	//ModelRef ref = ServiceLocator::Locate<AssetManager>()->GetModel("Demo_Level.glb");
@@ -44,20 +44,25 @@ bool World::Initialise()
 	//testRoom = CreateEntity("AAA");
 	//ref = ServiceLocator::Locate<AssetManager>()->GetModel("STACKING.glb");
 	//testRoom->SetModel(ref);
-	
+		
+	auto c = CreateEntity("Cone");
+	//c->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_AABB);
+	ModelRef cone = ServiceLocator::Locate<AssetManager>()->GetModel("Barrel.glb");
+	c->SetModel(cone);
+	c->SetPosition(Vector3(-10.0f, 0.0f, 5.0f));
 
-	TestBoxA = CreateEntity("Box A");
-	TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
-	//TestBoxA->GetCollider()->SetSize(Vector3(10.0f, 10.0f, 10.0f));
-	TestBoxA->SetPosition(Vector3(-30.0f, 0.0f, 0.0f));
-	ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("Suzanne.glb");
-	TestBoxA->SetModel(suzaane);
+	//TestBoxA = CreateEntity("Box A");
+	////TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
+	//////TestBoxA->GetCollider()->SetSize(Vector3(10.0f, 10.0f, 10.0f));
+	//TestBoxA->SetPosition(Vector3(-30.0f, 0.0f, 0.0f));
+	//ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("LargeSuzanne.glb");
+	//TestBoxA->SetModel(suzaane);
 
-	TestBoxB = CreateEntity("Box B");
-	ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("TestConvexHull.glb");
-	TestBoxB->SetModel(test);
-	//TestBoxB->GetCollider()->SetSize(Vector3(7.0f, 3.0f, 5.0f));
-	TestBoxB->SetPosition(Vector3(10.0f, 5.0f, -3.0f));
+	//TestBoxB = CreateEntity("Box B");
+	//ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("TestConvexHull.glb");
+	//TestBoxB->SetModel(test);
+	////TestBoxB->GetCollider()->SetSize(Vector3(7.0f, 3.0f, 5.0f));
+	//TestBoxB->SetPosition(Vector3(10.0f, 5.0f, -3.0f));
 
 	/*Vector3 position = Vector3(0.0f, 0.0f, 0.0f);
 	Entity* entity = nullptr;
@@ -199,29 +204,33 @@ void World::Update(const float& deltaTime)
 
 	state = false;
 	manifold.Reset();
-	Collider* colliderA = TestBoxA->GetCollider();
-	Collider* colliderB = TestBoxB->GetCollider();
-	if (colliderA != nullptr && colliderB != nullptr)
+
+	if (TestBoxA && TestBoxB)
 	{
-		state = SeparatingAxisTheorem::CheckCollision(*colliderA, *colliderB, &manifold);
-	}
+		Collider* colliderA = TestBoxA->GetCollider();
+		Collider* colliderB = TestBoxB->GetCollider();
+		if (colliderA != nullptr && colliderB != nullptr)
+		{
+			state = SeparatingAxisTheorem::CheckCollision(*colliderA, *colliderB, &manifold);
+		}
 
-	if (resolveCollision && state)
-	{
-		float halfDepth = -manifold.Depth * 0.5f;
-		Vector3 displacement = Vector3(
-			manifold.ContactPoints[0].Normal.x * halfDepth,
-			manifold.ContactPoints[0].Normal.y * halfDepth,
-			manifold.ContactPoints[0].Normal.z * halfDepth);
+		if (resolveCollision && state)
+		{
+			float halfDepth = -manifold.Depth * 0.5f;
+			Vector3 displacement = Vector3(
+				manifold.ContactPoints[0].Normal.x * halfDepth,
+				manifold.ContactPoints[0].Normal.y * halfDepth,
+				manifold.ContactPoints[0].Normal.z * halfDepth);
 
-		TestBoxA->Translate(displacement);
+			TestBoxA->Translate(displacement);
 
-		displacement = Vector3(
-			manifold.ContactPoints[1].Normal.x * halfDepth,
-			manifold.ContactPoints[1].Normal.y * halfDepth,
-			manifold.ContactPoints[1].Normal.z * halfDepth);
+			displacement = Vector3(
+				manifold.ContactPoints[1].Normal.x * halfDepth,
+				manifold.ContactPoints[1].Normal.y * halfDepth,
+				manifold.ContactPoints[1].Normal.z * halfDepth);
 
-		TestBoxB->Translate(displacement);
+			TestBoxB->Translate(displacement);
+		}
 	}
 }
 
@@ -546,6 +555,6 @@ void World::Render(Renderer& renderer)
 
 	if (m_OctreeRoot != nullptr)
 	{
-		OctreeNode::Render(renderer, m_OctreeRoot);
+		//OctreeNode::Render(renderer, m_OctreeRoot);
 	}
 }

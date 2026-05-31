@@ -188,6 +188,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Artifact.h" />
+    <ClInclude Include="Physics\Quickhull\ConvexHull.h" />
     <ClInclude Include="Physics\Colliders\OBBCollider.h" />
     <ClInclude Include="Physics\Structures.h">
       <DeploymentContent>true</DeploymentContent>
@@ -201,6 +202,7 @@
     <ClInclude Include="Physics\PhysicsWorld.h" />
     <ClInclude Include="Physics\Quickhull\Quickhull.h" />
     <ClInclude Include="Physics\SAT\SeparatingAxisTheorem.h" />
+    <ClInclude Include="System\Maths\Plane.h" />
     <ClInclude Include="System\Maths.h" />
     <ClInclude Include="Physics\Colliders\ConvexHullCollider.h" />
     <ClInclude Include="Rendering\Lighting\Light.h" />
@@ -249,6 +251,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Artifact.cpp" />
+    <ClCompile Include="Physics\Quickhull\ConvexHull.cpp" />
     <ClCompile Include="Physics\Colliders\OBBCollider.cpp" />
     <ClCompile Include="Physics\EPA\EPA.cpp">
       <DeploymentContent>true</DeploymentContent>
@@ -259,6 +262,7 @@
     <ClCompile Include="Physics\PhysicsWorld.cpp" />
     <ClCompile Include="Physics\Quickhull\Quickhull.cpp" />
     <ClCompile Include="Physics\SAT\SeparatingAxisTheorem.cpp" />
+    <ClCompile Include="System\Maths\Plane.cpp" />
     <ClCompile Include="System\Maths.cpp" />
     <ClCompile Include="Physics\Colliders\ConvexHullCollider.cpp" />
     <ClCompile Include="Rendering\Lighting\Light.cpp" />
@@ -340,13 +344,22 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Content\Barrel.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="Content\Colliders\BoxCollider.glb">
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Content\Colliders\SphereCollider.glb">
       <DeploymentContent>true</DeploymentContent>
     </None>
+    <None Include="Content\Cone.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="Content\Demo_Level.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="Content\LargeSuzanne.glb">
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Content\Lighting.bin">

@@ -247,11 +247,7 @@ void Entity::FixedUpdate()
 void Entity::Render(Renderer& renderer)
 {
 	renderer.SetDefaultDrawMode();
-
-	if (m_DisplayName != "Test Room")
-	{
-		renderer.SetDebugDrawMode();
-	}
+	renderer.SetDebugDrawMode();
 
 	if (m_Model != nullptr)
 	{
