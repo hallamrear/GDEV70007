@@ -196,6 +196,8 @@ LRESULT Engine::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 void Engine::FixedUpdate()
 {
+	InputListener::UpdateInputStates();
+
 	if (!m_IsInitialised || !m_IsRunning)
 		return;
 
@@ -203,31 +205,13 @@ void Engine::FixedUpdate()
 	{
 		m_World->FixedUpdate();
 	}
-}
 
-void Engine::Update(const float& deltaTime)
-{
-	InputListener::UpdateInputStates();
-
-	//POINT windowCentre{ m_Renderer->GetWindowCentre().x, m_Renderer->GetWindowCentre().y };
-	//ScreenToClient(m_Renderer->GetWindowHandle(), &centre);
-	//InputListener::SetMousePosition(m_Renderer->GetWindowCentre());
-
-	static float timeElapsed = 0.0f;
-	timeElapsed += deltaTime;
-
-	Vector4 clearColour = m_Renderer->GetClearColour();
-	clearColour.x = (sin(timeElapsed + 0) * 127 + 127) / 255.0f;
-	clearColour.y = (sin(timeElapsed + 2) * 127 + 127) / 255.0f;
-	clearColour.z = (sin(timeElapsed + 4) * 127 + 127) / 255.0f;
-	clearColour.w = 1.0f;
-	m_Renderer->SetClearColour(clearColour);
-
+	float deltaTime = FIXED_TIMESTEP;
 	Vector3 forward = m_Renderer->GetCamera().GetForwardVector();
 	Vector3 right = m_Renderer->GetCamera().GetRightVector();
 	Vector3 up = m_Renderer->GetCamera().GetUpVector();
 
-	const float moveSpeed = +360.0f * deltaTime;
+	const float moveSpeed = +180.0f * deltaTime;
 	const float rotationSpeed = 5.0f * deltaTime;
 
 	if (m_InputListener.GetKeyDown(VK_KEY_W)) { m_Renderer->GetCamera().Move(Vector3(forward.x * moveSpeed, forward.y * moveSpeed, forward.z * moveSpeed)); }
@@ -237,7 +221,7 @@ void Engine::Update(const float& deltaTime)
 
 	if (m_InputListener.GetKeyDown(VK_LSHIFT)) { m_Renderer->GetCamera().Move(Vector3(up.x * -moveSpeed, up.y * -moveSpeed, up.z * -moveSpeed)); }
 	if (m_InputListener.GetKeyDown(VK_SPACE)) { m_Renderer->GetCamera().Move(Vector3(up.x * moveSpeed, up.y * moveSpeed, up.z * moveSpeed)); }
-	
+
 	if (m_InputListener.GetKeyDown(VK_LEFT)) { m_Renderer->GetCamera().RotateEulerDegrees(Vector3(0.0f, -rotationSpeed, 0.0f)); }
 	if (m_InputListener.GetKeyDown(VK_RIGHT)) { m_Renderer->GetCamera().RotateEulerDegrees(Vector3(0.0f, rotationSpeed, 0.0f)); }
 	if (m_InputListener.GetKeyDown(VK_UP)) { m_Renderer->GetCamera().RotateEulerDegrees(Vector3(rotationSpeed, 0.0f, 0.0f)); }
@@ -317,6 +301,24 @@ void Engine::Update(const float& deltaTime)
 			}
 		}
 	}
+}
+
+void Engine::Update(const float& deltaTime)
+{
+	//POINT windowCentre{ m_Renderer->GetWindowCentre().x, m_Renderer->GetWindowCentre().y };
+	//ScreenToClient(m_Renderer->GetWindowHandle(), &centre);
+	//InputListener::SetMousePosition(m_Renderer->GetWindowCentre());
+
+	static float timeElapsed = 0.0f;
+	timeElapsed += deltaTime;
+
+	Vector4 clearColour = m_Renderer->GetClearColour();
+	clearColour.x = (sin(timeElapsed + 0) * 127 + 127) / 255.0f;
+	clearColour.y = (sin(timeElapsed + 2) * 127 + 127) / 255.0f;
+	clearColour.z = (sin(timeElapsed + 4) * 127 + 127) / 255.0f;
+	clearColour.w = 1.0f;
+	clearColour = { 1.0f, 1.0f, 1.0f, 1.0f };
+	m_Renderer->SetClearColour(clearColour);
 
 	if (m_World != nullptr)
 	{

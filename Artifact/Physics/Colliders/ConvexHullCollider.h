@@ -1,6 +1,8 @@
 #pragma once
 #include <Physics/Colliders/Collider.h>
 
+class ConvexHull;
+
 class ConvexHullCollider : public Collider
 {
 private:
@@ -11,9 +13,10 @@ private:
 	void SetSize(const Vector3& size);
 protected:
 	Matrix4x4 GetTransformMatrix() const override;
+	const ConvexHull* m_ConvexHull;
 
 public:
-	ConvexHullCollider(const Entity& entity);
+	ConvexHullCollider(const Entity& entity, const ModelRef& modelRef);
 	~ConvexHullCollider();
 };
 

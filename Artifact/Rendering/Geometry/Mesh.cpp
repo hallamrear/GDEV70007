@@ -43,6 +43,11 @@ Mesh::~Mesh()
 	}
 }
 
+const ConvexHull* Mesh::GetConvexHull() const
+{
+	return m_ConvexHull;
+}
+
 const Vector3& Mesh::GetCentroid() const
 {
 	return m_Centroid;

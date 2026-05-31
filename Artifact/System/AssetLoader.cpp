@@ -566,7 +566,26 @@ bool AssetLoader::GetVertexDataFromGLTFPrimitive(Mesh& mesh, const tinygltf::Mod
 
 	if (points.size() > 0)
 	{
-		mesh.m_ConvexHull = Quickhull::GenerateConvexHull(points);
+		ConvexHull* convexHull = Quickhull::GenerateConvexHull(points);
+
+		if (convexHull)
+		{
+			std::vector<Vector3> lineList;
+			convexHull->GetEdgesAsLineList(lineList);
+			mesh.m_ConvexHull = convexHull;
+
+			std::vector<Vertex> hullVertices;
+			for (size_t v = 0; v < lineList.size(); v++)
+			{
+				Vertex vertex;
+				vertex.Position = lineList[v];
+				hullVertices.push_back(vertex);
+			}
+
+			size_t hullVertexCount = sizeof(Vertex) * hullVertices.size();
+			bool boundHullVertexData = renderer->BindVertexData(convexHull->m_RenderingVertexBuffer, hullVertices.data(), hullVertexCount);
+			assert(boundHullVertexData);
+		}
 	}
 
 	return true;

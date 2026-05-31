@@ -1,9 +1,11 @@
 #include "pch.h"
 #include "ConvexHullCollider.h"
+#include <Rendering/Geometry/Mesh.h>
 
-ConvexHullCollider::ConvexHullCollider(const Entity& entity) : Collider(COLLIDER_TYPE_CONVEX_HULL, entity)
+ConvexHullCollider::ConvexHullCollider(const Entity& entity, const ModelRef& modelRef) : Collider(COLLIDER_TYPE_CONVEX_HULL, entity)
 {
-
+	assert(modelRef);
+	m_ConvexHull = modelRef->GetMeshes()[0]->GetConvexHull();
 }
 
 ConvexHullCollider::~ConvexHullCollider()

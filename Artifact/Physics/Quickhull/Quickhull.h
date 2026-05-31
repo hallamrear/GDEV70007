@@ -4,11 +4,14 @@
 #include <type_traits>
 #include <stack>
 
+//todo : find a way to remove
+#include <Rendering/VertexBuffer.h>
+
 struct ConvexHullFace;
 
 struct ConvexHullVertex
 {
-	friend ConvexHull;
+	friend class ConvexHull;
 	int VertexID = -1;
 	ConvexHullVertex* Next = nullptr;
 	ConvexHullVertex* Prev = nullptr;
@@ -30,7 +33,7 @@ typedef std::vector<ConvexHullVertex*> ConflictList;
 
 struct ConvexHullHalfEdge
 {
-	friend ConvexHull;
+	friend class ConvexHull;
 	int EdgeID = -1;
 	ConvexHullHalfEdge* Prev = nullptr;
 	ConvexHullHalfEdge* Next = nullptr;
@@ -51,7 +54,7 @@ protected:
 
 struct ConvexHullFace
 {
-	friend ConvexHull;
+	friend class ConvexHull;
 	int FaceID = -1;
 	ConvexHullFace* Prev = nullptr;
 	ConvexHullFace* Next = nullptr;
@@ -71,11 +74,13 @@ protected:
 //Half-edge based convex hull.
 class ConvexHull
 {
-
 private:
 	ConvexHullVertex* m_VertexBuffer;
 	ConvexHullFace* m_FaceBuffer;
 	ConvexHullHalfEdge* m_EdgeBuffer;
+	int m_VertexBufferElementCount;
+	int m_FaceBufferElementCount;
+	int m_EdgeBufferElementCount;
 
 	std::stack<ConvexHullVertex*> m_FreeVertices;
 	std::stack<ConvexHullFace*> m_FreeFaces;
@@ -85,6 +90,9 @@ private:
 	int m_AllocatedEdgeCount;
 
 public:
+	//todo : encapsulate
+	VertexBuffer m_RenderingVertexBuffer;
+
 	ConvexHullVertex* VerticesListHead;
 	ConvexHullFace* FacesListHead;
 	ConvexHullHalfEdge* EdgesListHead;
@@ -92,6 +100,8 @@ public:
 	int EdgeCount;
 	int VertexCount;
 	int FaceCount;
+
+	const VertexBuffer& GetDrawVertexBuffer() const { return m_RenderingVertexBuffer; };
 
 	ConvexHullVertex* GetNewVertex();
 	ConvexHullHalfEdge* GetNewEdge();
@@ -109,12 +119,24 @@ public:
 
 	ConvexHull(const int& expectedSize) 
 	{
-		m_VertexBuffer = new ConvexHullVertex[expectedSize * 2];
-		m_EdgeBuffer = new ConvexHullHalfEdge[(3 * expectedSize - 6) * 2 * 2];
-		m_FaceBuffer = new ConvexHullFace[(2 * expectedSize - 4) * 2];
+		m_VertexBufferElementCount = expectedSize * 2;
+		m_VertexBuffer = new ConvexHullVertex[m_VertexBufferElementCount];
+
+		m_EdgeBufferElementCount = (3 * expectedSize - 6) * 2 * 2;
+		m_EdgeBuffer = new ConvexHullHalfEdge[m_EdgeBufferElementCount];
+
+		m_FaceBufferElementCount = (2 * expectedSize - 4) * 2;
+		m_FaceBuffer = new ConvexHullFace[m_FaceBufferElementCount];
+
 		m_AllocatedVertexCount = 0;
 		m_AllocatedEdgeCount = 0;
 		m_AllocatedFaceCount = 0;
+		VerticesListHead = nullptr;
+		FacesListHead = nullptr;
+		EdgesListHead = nullptr;
+		EdgeCount = 0;
+		VertexCount = 0;
+		FaceCount = 0;
 	};
 
 	~ConvexHull()
@@ -141,6 +163,8 @@ public:
 		m_AllocatedEdgeCount = 0;
 		m_AllocatedFaceCount = 0;
 	};
+
+	void GetEdgesAsLineList(std::vector<Vector3>& lineList);
 };
 
 
@@ -154,7 +178,7 @@ private:
 	static Plane GetNormalisedSurfacePlaneFromHullFace(const ConvexHullFace& face);
 	static const float Calculate3DEpsilonFromExtents(const PointCloud& pointCloud);
 	static bool IsFaceVisible(const ConvexHullFace& face, const ConvexHullVertex& eyeVertex, const float& scaledEpsilon);
-	static bool AreFacesConvex(const ConvexHullFace& faceA, const ConvexHullFace& faceB, const float& epsilon);
+	static bool AreFacesConvex(const ConvexHullFace& faceA, const ConvexHullFace& otherFace, const float& epsilon);
 	static int GetFaceVertexCount(const ConvexHullFace& face);
 
 	//Geometric helpers
@@ -171,9 +195,10 @@ private:
 	static void FixAdditionalPointInvariance(ConvexHull& convexHull, ConvexHullFace*& conflictFace, ConvexHullHalfEdge*& incoming, ConvexHullHalfEdge*& outgoing);
 	static void FixInternalPointInvariance(ConvexHull& convexHull, ConvexHullFace*& conflictFace, ConvexHullHalfEdge*& edgeA, ConvexHullHalfEdge*& edgeB);
 	static void UpdateExistingFaces(std::vector<ConvexHullFace*>& newFaces, std::vector<ConvexHullFace*>& visibleFaces, ConvexHull& convexHull, ConvexHullFace*& conflictFace);
+	static void ResolveOrphanPoints(ConvexHull& convexHull, std::vector<ConvexHullFace*>& newFaces, ConvexHullFace*& conflictFace);
 	static const Simplex BuildInitialSimplex(const PointCloud& pointCloud, Vector4& searchDirection);
 	static void ConstructInitialHullFromSimplex(ConvexHull& convexHull, PointCloud& pointCloud, const Simplex& simplex, const Vector4& constructionDirection);
 	static ConvexHullFace* CreateHullFace(ConvexHull& convexHull, ConvexHullVertex*& vertexA, ConvexHullVertex*& vertexB, ConvexHullVertex*& vertexC);
 	static ConvexHullHalfEdge* FindTwinEdge(const ConvexHull& convexHull, const ConvexHullHalfEdge* edge);
-	static ConvexHullHalfEdge* FindTwinEdgeOfEyeVertex(const std::vector<ConvexHullHalfEdge*>& edgeList, const ConvexHullHalfEdge*& edge, const ConvexHullVertex*& eyeVertex);
+	static ConvexHullHalfEdge* FindTwinEdgeOfEyeVertex(const std::vector<ConvexHullHalfEdge*>& edgeList, ConvexHullHalfEdge*& edge, ConvexHullVertex*& eyeVertex);
 };

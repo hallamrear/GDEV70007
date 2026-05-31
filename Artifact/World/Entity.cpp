@@ -3,6 +3,7 @@
 #include <Rendering/Renderer.h>
 #include <Physics/Colliders/SphereCollider.h>
 #include <Physics/Colliders/AABBCollider.h>
+#include <Physics/Colliders/ConvexHullCollider.h>
 #include <Rendering/Geometry/Mesh.h>
 #include <Physics/Rigidbody.h>
 
@@ -104,6 +105,14 @@ void Entity::AddCollider(const COLLIDER_TYPE& colliderType)
 	case COLLIDER_TYPE_AABB:
 		m_Collider = new AABBCollider(*this, size);
 		break;
+	case COLLIDER_TYPE_CONVEX_HULL:
+	{
+		if (m_Model != nullptr)
+		{
+			//m_Collider = new ConvexHullCollider(*this, m_Model);
+		}
+	}
+
 	case COLLIDER_TYPE_COUNT:
 	default:
 		printf("Failed to create a new collider. SetCollider was passed an invalid collider type.\n");
@@ -195,7 +204,6 @@ void Entity::UpdateWorldMatrix()
 	DirectX::XMStoreFloat3(&m_RightVector, DirectX::XMVector3Normalize(DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&BASIS_RIGHT_VECTOR), DirectX::XMLoadFloat4x4(&m_RotationMatrix))));
 	DirectX::XMStoreFloat3(&m_UpVector, DirectX::XMVector3Normalize(DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&BASIS_UP_VECTOR), DirectX::XMLoadFloat4x4(&m_RotationMatrix))));
 	DirectX::XMStoreFloat3(&m_ForwardVector, DirectX::XMVector3Normalize(DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&BASIS_FORWARD_VECTOR), DirectX::XMLoadFloat4x4(&m_RotationMatrix))));
-
 }
 
 void Entity::SetModel(ModelRef& model)
@@ -242,7 +250,7 @@ void Entity::Render(Renderer& renderer)
 
 	if (m_DisplayName != "Test Room")
 	{
-		//renderer.SetDebugDrawMode();
+		renderer.SetDebugDrawMode();
 	}
 
 	if (m_Model != nullptr)

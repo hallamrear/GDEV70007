@@ -10,6 +10,9 @@
 #include <functional>
 #include "Geometry/Model.h"
 
+//todo : should be pulled into its own class for convexhull.
+#include <Physics/Quickhull/Quickhull.h>
+
 #define FAILED_RETURN(hr) if(FAILED(hr)) return !FAILED(hr);
 
 ID3D12DescriptorHeap* DX12Renderer::m_MainStorageSRVHeap = nullptr;
@@ -663,6 +666,16 @@ void DX12Renderer::Render(const ModelRef& model, const Matrix4x4& worldMatrix)
         else
         {
             GetCommandList()->DrawInstanced(mesh->GetVertexBuffer().GetElementCount(), 1, 0, 0);
+        }
+
+        if (mesh->GetConvexHull() != nullptr)
+        {
+            const ConvexHull* hull = mesh->GetConvexHull();
+
+            SetLineDrawMode();
+            GetCommandList()->IASetVertexBuffers(0, 1, &hull->GetDrawVertexBuffer().GetBufferView());
+            GetCommandList()->DrawInstanced(hull->GetDrawVertexBuffer().GetElementCount(), 1, 0, 0);
+            SetDefaultDrawMode();
         }
     }
 }
@@ -1718,10 +1731,6 @@ HRESULT DX12Renderer::CreateGraphicsPipelines()
     }
     m_LineDrawPipeline->SetName(L"Line Drawing Graphics Pipeline");
 
-
-
-
-
     return result;
 }
 
@@ -1801,6 +1810,7 @@ bool DX12Renderer::SetDebugDrawMode()
         return false;
     }
 
+    m_CommandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     m_CommandList->SetPipelineState(m_DebugDrawPipeline);
 
     return true;
@@ -1814,6 +1824,7 @@ bool DX12Renderer::SetLineDrawMode()
         return false;
     }
 
+    m_CommandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_LINELIST);
     m_CommandList->SetPipelineState(m_LineDrawPipeline);
 
     return true;
@@ -1827,6 +1838,7 @@ bool DX12Renderer::SetDefaultDrawMode()
         return false;
     }
 
+    m_CommandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     m_CommandList->SetPipelineState(m_DefaultPipeline);
 
     return true;

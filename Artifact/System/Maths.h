@@ -38,6 +38,11 @@ bool operator<(const Vector3& lhs, const Vector3& rhs)
 
 namespace Maths
 {
+	inline Vector3 MultiplyScalar(const float& scalar, const Vector3& vector)
+	{
+		return Vector3(vector.x * scalar, vector.y * scalar, vector.z * scalar);
+	};
+
 	inline static Vector3 Add(const Vector3& A, const Vector3& B)
 	{
 		return Vector3(A.x + B.x, A.y + B.y, A.z + B.z);
@@ -63,6 +68,11 @@ namespace Maths
 		DirectX::XMStoreFloat(&d, DirectX::XMVector3Dot(XMLoadFloat3(&A), XMLoadFloat3(&B)));
 		return d;
 	}
+	
+	inline static float Dot(const Plane& plane, const Vector3& vector)
+	{
+		return plane.Normal.x * vector.x + plane.Normal.y * vector.y + plane.Normal.z * vector.z + plane.Offset;
+	}
 
 	inline static bool SameDirection(const Vector3& A, const Vector3& B)
 	{
@@ -72,6 +82,13 @@ namespace Maths
 	inline static void Normalise(Vector3& vec)
 	{
 		DirectX::XMStoreFloat3(&vec, DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&vec)));
+	}
+
+	inline static void Normalise(Plane& plane)
+	{
+		float invMag = 1.0f / Magnitude(plane.Normal);
+		plane.Normal = MultiplyScalar(invMag, plane.Normal);
+		plane.Offset *= invMag;
 	}
 
 	inline static Vector3 Normalised(const Vector3& vec)
@@ -88,11 +105,6 @@ namespace Maths
 		Normalise(cross);
 		return cross;
 	}
-
-	inline Vector3 MultiplyScalar(const float& scalar, const Vector3& vector)
-	{
-		return Vector3(vector.x * scalar, vector.y * scalar, vector.z * scalar);
-	};
 
 	static inline unsigned int RoundToNearestBaseTwo(const unsigned int& integer)
 	{
@@ -116,7 +128,7 @@ namespace Maths
 	{
 		Vector3 AB = Vector3(B.x - A.x, B.y - A.y, B.z - A.z);
 		Vector3 AC = Vector3(C.x - A.x, C.y - A.y, C.z - A.z);
-		return Normalised(Cross(AB, AC));
+		return Cross(AB, AC);
 	}
 
 	inline static Vector3 GetNormalOfTriangle(const Triangle& triangle)
@@ -128,8 +140,9 @@ namespace Maths
 	{
 		Plane plane;
 		//todo : this is halfed in the example?
-		plane.Normal = Normalised(GetNormalOfTriangle(triangle));
+		plane.Normal = GetNormalOfTriangle(triangle);
 		plane.Offset = Dot(MultiplyScalar(-1.0f, plane.Normal), triangle.Vertices[0]);
+		Normalise(plane);
 		return plane;
 	}
 

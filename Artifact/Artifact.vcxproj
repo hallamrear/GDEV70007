@@ -356,6 +356,9 @@
       <FileType>Document</FileType>
       <DeploymentContent>true</DeploymentContent>
     </None>
+    <None Include="Content\TestConvexHull.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="Rendering\Shaders\Lighting.hlsli">
       <FileType>Document</FileType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.1</ShaderModel>

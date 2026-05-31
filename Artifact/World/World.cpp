@@ -54,8 +54,9 @@ bool World::Initialise()
 	TestBoxA->SetModel(suzaane);
 
 	TestBoxB = CreateEntity("Box B");
-	TestBoxB->AddCollider(COLLIDER_TYPE_AABB);
-	TestBoxB->GetCollider()->SetSize(Vector3(7.0f, 3.0f, 5.0f));
+	ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("TestConvexHull.glb");
+	TestBoxB->SetModel(test);
+	//TestBoxB->GetCollider()->SetSize(Vector3(7.0f, 3.0f, 5.0f));
 	TestBoxB->SetPosition(Vector3(10.0f, 5.0f, -3.0f));
 
 	/*Vector3 position = Vector3(0.0f, 0.0f, 0.0f);

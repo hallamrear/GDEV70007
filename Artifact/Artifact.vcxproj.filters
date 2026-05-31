@@ -342,5 +342,6 @@
     <None Include="Content\Lighting.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="Content\TestConvexHull.glb" />
   </ItemGroup>
 </Project>

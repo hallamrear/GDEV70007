@@ -28,6 +28,7 @@ public:
 	Mesh();
 	~Mesh();
 
+	const ConvexHull* GetConvexHull() const;
 	const Vector3& GetCentroid() const;
 	const Matrix4x4& GetOffsetMatrix() const;
 	const IndexBuffer& GetIndexBuffer() const;
