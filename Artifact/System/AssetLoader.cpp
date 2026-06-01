@@ -566,6 +566,7 @@ bool AssetLoader::GetVertexDataFromGLTFPrimitive(Mesh& mesh, const tinygltf::Mod
 
 	if (points.size() > 0)
 	{
+
 		std::vector<Vector3> pointCloud
 		{
 		 {0.000000f, -1.25000f, -1.000000f},
@@ -751,6 +752,7 @@ bool AssetLoader::GetVertexDataFromGLTFPrimitive(Mesh& mesh, const tinygltf::Mod
 		 {-0.556883f, 1.200000f, -0.766485f},
 		 {-0.556883f, 1.200000f, -0.766485f},
 		};
+
 
 		ConvexHull* convexHull = Quickhull::GenerateConvexHull(pointCloud);
 

@@ -22,7 +22,7 @@ struct equal_to {
 	}
 };
 
-bool operator<(const Vector3& lhs, const Vector3& rhs)
+inline static bool operator<(const Vector3& lhs, const Vector3& rhs)
 {
 	if (lhs.x != rhs.x)
 		return lhs.x < rhs.x;
@@ -30,6 +30,14 @@ bool operator<(const Vector3& lhs, const Vector3& rhs)
 		return lhs.y < rhs.y;
 	return lhs.z < rhs.z;
 };
+
+inline static bool operator==(const Vector3& lhs, const Vector3& rhs)
+{
+	if ((lhs.x == rhs.x) && (lhs.y == rhs.y) && (lhs.z == rhs.z))
+		return true;
+	else
+		return false;
+}
 
 namespace Maths
 {
@@ -81,16 +89,15 @@ namespace Maths
 
 	inline static Vector3 Cross(const Vector3& A, const Vector3& B)
 	{
-		//Vector3 cross = Vector3(0.0f, 0.0f, 0.0f);
-		//DirectX::XMStoreFloat3(&cross, DirectX::XMVector3Cross(XMLoadFloat3(&A), XMLoadFloat3(&B)));
-		//return cross;
+		Vector3 cross = Vector3(0.0f, 0.0f, 0.0f);
+		DirectX::XMStoreFloat3(&cross, DirectX::XMVector3Cross(XMLoadFloat3(&A), XMLoadFloat3(&B)));
+		return cross;
 
-		return Vector3
-		{
-			A.y * B.z - A.z * B.y ,
-			A.z * B.x - A.x * B.z ,
-			A.x * B.y - A.y * B.x
-		};
+		//Vector3 cross;
+		//cross.x = A.y * B.z - A.z * B.y;
+		//cross.y = A.z * B.x - A.x * B.z;
+		//cross.z = A.x * B.y - A.y * B.x;
+		//return cross;
 	}
 
 	inline static Vector3 CrossNormalised(const Vector3& A, const Vector3& B)
@@ -120,7 +127,7 @@ namespace Maths
 	{
 		Vector3 AB = Vector3(B.x - A.x, B.y - A.y, B.z - A.z);
 		Vector3 AC = Vector3(C.x - A.x, C.y - A.y, C.z - A.z);
-		return Cross(AC, AB);
+		return Cross(AB, AC);
 	}
 
 	inline static Vector3 GetNormalOfTriangle(const Triangle& triangle)

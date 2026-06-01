@@ -41,3 +41,9 @@ enum MESH_TOPOLOGY
 #include <combaseapi.h>
 #include <guiddef.h>
 typedef GUID EntityID;
+
+
+static inline Vector3 operator-(const Vector3& lhs, const Vector3& rhs)
+{
+	return Vector3(lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z);
+}

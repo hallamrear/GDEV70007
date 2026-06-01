@@ -1,4 +1,5 @@
 #pragma once
+#include <System/Maths.h>
 #include <list>
 #include <unordered_set>
 #include <type_traits>
@@ -28,8 +29,31 @@ protected:
 };
 
 typedef std::vector<Vector3> PointCloud;
-typedef std::vector<Vector3> Simplex;
 typedef std::vector<ConvexHullVertex*> ConflictList;
+
+struct Simplex
+{
+private:
+	int m_Size;
+
+public:
+	Vector3 Points[4];
+	
+	void PushFront(const Vector3& point)
+	{
+		Points[3] = Points[2];
+		Points[2] = Points[1];
+		Points[1] = Points[0];
+		Points[0] = point;
+		m_Size = std::min(m_Size + 1, 4);
+	}
+
+	void PushBack(const Vector3& point)
+	{
+		Points[m_Size] = point;
+		m_Size = std::min(m_Size + 1, 4);
+	}
+};
 
 struct ConvexHullHalfEdge
 {

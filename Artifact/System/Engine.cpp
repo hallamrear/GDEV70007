@@ -235,6 +235,21 @@ void Engine::FixedUpdate()
 		m_Renderer->GetCamera().RotateEulerDegrees(Vector3(rotationSpeed * -delta.y * sensitivity, rotationSpeed * delta.x * sensitivity, 0.0f));
 	}
 
+
+}
+
+void Engine::Update(const float& deltaTime)
+{
+	//POINT windowCentre{ m_Renderer->GetWindowCentre().x, m_Renderer->GetWindowCentre().y };
+	//ScreenToClient(m_Renderer->GetWindowHandle(), &centre);
+	//InputListener::SetMousePosition(m_Renderer->GetWindowCentre());
+
+	const float moveSpeed = +80.0f * deltaTime;
+	const float rotationSpeed = 5.0f * deltaTime;
+	Vector3 forward = m_Renderer->GetCamera().GetForwardVector();
+	Vector3 right = m_Renderer->GetCamera().GetRightVector();
+	Vector3 up = m_Renderer->GetCamera().GetUpVector();
+
 	if (m_InputListener.IsControllerSupportEnabled())
 	{
 		Vector2 thumbstickLeft =
@@ -301,13 +316,6 @@ void Engine::FixedUpdate()
 			}
 		}
 	}
-}
-
-void Engine::Update(const float& deltaTime)
-{
-	//POINT windowCentre{ m_Renderer->GetWindowCentre().x, m_Renderer->GetWindowCentre().y };
-	//ScreenToClient(m_Renderer->GetWindowHandle(), &centre);
-	//InputListener::SetMousePosition(m_Renderer->GetWindowCentre());
 
 	static float timeElapsed = 0.0f;
 	timeElapsed += deltaTime;
