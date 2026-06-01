@@ -94,6 +94,7 @@ private:
 
 	ID3DBlob* m_DefaultPixelShaderBlob;
 	ID3DBlob* m_DefaultVertexShaderBlob;
+	ID3DBlob* m_ConvexHullPixelShaderBlob;
 	HRESULT FindAndCreateShaders();
 	HRESULT ReadShaderData(const std::string& filename, ID3DBlob*& targetBlob);
 	void DestroyLoadedShaders();

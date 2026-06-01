@@ -22,9 +22,9 @@ struct ConvexHullVertex
 protected:
 	ConvexHullVertex()
 	{
-		static int counter = 0;
-		VertexID = counter;
-		counter++;
+		//static int counter = 0;
+		//VertexID = counter;
+		//counter++;
 	}
 };
 
@@ -70,9 +70,9 @@ struct ConvexHullHalfEdge
 protected:
 	ConvexHullHalfEdge()
 	{
-		static int counter = 0;
-		EdgeID = counter;
-		counter++;
+		//static int counter = 0;
+		//EdgeID = counter;
+		//counter++;
 	}
 };
 
@@ -89,9 +89,9 @@ struct ConvexHullFace
 protected:
 	ConvexHullFace()
 	{
-		static int counter = 0;
-		FaceID = counter;
-		counter++;
+		//static int counter = 0;
+		//FaceID = counter;
+		//counter++;
 	}
 };
 

@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Quickhull.h"
 
-#define TINY_FLOAT 0.00001f
+#define TINY_FLOAT (0.00001f)
 
 using namespace Maths;
 
@@ -33,35 +33,36 @@ struct LessThanPredicate {
 
 void PrintConflictList(ConvexHull& convexHull)
 {
-	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleTextAttribute(hConsole, 11);
-
-	printf("Face conflict list list START\n");
-	ConvexHullFace* f = convexHull.FacesListHead;
-	do
-	{
-		printf("Face %p -> %i\n", f, (int)f->ConflictList.size());
-
-		for (size_t i = 0; i < f->ConflictList.size(); i++)
-		{
-			Vector3 point = f->ConflictList[i]->Vertex;
-			printf("Point -> %f %f %f\n", point.x, point.y, point.z);
-		}
-
-		f = f->Next;
-	} while (f != convexHull.FacesListHead);
-
-	printf("\n");
-
-	f = convexHull.FacesListHead;
-	do
-	{
-		printf("Face %p -> %i\n", f, (int)f->ConflictList.size());
-		f = f->Next;
-	} while (f != convexHull.FacesListHead);
-
-	printf("Face conflict list list END\n");
-	SetConsoleTextAttribute(hConsole, 15);
+	UNREFERENCED_PARAMETER(convexHull);
+	//HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	//SetConsoleTextAttribute(hConsole, 11);
+	//
+	//printf("Face conflict list list START\n");
+	//ConvexHullFace* f = convexHull.FacesListHead;
+	//do
+	//{
+	//	printf("Face %p -> %i\n", f, (int)f->ConflictList.size());
+	//
+	//	for (size_t i = 0; i < f->ConflictList.size(); i++)
+	//	{
+	//		Vector3 point = f->ConflictList[i]->Vertex;
+	//		printf("Point -> %f %f %f\n", point.x, point.y, point.z);
+	//	}
+	//
+	//	f = f->Next;
+	//} while (f != convexHull.FacesListHead);
+	//
+	//printf("\n");
+	//
+	//f = convexHull.FacesListHead;
+	//do
+	//{
+	//	printf("Face %p -> %i\n", f, (int)f->ConflictList.size());
+	//	f = f->Next;
+	//} while (f != convexHull.FacesListHead);
+	//
+	//printf("Face conflict list list END\n");
+	//SetConsoleTextAttribute(hConsole, 15);
 }
 
 ConvexHull* Quickhull::GenerateConvexHull(PointCloud& pointCloud)
@@ -115,11 +116,6 @@ ConvexHullVertex* Quickhull::GetNextConflictVertex(ConvexHull*& convexHull, Conv
 	//remove result from face
 	if (vertex != nullptr)
 	{
-		printf("Conflict Vertex: %p %f %f %f -> Conflict Face: %p -> Distance %i\n",
-			vertex, vertex->Vertex.x, vertex->Vertex.y, vertex->Vertex.z,
-			conflictVertexFace,
-			furthestDistance);
-
 		std::erase(conflictVertexFace->ConflictList, vertex);
 	}
 
@@ -130,12 +126,6 @@ bool Quickhull::IsFaceVisible(const ConvexHullFace& face, const ConvexHullVertex
 {
 	Plane facePlane = GetNormalisedSurfacePlaneFromHullFace(face);
 	float d = DotPoint(facePlane, eyeVertex.Vertex);
-
-	printf("Face: %p Visiblity: %f against plane: X%f Y%f Z%f W%f  and point: %f %f %f\n",
-		&face, d, 
-		facePlane.x, facePlane.y, facePlane.z, facePlane.w,
-		eyeVertex.Vertex.x, eyeVertex.Vertex.y, eyeVertex.Vertex.z);
-
 	return d > -scaledEpsilon;
 }
 
@@ -198,8 +188,6 @@ void Quickhull::BuildNewFaces(std::list<ConvexHullHalfEdge*>& horizon, std::vect
 		edge2->Prev = edge1;
 		edge2->Next = edge0;
 
-		printf("Adding edge V %f %f %f\n", edge1->Tail->Vertex.x, edge1->Tail->Vertex.y, edge1->Tail->Vertex.z);
-
 		newEdges.push_back(edge0);
 		newEdges.push_back(edge2);
 		newFaces.push_back(face);
@@ -245,7 +233,6 @@ bool Quickhull::AreFacesConvex(const ConvexHullFace& faceA, const ConvexHullFace
 	Plane surfacePlane = GetNormalisedSurfacePlaneFromHullFace(otherFace);
 
 	float d = DotPoint(surfacePlane, centre);
-	printf("Concave Check: D %f B: %c\n", d, (d < -scaledEpsilon) ? 'T' : 'F');
 	return d < -scaledEpsilon;
 }
 
@@ -254,6 +241,8 @@ int Quickhull::GetFaceVertexCount(const ConvexHullFace& face)
 	int vertexCount = 1;
 	for (ConvexHullHalfEdge* edge = face.Edge->Next; edge != face.Edge; edge = edge->Next)
 	{
+		//LOOP BREAK
+		assert(vertexCount < 10000);
 		++vertexCount;
 	}
 	return vertexCount;
@@ -285,22 +274,11 @@ void Quickhull::MergeConcaveFaces(ConvexHull& convexHull, ConvexHullFace& confli
 	//if deallocated face has any conflict points add them to the conflict face to be resolved with other orphaned points
 	ConvexHullFace* twinFace = edge->Twin->Face;
 	conflictFace.ConflictList.insert(conflictFace.ConflictList.end(), twinFace->ConflictList.begin(), twinFace->ConflictList.end());
-	printf("New conflict face %p list size %i\n", &conflictFace, (int)conflictFace.ConflictList.size());
 	convexHull.DestroyFace(twinFace);
 }
 
 void Quickhull::MergeFaces(std::vector<ConvexHullFace*>& newFaces, ConvexHull& convexHull, ConvexHullFace*& conflictFace, const float& scaledEpsilon)
 {
-	for (auto face : newFaces)
-	{
-		printf("f %p e %p v %f %f %f\n",
-			face,
-			face->Edge,
-			face->Edge->Tail->Vertex.x,
-			face->Edge->Tail->Vertex.y,
-			face->Edge->Tail->Vertex.z);
-	}
-
 	size_t faceCount = newFaces.size();
 
 	for (size_t i = 0; i < faceCount; i++)
@@ -447,21 +425,18 @@ void Quickhull::UpdateExistingFaces(std::vector<ConvexHullFace*>& newFaces, std:
 	{
 		if (face->FaceID != conflictFace->FaceID)
 		{
-			printf("Adding %i points to %p\n", (int)face->ConflictList.size(), conflictFace);
 			conflictFace->ConflictList.insert(conflictFace->ConflictList.end(), face->ConflictList.begin(), face->ConflictList.end());
 		}
 
 		convexHull.DestroyFace(face);
 	}
 
-	ResolveOrphanPoints(convexHull, newFaces, conflictFace);
+	ResolveOrphanPoints(convexHull, newFaces, conflictFace, scaledEpsilon);
 }
 
 void Quickhull::ResolveOrphanPoints(ConvexHull& convexHull, std::vector<ConvexHullFace*>& newFaces, ConvexHullFace*& conflictFace)
 {
 	//Takin all the face points and reallocating to the furthest new faces.
-	printf("f %p orphan conflict list size %i\n", conflictFace, (int)conflictFace->ConflictList.size());
-
 	for (auto& subjectPoint : conflictFace->ConflictList)
 	{
 		ConvexHullFace* furthestFace = nullptr;
@@ -486,9 +461,7 @@ void Quickhull::ResolveOrphanPoints(ConvexHull& convexHull, std::vector<ConvexHu
 			continue;
 		}
 
-		printf("orphan point %f %f %f\n", subjectPoint->Vertex.x, subjectPoint->Vertex.x, subjectPoint->Vertex.z);
 		furthestFace->ConflictList.push_back(subjectPoint);
-		printf("New conflict face %p list size %i\n", furthestFace, (int)furthestFace->ConflictList.size());
 	}
 
 	return;
@@ -496,7 +469,7 @@ void Quickhull::ResolveOrphanPoints(ConvexHull& convexHull, std::vector<ConvexHu
 
 void Quickhull::AddAndResolveNewVertexInHull(ConvexHull& convexHull, ConvexHullFace*& conflictFace, ConvexHullVertex*& conflictVertex, const float& scaledEpsilon)
 {
-	printf("\n\nNEW RUN\n");
+	printf("\n\nAddAndResolveNewVertexInHull\n");
 
 	convexHull.AddVertexToHull(conflictVertex);
 
@@ -535,9 +508,8 @@ void Quickhull::AddAndResolveNewVertexInHull(ConvexHull& convexHull, ConvexHullF
 	UpdateExistingFaces(newFaces, visibleFaces, convexHull, conflictFace);
 
 	PrintConflictList(convexHull);
+
 	//Ensure convexity?
-	//EnsureConvexity(convexHull);
-	printf("");
 }
 
 std::vector<ConvexHullFace*>  Quickhull::DetermineHorizon(std::list<ConvexHullHalfEdge*>& horizon, ConvexHullFace*& conflictFace, ConvexHullVertex* conflictVertex, const float& scaledEpsilon)
@@ -577,7 +549,6 @@ void Quickhull::DetermineHorizonRecursiveSearch(std::unordered_set<ConvexHullFac
 			}
 			else
 			{
-				printf("horizon edge %f %f %f\n", edge->Tail->Vertex.x, edge->Tail->Vertex.y, edge->Tail->Vertex.z);
 				horizon.push_back(edge);
 			}
 
@@ -715,15 +686,10 @@ const Simplex Quickhull::BuildInitialSimplex(const PointCloud& pointCloud, Vecto
 		if (lengthSqr - TINY_FLOAT > furthestPointFromLineDistance &&
 			p != initialSimplex.Points[0] && p != initialSimplex.Points[1])
 		{
-			printf("%f %f %f - %f\n", p.x, p.y, p.z, lengthSqr);
 			initialSimplex.Points[2] = pointCloud[i];
 			furthestPointFromLineIndex = (int)i;
 			furthestPointFromLineDistance = lengthSqr;
 			furthestPointFromLineDirection = cross;
-		}
-		else
-		{
-			printf("%f %f %f - miss\n", p.x, p.y, p.z);
 		}
 	}
 
@@ -903,7 +869,7 @@ void Quickhull::ConstructInitialHullFromSimplex(ConvexHull& convexHull, PointClo
 		ConvexHullVertex* vertex = convexHull.GetNewVertex();
 		vertex->Vertex = point;
 		furthestFace->ConflictList.push_back(vertex);
-		printf("Added point %f %f %f to Face %p -> %i -> %i\n",
+		printf("Added point %f %f %f to Face %p -> %i -> %f\n",
 			point.x, point.y, point.z,
 			furthestFace,
 			(int)furthestFace->ConflictList.size(),

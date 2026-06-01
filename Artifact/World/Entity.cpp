@@ -247,7 +247,6 @@ void Entity::FixedUpdate()
 void Entity::Render(Renderer& renderer)
 {
 	renderer.SetDefaultDrawMode();
-	renderer.SetDebugDrawMode();
 
 	if (m_Model != nullptr)
 	{

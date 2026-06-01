@@ -343,6 +343,7 @@
   <ItemGroup>
     <FxCompile Include="Rendering\Shaders\PS_Standard.hlsl" />
     <FxCompile Include="Rendering\Shaders\VS_Standard.hlsl" />
+    <FxCompile Include="Rendering\Shaders\PS_ConvexHullLine.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Content\Colliders\BoxCollider.glb" />

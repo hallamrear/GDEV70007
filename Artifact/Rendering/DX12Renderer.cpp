@@ -660,12 +660,12 @@ void DX12Renderer::Render(const ModelRef& model, const Matrix4x4& worldMatrix)
 
         if (mesh->GetIndexBuffer().IsLoaded())
         {
-            //GetCommandList()->IASetIndexBuffer(&mesh->GetIndexBuffer().GetBufferView());
-            //GetCommandList()->DrawIndexedInstanced(mesh->GetIndexBuffer().GetElementCount(), 1, 0, 0, 0);
+            GetCommandList()->IASetIndexBuffer(&mesh->GetIndexBuffer().GetBufferView());
+            GetCommandList()->DrawIndexedInstanced(mesh->GetIndexBuffer().GetElementCount(), 1, 0, 0, 0);
         }
         else
         {
-            //GetCommandList()->DrawInstanced(mesh->GetVertexBuffer().GetElementCount(), 1, 0, 0);
+            GetCommandList()->DrawInstanced(mesh->GetVertexBuffer().GetElementCount(), 1, 0, 0);
         }
 
         if (mesh->GetConvexHull() != nullptr)
@@ -1650,6 +1650,14 @@ HRESULT DX12Renderer::FindAndCreateShaders()
         return result;
     }
 
+    result = ReadShaderData("PS_ConvexHullLine.cso", m_ConvexHullPixelShaderBlob);
+
+    if (FAILED(result))
+    {
+        //Error message displayed in function.
+        return result;
+    }
+
     return result;
 }
 
@@ -1719,9 +1727,16 @@ HRESULT DX12Renderer::CreateGraphicsPipelines()
     m_DebugDrawPipeline->SetName(L"Debug Drawing Graphics Pipeline");
 
 
+    result = E_POINTER;
+    if (m_ConvexHullPixelShaderBlob != nullptr)
+    {
+        pipelineStateDesc.PS.pShaderBytecode = m_ConvexHullPixelShaderBlob->GetBufferPointer();
+        pipelineStateDesc.PS.BytecodeLength = m_ConvexHullPixelShaderBlob->GetBufferSize();
+    }
+
     pipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE::D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
     pipelineStateDesc.RasterizerState.FillMode = D3D12_FILL_MODE::D3D12_FILL_MODE_WIREFRAME;
-    pipelineStateDesc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_BACK;
+    pipelineStateDesc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_NONE;
     result = m_Device->CreateGraphicsPipelineState(&pipelineStateDesc, IID_PPV_ARGS(&m_LineDrawPipeline));
 
     if (FAILED(result))
