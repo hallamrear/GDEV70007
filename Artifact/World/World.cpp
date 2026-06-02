@@ -40,29 +40,31 @@ bool World::Initialise()
 	//Entity* testRoom = CreateEntity("Test Room");
 	//ModelRef ref = ServiceLocator::Locate<AssetManager>()->GetModel("Demo_Level.glb");
 	//testRoom->SetModel(ref);
+	//testRoom->SetPosition(Vector3(-60.0f, 0.0f, 0.0f));
 
-	//testRoom = CreateEntity("AAA");
-	//ref = ServiceLocator::Locate<AssetManager>()->GetModel("STACKING.glb");
-	//testRoom->SetModel(ref);
+	Entity* AAA = CreateEntity("AAA");
+	ModelRef stacking = ServiceLocator::Locate<AssetManager>()->GetModel("Colliders/BoxCollider.glb");
+	AAA->SetModel(stacking);
+	AAA->SetPosition(Vector3(-60.0f, 0.0f, 0.0f));
 		
 	auto c = CreateEntity("Cone");
-	//c->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_AABB);
+	c->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_AABB);
 	ModelRef cone = ServiceLocator::Locate<AssetManager>()->GetModel("Barrel.glb");
 	c->SetModel(cone);
-	c->SetPosition(Vector3(-10.0f, 0.0f, 5.0f));
+	c->SetPosition(Vector3(-40.0f, 0.0f, 0.0f));
 
-	//TestBoxA = CreateEntity("Box A");
-	////TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
-	//////TestBoxA->GetCollider()->SetSize(Vector3(10.0f, 10.0f, 10.0f));
-	//TestBoxA->SetPosition(Vector3(-30.0f, 0.0f, 0.0f));
-	//ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("LargeSuzanne.glb");
-	//TestBoxA->SetModel(suzaane);
+	TestBoxA = CreateEntity("Box A");
+	TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
+	//TestBoxA->GetCollider()->SetSize(Vector3(10.0f, 10.0f, 10.0f));
+	TestBoxA->SetPosition(Vector3(-20.0f, 30.0f, 0.0f));
+	ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("LargeSuzanne.glb");
+	TestBoxA->SetModel(suzaane);
 
-	//TestBoxB = CreateEntity("Box B");
-	//ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("TestConvexHull.glb");
-	//TestBoxB->SetModel(test);
-	////TestBoxB->GetCollider()->SetSize(Vector3(7.0f, 3.0f, 5.0f));
-	//TestBoxB->SetPosition(Vector3(10.0f, 5.0f, -3.0f));
+	TestBoxB = CreateEntity("Box B");
+	ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("TestConvexHull.glb");
+	TestBoxB->SetModel(test);
+	//TestBoxB->GetCollider()->SetSize(Vector3(7.0f, 3.0f, 5.0f));
+	TestBoxB->SetPosition(Vector3(20.0f, 0.0f, 0.0f));
 
 	/*Vector3 position = Vector3(0.0f, 0.0f, 0.0f);
 	Entity* entity = nullptr;

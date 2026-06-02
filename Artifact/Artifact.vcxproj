@@ -317,6 +317,9 @@
     <Image Include="Content\DebugTexture.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
+    <Image Include="Content\Textures\colormap.png">
+      <DeploymentContent>true</DeploymentContent>
+    </Image>
     <Image Include="small.ico" />
   </ItemGroup>
   <ItemGroup>
@@ -353,6 +356,9 @@
     <None Include="Content\Barrel.glb">
       <DeploymentContent>true</DeploymentContent>
     </None>
+    <None Include="Content\blasterG.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="Content\Colliders\BoxCollider.glb">
       <DeploymentContent>true</DeploymentContent>
     </None>
@@ -369,6 +375,9 @@
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Content\Lighting.bin">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="Content\police.glb">
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Content\Suzanne.glb">

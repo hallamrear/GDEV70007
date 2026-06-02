@@ -326,6 +326,7 @@ void Engine::Update(const float& deltaTime)
 	clearColour.z = (sin(timeElapsed + 4) * 127 + 127) / 255.0f;
 	clearColour.w = 1.0f;
 	clearColour = { 1.0f, 1.0f, 1.0f, 1.0f };
+	clearColour = { 0.0f, 0.0f, 0.0f, 1.0f };
 	m_Renderer->SetClearColour(clearColour);
 
 	if (m_World != nullptr)

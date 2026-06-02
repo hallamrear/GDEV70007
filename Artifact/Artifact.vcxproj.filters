@@ -339,6 +339,9 @@
     <Image Include="Content\ColliderTexture.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="Content\Textures\colormap.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Rendering\Shaders\PS_Standard.hlsl" />
@@ -359,5 +362,7 @@
     <None Include="Content\Cone.glb" />
     <None Include="Content\LargeSuzanne.glb" />
     <None Include="Content\Barrel.glb" />
+    <None Include="Content\blasterG.glb" />
+    <None Include="Content\police.glb" />
   </ItemGroup>
 </Project>

@@ -14,25 +14,30 @@ struct Triangle
 // Source - https://stackoverflow.com/a/61862608
 // Posted by bolov, modified by community. See post 'Timeline' for change history
 // Retrieved 2026-05-30, License - CC BY-SA 4.0
-template <class T = void>
-struct equal_to {
-	constexpr bool operator()(const T& lhs, const T& rhs) const
-	{
-		return lhs == rhs;
-	}
-};
-
-inline static bool operator<(const Vector3& lhs, const Vector3& rhs)
-{
-	if (lhs.x != rhs.x)
-		return lhs.x < rhs.x;
-	if (lhs.y != rhs.y)
-		return lhs.y < rhs.y;
-	return lhs.z < rhs.z;
-};
-
+//template <class T = void>
+//struct equal_to {
+//	constexpr bool operator()(const T& lhs, const T& rhs) const
+//	{
+//		return lhs == rhs;
+//	}
+//};
+//
+////inline static bool operator<(const Vector3& lhs, const Vector3& rhs)
+////{
+////	if (lhs.x != rhs.x)
+////		return lhs.x < rhs.x;
+////	if (lhs.y != rhs.y)
+////		return lhs.y < rhs.y;
+////	return lhs.z < rhs.z;
+////};
+//
 inline static bool operator==(const Vector3& lhs, const Vector3& rhs)
 {
+	//return (
+	//	abs(lhs.x - rhs.y) < 1e-4f &&
+	//	abs(lhs.x - rhs.y) < 1e-4f &&
+	//	abs(lhs.x - rhs.y) < 1e-4f);
+
 	if ((lhs.x == rhs.x) && (lhs.y == rhs.y) && (lhs.z == rhs.z))
 		return true;
 	else
