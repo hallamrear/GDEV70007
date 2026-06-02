@@ -1,4 +1,7 @@
-//#pragma once
+#pragma once
+
+//todo : move things here.
+// 
 //#include <Rendering/VertexBuffer.h>
 //
 //struct ConvexHullFace;

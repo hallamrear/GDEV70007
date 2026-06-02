@@ -174,6 +174,8 @@ void World::FixedUpdate()
 
 #include <System/InputListener.h>
 #include <Physics/SAT/SeparatingAxisTheorem.h>
+#include <Rendering/Geometry/Model.h>
+#include <Rendering/Geometry/Mesh.h>
 void World::Update(const float& deltaTime)
 {
 	m_PhysicsWorld.Update(deltaTime);
@@ -208,12 +210,19 @@ void World::Update(const float& deltaTime)
 	manifold.Reset();
 
 	if (TestBoxA && TestBoxB)
-	{
-		Collider* colliderA = TestBoxA->GetCollider();
-		Collider* colliderB = TestBoxB->GetCollider();
-		if (colliderA != nullptr && colliderB != nullptr)
+	{	
+		//Collider* colliderA = TestBoxA->GetCollider();
+		//Collider* colliderB = TestBoxB->GetCollider();
+		//if (colliderA != nullptr && colliderB != nullptr)
 		{
-			state = SeparatingAxisTheorem::CheckCollision(*colliderA, *colliderB, &manifold);
+			//state = SeparatingAxisTheorem::CheckCollision(*colliderA, *colliderB, &manifold);
+
+			state = SeparatingAxisTheorem::CheckCollision(
+				*TestBoxA->GetModel()->GetMeshes()[0]->GetConvexHull(),
+				TestBoxA->GetWorldMatrix(),
+				*TestBoxB->GetModel()->GetMeshes()[0]->GetConvexHull(),
+				TestBoxB->GetWorldMatrix(),
+				nullptr);
 		}
 
 		if (resolveCollision && state)

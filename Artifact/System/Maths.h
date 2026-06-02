@@ -46,7 +46,22 @@ inline static bool operator==(const Vector3& lhs, const Vector3& rhs)
 
 namespace Maths
 {
-	inline Vector3 MultiplyScalar(const float& scalar, const Vector3& vector)
+	inline static Matrix4x4 InverseTranspose(const Matrix4x4& matrix)
+	{
+		DirectX::XMMATRIX xmmatrix = DirectX::XMLoadFloat4x4(&matrix);
+
+		// Zero out the translation row (normals are directions, not points)
+		//xmmatrix.r[3] = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f);
+		// Compute determinant
+		DirectX::XMVECTOR det = DirectX::XMMatrixDeterminant(xmmatrix);
+
+		// Return the transposed inverse
+		Matrix4x4 result = IdentityMatrix;
+		DirectX::XMStoreFloat4x4(&result, DirectX::XMMatrixTranspose(DirectX::XMMatrixInverse(&det, xmmatrix)));
+		return result;
+	}
+
+	inline static Vector3 MultiplyScalar(const float& scalar, const Vector3& vector)
 	{
 		return Vector3(vector.x * scalar, vector.y * scalar, vector.z * scalar);
 	};
@@ -133,6 +148,29 @@ namespace Maths
 		Vector3 AB = Vector3(B.x - A.x, B.y - A.y, B.z - A.z);
 		Vector3 AC = Vector3(C.x - A.x, C.y - A.y, C.z - A.z);
 		return Cross(AB, AC);
+	}
+
+	inline static Plane TransformPlane(const Plane& plane, const Matrix4x4& transformMatrix)
+	{
+		Vector3 O = { plane.x * plane.w, plane.y * plane.w, plane.z * plane.w };
+		Vector3 N = { plane.x, plane.y, plane.z };
+
+		//O = M * O
+		DirectX::XMStoreFloat3(&O, DirectX::XMVector3TransformCoord(DirectX::XMLoadFloat3(&O), DirectX::XMLoadFloat4x4(&transformMatrix)));
+
+		//N = transpose(invert(M)) * N
+		Matrix4x4 invTranspose = InverseTranspose(transformMatrix);
+		DirectX::XMStoreFloat3(&N, DirectX::XMVector3TransformNormal(DirectX::XMLoadFloat3(&N), DirectX::XMLoadFloat4x4(&invTranspose)));
+
+		Plane result;
+		//d = dot(O.xyz, N.xyz)
+		result.w = Dot(O, N);
+		Normalise(N);
+		result.x = N.x;
+		result.y = N.y;
+		result.z = N.z;
+
+		return result;
 	}
 
 	inline static Vector3 GetNormalOfTriangle(const Triangle& triangle)

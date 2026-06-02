@@ -86,6 +86,7 @@ struct ConvexHullFace
 	ConflictList ConflictList;
 	bool Dead = false;
 	int VertexCount = 0;
+	Plane Plane;
 
 protected:
 	ConvexHullFace()
@@ -93,6 +94,7 @@ protected:
 		static int counter = 0;
 		FaceID = counter;
 		counter++;
+		Plane = { 0.0f, 0.0f, 0.0f, 0.0f };
 	}
 };
 
@@ -100,6 +102,7 @@ protected:
 class ConvexHull
 {
 private:
+	friend class Quickhull;
 	ConvexHullVertex* m_VertexBuffer;
 	ConvexHullFace* m_FaceBuffer;
 	ConvexHullHalfEdge* m_EdgeBuffer;
@@ -114,6 +117,10 @@ private:
 	int m_AllocatedFaceCount;
 	int m_AllocatedEdgeCount;
 
+	std::vector<Plane> m_FinalFacePlanes;
+	std::vector<ConvexHullHalfEdge*> m_FinalEdgeList;
+	void AccumulateFinalEdgesFromFaces();
+
 public:
 	//todo : encapsulate
 	VertexBuffer m_RenderingVertexBuffer;
@@ -127,6 +134,10 @@ public:
 	int FaceCount;
 
 	const VertexBuffer& GetDrawVertexBuffer() const { return m_RenderingVertexBuffer; };
+
+	const std::vector<ConvexHullHalfEdge*>& GetEdgeList() const { return m_FinalEdgeList; };
+
+	Vector3 FindSupportVertex(const Vector3& direction, int& vertexIndex) const;
 
 	ConvexHullVertex* GetNewVertex();
 	ConvexHullHalfEdge* GetNewEdge();
@@ -209,6 +220,7 @@ private:
 	//Geometric helpers
 private:
 	static void MergeConcaveFaces(ConvexHull& convexHull, ConvexHullFace& conflictFace, ConvexHullHalfEdge*& edge);
+	static void GenerateHullFacePlanes(ConvexHull& convexHull);
 
 private:
 
