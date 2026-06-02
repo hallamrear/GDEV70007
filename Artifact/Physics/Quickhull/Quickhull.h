@@ -85,6 +85,7 @@ struct ConvexHullFace
 	ConvexHullHalfEdge* Edge = nullptr;
 	ConflictList ConflictList;
 	bool Dead = false;
+	int VertexCount = 0;
 
 protected:
 	ConvexHullFace()

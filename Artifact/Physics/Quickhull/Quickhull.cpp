@@ -65,8 +65,10 @@ void PrintConflictList(ConvexHull& convexHull)
 	//SetConsoleTextAttribute(hConsole, 15);
 }
 
+static int runs = 0;
 ConvexHull* Quickhull::GenerateConvexHull(PointCloud& pointCloud)
 {
+	runs = 0;
 	ConvexHull* convexHull = new ConvexHull((int)pointCloud.size());
 
 	float epsilon = Calculate3DEpsilonFromExtents(pointCloud);
@@ -122,13 +124,6 @@ ConvexHullVertex* Quickhull::GetNextConflictVertex(ConvexHull*& convexHull, Conv
 	return vertex;
 }
 
-bool Quickhull::IsFaceVisible(const ConvexHullFace& face, const ConvexHullVertex& eyeVertex, const float& scaledEpsilon)
-{
-	Plane facePlane = GetNormalisedSurfacePlaneFromHullFace(face);
-	float d = DotPoint(facePlane, eyeVertex.Vertex);
-	return d > -scaledEpsilon;
-}
-
 /// Finds edge twin pairs within a given list rather than the hull.
 ConvexHullHalfEdge* Quickhull::FindTwinEdgeOfEyeVertex(const std::vector<ConvexHullHalfEdge*>& edgeList, ConvexHullHalfEdge*& edge, ConvexHullVertex*& eyeVertex)
 {
@@ -167,6 +162,7 @@ void Quickhull::BuildNewFaces(std::list<ConvexHullHalfEdge*>& horizon, std::vect
 
 		//Create face.
 		ConvexHullFace* face = convexHull.GetNewFace();
+		face->VertexCount = 3;
 
 		face->Edge = edge0;
 		edge0->Face = face;
@@ -209,6 +205,13 @@ void Quickhull::BuildNewFaces(std::list<ConvexHullHalfEdge*>& horizon, std::vect
 	//todo : potential issues here!
 }
 
+bool Quickhull::IsFaceVisible(const ConvexHullFace& face, const ConvexHullVertex& eyeVertex, const float& scaledEpsilon)
+{
+	Plane facePlane = GetNormalisedSurfacePlaneFromHullFace(face);
+	float d = DotPoint(facePlane, eyeVertex.Vertex);
+	return d > -scaledEpsilon;
+}
+
 bool Quickhull::AreFacesConvex(const ConvexHullFace& faceA, const ConvexHullFace& otherFace, const float& scaledEpsilon)
 {
 	//calculate centroid	
@@ -233,7 +236,7 @@ bool Quickhull::AreFacesConvex(const ConvexHullFace& faceA, const ConvexHullFace
 	Plane surfacePlane = GetNormalisedSurfacePlaneFromHullFace(otherFace);
 
 	float d = DotPoint(surfacePlane, centre);
-	return d < -scaledEpsilon;
+	return d - TINY_FLOAT < -scaledEpsilon;
 }
 
 int Quickhull::GetFaceVertexCount(const ConvexHullFace& face)
@@ -270,11 +273,14 @@ void Quickhull::MergeConcaveFaces(ConvexHull& convexHull, ConvexHullFace& confli
 	//Very shit cleanup.
 	convexHull.DestroyHalfEdge(edge);
 	convexHull.DestroyHalfEdge(edge->Twin);
+	convexHull.EdgeCount -= 2;
 
 	//if deallocated face has any conflict points add them to the conflict face to be resolved with other orphaned points
 	ConvexHullFace* twinFace = edge->Twin->Face;
 	conflictFace.ConflictList.insert(conflictFace.ConflictList.end(), twinFace->ConflictList.begin(), twinFace->ConflictList.end());
 	convexHull.DestroyFace(twinFace);
+	
+	++edge->Face->VertexCount;
 }
 
 void Quickhull::MergeFaces(std::vector<ConvexHullFace*>& newFaces, ConvexHull& convexHull, ConvexHullFace*& conflictFace, const float& scaledEpsilon)
@@ -367,7 +373,7 @@ void Quickhull::FixAdditionalPointInvariance(ConvexHull& convexHull, ConvexHullF
 	face->Edge = incoming->Prev;
 
 	/* todo : ? */
-	//ConvexHullFace* twinFace = incoming->Twin->Face;
+	ConvexHullFace* twinFace = incoming->Twin->Face;
 	//twinFace->Edge = incoming->Twin->Next;
 
 	incoming->Next = outgoing->Next;
@@ -378,10 +384,13 @@ void Quickhull::FixAdditionalPointInvariance(ConvexHull& convexHull, ConvexHullF
 	//todo : fix cleanup
 	convexHull.DestroyHalfEdge(outgoing);
 	convexHull.DestroyHalfEdge(incoming->Twin);
+	convexHull.EdgeCount -= 2;
 	convexHull.DestroyVertex(outgoing->Tail);
 
 	incoming->Twin = outgoing->Twin;
 	outgoing->Twin->Twin = incoming;
+	--face->VertexCount;
+	--twinFace->VertexCount;
 }
 
 /// <summary>
@@ -415,11 +424,13 @@ void Quickhull::FixInternalPointInvariance(ConvexHull& convexHull, ConvexHullFac
 	convexHull.DestroyHalfEdge(outgoing);
 	convexHull.DestroyHalfEdge(incoming->Twin);
 	convexHull.DestroyHalfEdge(outgoing->Twin);
+	convexHull.EdgeCount -= 4;
 	convexHull.DestroyVertex(outgoing->Tail);
 
 	ConvexHullFace* twinFace = incoming->Twin->Face;
 	conflictFace->ConflictList.insert(conflictFace->ConflictList.end(), twinFace->ConflictList.begin(), twinFace->ConflictList.end());
 	convexHull.DestroyFace(incoming->Twin->Face);
+	++face->VertexCount;
 }
 
 void Quickhull::UpdateExistingFaces(std::vector<ConvexHullFace*>& newFaces, std::vector<ConvexHullFace*>& visibleFaces, ConvexHull& convexHull, ConvexHullFace*& conflictFace)
@@ -450,7 +461,7 @@ void Quickhull::ResolveOrphanPoints(ConvexHull& convexHull, std::vector<ConvexHu
 			Plane facePlane = GetNormalisedSurfacePlaneFromHullFace(*face);
 			float distance = DotPoint(facePlane, subjectPoint->Vertex);
 
-			if (distance > furthestDistance)
+			if (distance - TINY_FLOAT > furthestDistance)
 			{
 				furthestDistance = distance;
 				furthestFace = face;
@@ -472,7 +483,8 @@ void Quickhull::ResolveOrphanPoints(ConvexHull& convexHull, std::vector<ConvexHu
 
 void Quickhull::AddAndResolveNewVertexInHull(ConvexHull& convexHull, ConvexHullFace*& conflictFace, ConvexHullVertex*& conflictVertex, const float& scaledEpsilon)
 {
-	printf("\n\nAddAndResolveNewVertexInHull\n");
+	runs++;
+	printf("\n\nAddAndResolveNewVertexInHull %i\n", runs);
 
 	convexHull.AddVertexToHull(conflictVertex);
 
@@ -890,6 +902,9 @@ ConvexHullFace* Quickhull::CreateHullFace(ConvexHull& convexHull, ConvexHullVert
 		convexHull.GetNewEdge(),
 	};
 
+	convexHull.EdgeCount += 2;
+	face->VertexCount = 3;
+
 	face->Edge = edges[0];
 
 	edges[0]->Tail = vertexA;
@@ -976,7 +991,6 @@ ConvexHullHalfEdge* ConvexHull::GetNewEdge()
 		newEdge = &m_EdgeBuffer[m_AllocatedEdgeCount++];
 	}
 
-	++EdgeCount;
 	return newEdge;
 }
 
@@ -1011,7 +1025,6 @@ void ConvexHull::DestroyHalfEdge(ConvexHullHalfEdge*& edge)
 {
 	edge->Dead = true;
 	m_FreeEdges.push(edge);
-	--EdgeCount;
 }
 
 void ConvexHull::DestroyFace(ConvexHullFace*& face)
@@ -1038,7 +1051,7 @@ void ConvexHull::AddVertexToHull(ConvexHullVertex*& vertex)
 	vertex->Next = VerticesListHead;
 	VerticesListHead->Prev = vertex;
 
-	++VertexCount;
+	VertexCount++;
 }
 
 void ConvexHull::AddFaceToHull(ConvexHullFace*& face)
@@ -1056,7 +1069,8 @@ void ConvexHull::AddFaceToHull(ConvexHullFace*& face)
 
 	face->Next = FacesListHead;
 	FacesListHead->Prev = face;
-	++FaceCount;
+
+	FaceCount++;
 }
 
 void ConvexHull::AddEdgeToHull(ConvexHullHalfEdge*& edge)
@@ -1074,7 +1088,8 @@ void ConvexHull::AddEdgeToHull(ConvexHullHalfEdge*& edge)
 
 	edge->Next = EdgesListHead;
 	EdgesListHead->Prev = edge;
-	++EdgeCount;
+
+	EdgeCount++;
 }
 
 void ConvexHull::RemoveVertexFromHull(ConvexHullVertex*& vertex)
@@ -1086,6 +1101,7 @@ void ConvexHull::RemoveVertexFromHull(ConvexHullVertex*& vertex)
 
 	vertex->Prev->Next = vertex->Next;
 	vertex->Next->Prev = vertex->Prev;
+
 	--VertexCount;
 }
 
@@ -1098,6 +1114,7 @@ void ConvexHull::RemoveFaceFromHull(ConvexHullFace*& face)
 
 	face->Prev->Next = face->Next;
 	face->Next->Prev = face->Prev;
+
 	--FaceCount;
 }
 
@@ -1134,5 +1151,6 @@ void ConvexHull::RemoveEdgeFromHull(ConvexHullHalfEdge*& edge)
 
 	edge->Prev->Next = edge->Next;
 	edge->Next->Prev = edge->Prev;
+
 	--EdgeCount;
 }

@@ -281,6 +281,17 @@ void World::OnIMGUIRender()
 
 	ImGui::Begin("World");
 
+	Renderer* renderer = ServiceLocator::Locate<Renderer>();
+	Camera& camera = renderer->GetCamera();
+	ImGui::Text("Camera Forward %f %f %f",
+		camera.GetForwardVector().x, camera.GetForwardVector().y, camera.GetForwardVector().z);
+
+	ImGui::Text("Camera Right %f %f %f",
+		camera.GetRightVector().x, camera.GetRightVector().y, camera.GetRightVector().z);
+
+	ImGui::Text("Camera Up %f %f %f",
+		camera.GetUpVector().x, camera.GetUpVector().y, camera.GetUpVector().z);
+
 	if (ImGui::Button("Create New Entity"))
 	{
 		CreateEntity();

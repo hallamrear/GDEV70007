@@ -164,9 +164,6 @@ namespace Maths
 	{
 		//halved in the example?
 		Vector3 normal = GetNormalOfTriangle(triangle);
-		normal.x *= 0.5f;
-		normal.y *= 0.5f;
-		normal.z *= 0.5f;
 
 		Vector3 invertedNormal = normal;
 		invertedNormal.x *= -1.0f;
