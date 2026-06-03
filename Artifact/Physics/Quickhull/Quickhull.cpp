@@ -983,7 +983,7 @@ Vector3 ConvexHull::FindSupportVertex(const Vector3& direction, int& vertexIndex
 		Vector3 point = vertex->Vertex;
 		float distance = Dot(point, direction);
 
-		if (distance > furthestDistance)
+		if (distance - TINY_FLOAT > furthestDistance)
 		{
 			vertexIndex = index;
 			furthestDistance = distance;
@@ -1154,25 +1154,28 @@ void ConvexHull::RemoveFaceFromHull(ConvexHullFace*& face)
 	--FaceCount;
 }
 
-void ConvexHull::GetEdgesAsLineList(std::vector<Vector3>& lineList)
+void ConvexHull::GetFacesAsList(std::vector<Vector3>& pointList)
 {
-	lineList.clear();
+	pointList.clear();
 	
 	//Lines
 	ConvexHullFace* face = FacesListHead;
 	do
 	{
-		ConvexHullHalfEdge* edge = face->Edge;
-		do
+		if (face->VertexCount == 3)
 		{
-			Vector3 lineStart = edge->Tail->Vertex;
-			Vector3 lineEnd = edge->Next->Tail->Vertex;
-			lineList.push_back(lineStart);
-			lineList.push_back(lineEnd);
-			edge = edge->Next;
+			int pointCount = 0;
+			ConvexHullHalfEdge* edge = face->Edge;
+			do
+			{
+				pointList.push_back(edge->Tail->Vertex);
+				pointCount++;
+				edge = edge->Next;
 
-		} while (edge != face->Edge);
+			} while (edge != face->Edge);
 
+			assert(pointCount == 3);
+		}
 		face = face->Next;
 
 	} while (face != FacesListHead);

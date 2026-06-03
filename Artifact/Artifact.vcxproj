@@ -240,6 +240,7 @@
     <ClInclude Include="System\Defines.h" />
     <ClInclude Include="System\Types.h" />
     <ClInclude Include="Rendering\VertexBuffer.h" />
+    <ClInclude Include="System\Maths\Triangle.h" />
     <ClInclude Include="World\World.h" />
     <ClInclude Include="World\Entity.h" />
     <ClInclude Include="System\ServiceLocator.h" />
@@ -295,6 +296,7 @@
     <ClCompile Include="Rendering\Texturing\Texture.cpp" />
     <ClCompile Include="Rendering\Vertex.cpp" />
     <ClCompile Include="Rendering\VertexBuffer.cpp" />
+    <ClCompile Include="System\Maths\Triangle.cpp" />
     <ClCompile Include="World\World.cpp" />
     <ClCompile Include="World\Entity.cpp" />
     <ClCompile Include="System\ServiceLocator.cpp" />

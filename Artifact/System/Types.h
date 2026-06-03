@@ -47,3 +47,8 @@ static inline Vector3 operator-(const Vector3& lhs, const Vector3& rhs)
 {
 	return Vector3(lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z);
 }
+
+static inline Vector3 operator-(const Vector3& inverseVec)
+{
+	return Vector3(-inverseVec.x, -inverseVec.y, -inverseVec.z);
+}

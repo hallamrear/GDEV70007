@@ -211,8 +211,8 @@ void Engine::FixedUpdate()
 	Vector3 right = m_Renderer->GetCamera().GetRightVector();
 	Vector3 up = m_Renderer->GetCamera().GetUpVector();
 
-	const float moveSpeed = +180.0f * deltaTime;
-	const float rotationSpeed = 5.0f * deltaTime;
+	const float moveSpeed = deltaTime;
+	const float rotationSpeed = deltaTime;
 
 	if (m_InputListener.GetKeyDown(VK_KEY_W)) { m_Renderer->GetCamera().Move(Vector3(forward.x * moveSpeed, forward.y * moveSpeed, forward.z * moveSpeed)); }
 	if (m_InputListener.GetKeyDown(VK_KEY_S)) { m_Renderer->GetCamera().Move(Vector3(forward.x * -moveSpeed, forward.y * -moveSpeed, forward.z * -moveSpeed)); }
@@ -281,38 +281,38 @@ void Engine::Update(const float& deltaTime)
 				//m_World->TestBoxA->Rotate(Vector3(rotationSpeed * -thumbstickRight.y, rotationSpeed * thumbstickRight.x, 0.0f));
 			}
 
-			Vector3 localForward = m_World->TestBoxA->GetForwardVector();
-			Vector3 localRight = m_World->TestBoxA->GetRightVector();
-			Vector3 localUp = m_World->TestBoxA->GetUpVector();
+			Vector3 localForward = m_World->TestBoxB->GetForwardVector();
+			Vector3 localRight = m_World->TestBoxB->GetRightVector();
+			Vector3 localUp = m_World->TestBoxB->GetUpVector();
 
 			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_DPAD_UP) || m_InputListener.GetKeyDown(VK_KEY_I))
 			{
-				m_World->TestBoxA->Translate(Vector3(localForward.x * moveSpeed * 5 * FIXED_TIMESTEP, localForward.y * moveSpeed * 5 * FIXED_TIMESTEP, localForward.z * moveSpeed * 5 * FIXED_TIMESTEP));
+				m_World->TestBoxB->Translate(Vector3(localForward.x * moveSpeed * 5 * FIXED_TIMESTEP, localForward.y * moveSpeed * 5 * FIXED_TIMESTEP, localForward.z * moveSpeed * 5 * FIXED_TIMESTEP));
 			}
 
 			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_DPAD_RIGHT) || m_InputListener.GetKeyDown(VK_KEY_L))
 			{
-				m_World->TestBoxA->Translate(Vector3(localRight.x * moveSpeed * 5 * FIXED_TIMESTEP, localRight.y * moveSpeed * 5 * FIXED_TIMESTEP, localRight.z * moveSpeed * 5 * FIXED_TIMESTEP));
+				m_World->TestBoxB->Translate(Vector3(localRight.x * moveSpeed * 5 * FIXED_TIMESTEP, localRight.y * moveSpeed * 5 * FIXED_TIMESTEP, localRight.z * moveSpeed * 5 * FIXED_TIMESTEP));
 			}
 
 			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_DPAD_DOWN) || m_InputListener.GetKeyDown(VK_KEY_K))
 			{
-				m_World->TestBoxA->Translate(Vector3(-localForward.x * moveSpeed * 5 * FIXED_TIMESTEP, -localForward.y * moveSpeed * 5 * FIXED_TIMESTEP, -localForward.z * moveSpeed * 5 * FIXED_TIMESTEP));
+				m_World->TestBoxB->Translate(Vector3(-localForward.x * moveSpeed * 5 * FIXED_TIMESTEP, -localForward.y * moveSpeed * 5 * FIXED_TIMESTEP, -localForward.z * moveSpeed * 5 * FIXED_TIMESTEP));
 			}
 
 			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_DPAD_LEFT) || m_InputListener.GetKeyDown(VK_KEY_J))
 			{
-				m_World->TestBoxA->Translate(Vector3(-localRight.x * moveSpeed * 5 * FIXED_TIMESTEP, -localRight.y * moveSpeed * 5 * FIXED_TIMESTEP, -localRight.z * moveSpeed * 5 * FIXED_TIMESTEP));
+				m_World->TestBoxB->Translate(Vector3(-localRight.x * moveSpeed * 5 * FIXED_TIMESTEP, -localRight.y * moveSpeed * 5 * FIXED_TIMESTEP, -localRight.z * moveSpeed * 5 * FIXED_TIMESTEP));
 			}
 
 			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_LEFT_SHOULDER) || m_InputListener.GetKeyDown(VK_KEY_U))
 			{
-				m_World->TestBoxA->Translate(Vector3(-localUp.x * moveSpeed * 5 * FIXED_TIMESTEP, -localUp.y * moveSpeed * 5 * FIXED_TIMESTEP, -localUp.z * moveSpeed * 5 * FIXED_TIMESTEP));
+				m_World->TestBoxB->Translate(Vector3(-localUp.x * moveSpeed * 5 * FIXED_TIMESTEP, -localUp.y * moveSpeed * 5 * FIXED_TIMESTEP, -localUp.z * moveSpeed * 5 * FIXED_TIMESTEP));
 			}
 
 			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_RIGHT_SHOULDER) || m_InputListener.GetKeyDown(VK_KEY_O))
 			{
-				m_World->TestBoxA->Translate(Vector3(localUp.x * moveSpeed * 5 * FIXED_TIMESTEP, localUp.y * moveSpeed * 5 * FIXED_TIMESTEP, localUp.z * moveSpeed * 5 * FIXED_TIMESTEP));
+				m_World->TestBoxB->Translate(Vector3(localUp.x * moveSpeed * 5 * FIXED_TIMESTEP, localUp.y * moveSpeed * 5 * FIXED_TIMESTEP, localUp.z * moveSpeed * 5 * FIXED_TIMESTEP));
 			}
 		}
 	}

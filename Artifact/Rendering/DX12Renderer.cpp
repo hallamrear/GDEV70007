@@ -672,7 +672,8 @@ void DX12Renderer::Render(const ModelRef& model, const Matrix4x4& worldMatrix)
         {
             const ConvexHull* hull = mesh->GetConvexHull();
 
-            SetLineDrawMode();
+            //SetLineDrawMode();
+            SetDebugDrawMode();
             GetCommandList()->IASetVertexBuffers(0, 1, &hull->GetDrawVertexBuffer().GetBufferView());
             GetCommandList()->DrawInstanced(hull->GetDrawVertexBuffer().GetElementCount(), 1, 0, 0);
             SetDefaultDrawMode();
@@ -1714,6 +1715,13 @@ HRESULT DX12Renderer::CreateGraphicsPipelines()
         return result;
     }
     m_DefaultPipeline->SetName(L"Standard Graphics Pipeline");
+
+    result = E_POINTER;
+    if (m_ConvexHullPixelShaderBlob != nullptr)
+    {
+        pipelineStateDesc.PS.pShaderBytecode = m_ConvexHullPixelShaderBlob->GetBufferPointer();
+        pipelineStateDesc.PS.BytecodeLength = m_ConvexHullPixelShaderBlob->GetBufferSize();
+    }
 
     pipelineStateDesc.RasterizerState.FillMode = D3D12_FILL_MODE::D3D12_FILL_MODE_WIREFRAME;
     pipelineStateDesc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_BACK;

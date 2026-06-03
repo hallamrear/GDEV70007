@@ -584,7 +584,7 @@ bool AssetLoader::GetVertexDataFromGLTFPrimitive(Mesh& mesh, const tinygltf::Mod
 		if (convexHull)
 		{
 			std::vector<Vector3> lineList;
-			convexHull->GetEdgesAsLineList(lineList);
+			convexHull->GetFacesAsList(lineList);
 			mesh.m_ConvexHull = convexHull;
 
 			std::vector<Vertex> hullVertices;

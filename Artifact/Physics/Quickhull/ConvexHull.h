@@ -161,5 +161,5 @@
 //		m_AllocatedFaceCount = 0;
 //	};
 //
-//	void GetEdgesAsLineList(std::vector<Vector3>& lineList);
+//	void GetFacesAsList(std::vector<Vector3>& lineList);
 //};

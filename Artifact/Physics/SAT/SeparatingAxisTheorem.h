@@ -1,4 +1,7 @@
 #pragma once
+#include <System/Maths.h>
+#include <System/Maths/Plane.h>
+#include <System/Maths/Triangle.h>
 
 #define SAT_EPSILON (0.00001f)
 

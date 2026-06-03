@@ -17,30 +17,46 @@ FaceQuery SeparatingAxisTheorem::QueryFace(const ConvexHull& hullA, const Matrix
 	ConvexHullFace* startingFace = hullA.FacesListHead;
 	ConvexHullFace* queryFace = startingFace;
 
-	Matrix4x4 inverseWorldMatrixA = InverseTranspose(hullAMatrix);
-	Matrix4x4 inverseWorldMatrixB = InverseTranspose(hullBMatrix);
-
 	do
 	{
-		Plane facePlane = queryFace->Plane;		
-		facePlane = TransformPlane(facePlane, hullAMatrix);
+		if (queryFace->VertexCount > 3)
+			continue;
 
-		Vector3 direction = MultiplyScalar(-1.0f, facePlane.Normal());
-		DirectX::XMStoreFloat3(&direction, DirectX::XMVector3TransformNormal(DirectX::XMLoadFloat3(&direction), DirectX::XMLoadFloat4x4(&inverseWorldMatrixB)));
+		Matrix4x4 inverseTransformA;
+		DirectX::XMStoreFloat4x4(&inverseTransformA,
+			DirectX::XMMatrixTranspose(
+				DirectX::XMMatrixInverse(nullptr, DirectX::XMLoadFloat4x4(&hullAMatrix))));
+
+		Vector4 facePlane = queryFace->Plane.GetVector4();
+		DirectX::XMStoreFloat4(&facePlane, 
+			DirectX::XMPlaneTransform(DirectX::XMLoadFloat4(&facePlane), DirectX::XMLoadFloat4x4(&inverseTransformA)));
+
+		Vector3 direction = -(Vector3(facePlane.x, facePlane.y, facePlane.z));
+		DirectX::XMStoreFloat3(&direction,
+			DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&direction), DirectX::XMLoadFloat4x4(&hullBMatrix)));
 		
 		int supportVertexIndex = -1;
 		Vector3 vertexB = hullB.FindSupportVertex(direction, supportVertexIndex);
-		DirectX::XMStoreFloat3(&vertexB, DirectX::XMVector3TransformCoord(DirectX::XMLoadFloat3(&vertexB), DirectX::XMLoadFloat4x4(&inverseWorldMatrixB)));
+		DirectX::XMStoreFloat3(&vertexB, 
+			DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&vertexB), DirectX::XMLoadFloat4x4(&hullBMatrix)));
 
-		float distance = DotPoint(facePlane, vertexB);
+		Plane plane = { facePlane.x, facePlane.y, facePlane.z, facePlane.w };
+		float distance = DotPoint(plane, vertexB);
 
-		if (distance > faceQuery.Distance)
+		if (distance - SAT_EPSILON <= faceQuery.Distance)
 		{
-			faceQuery.Face = queryFace;
-			faceQuery.Distance = distance;
+			continue;
 		}
 
-	} while (queryFace = queryFace->Next, queryFace != startingFace);
+		faceQuery.Face = queryFace;
+		faceQuery.Distance = distance;
+
+		if (faceQuery.Distance > SAT_EPSILON)
+		{
+			return faceQuery;
+		}
+
+	} while ((queryFace = queryFace->Next) != startingFace);
 
 	return faceQuery;
 }
@@ -59,30 +75,25 @@ EdgeQuery SeparatingAxisTheorem::QueryEdge(const ConvexHull& hullA, const Matrix
 	{
 		assert(edgeA->Twin->Twin == edgeA);
 
-		Vector3 eA_origin;
-		Vector3 eA_A;
-		Vector3 eA_B;
-		Vector3 eA_BcrossA;
+		Vector3 eA0;
+		Vector3 A;
+		Vector3 B;
+		Vector3 BxA;
 
-		MapVertexToGaussMap(hullAMatrix, *edgeA, eA_origin, eA_BcrossA, eA_A, eA_B);
+		MapVertexToGaussMap(hullAMatrix, *edgeA, eA0, BxA, A, B);
 
 		for (const auto& edgeB : hullBEdgeList)
 		{
 			assert(edgeB->Twin->Twin == edgeB);
 
-			Vector3 eB_origin;
-			Vector3 eB_A;
-			Vector3 eB_B;
-			Vector3 eB_BcrossA;
+			Vector3 eB0;
+			Vector3 C;
+			Vector3 D;
+			Vector3 DxC;
 			
-			MapVertexToGaussMap(hullBMatrix, *edgeB, eB_origin, eB_BcrossA, eB_A, eB_B);
+			MapVertexToGaussMap(hullBMatrix, *edgeB, eB0, DxC, C, D);
 
-			Vector3 inverse_e2A = MultiplyScalar(-1.0f, eB_A);
-			Vector3 inverse_e2B = MultiplyScalar(-1.0f, eB_B);
-			Vector3 inverseBcrossA = MultiplyScalar(-1.0f, eA_BcrossA);
-			Vector3 inverseDcrossC = MultiplyScalar(-1.0f, eB_BcrossA);
-
-			if (IsMinkowskiFace(inverseBcrossA, inverseDcrossC, eA_A, eA_B, inverse_e2A, inverse_e2B) == false)
+			if (IsMinkowskiFace(-BxA, -DxC, A, B, -C, -D) == false)
 			{
 				continue;
 			}
@@ -95,7 +106,7 @@ EdgeQuery SeparatingAxisTheorem::QueryEdge(const ConvexHull& hullA, const Matrix
 			colliderOrigin.y = DirectX::XMVectorGetY(translationVector);
 			colliderOrigin.z = DirectX::XMVectorGetZ(translationVector);
 
-			float distance = EdgeEdgeDistance(eA_BcrossA, eB_BcrossA, eA_origin, eB_origin, colliderOrigin);
+			float distance = EdgeEdgeDistance(BxA, DxC, eA0, eB0, colliderOrigin);
 
 			if (distance <= edgeQuery.Distance)
 			{
@@ -199,9 +210,11 @@ void SeparatingAxisTheorem::MapVertexToGaussMap(const Matrix4x4& worldMatrix, co
 {
 	Vector3 edgeVertex = edge.Tail->Vertex;
 
-	DirectX::XMStoreFloat3(&edgeOrigin,
+	DirectX::XMStoreFloat3(&edgeVertex,
 		DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&edgeVertex),
 			DirectX::XMLoadFloat4x4(&worldMatrix)));
+
+	edgeOrigin = edgeVertex;
 
 	Vector3 edgeDestination = edge.Twin->Tail->Vertex;
 
@@ -209,16 +222,18 @@ void SeparatingAxisTheorem::MapVertexToGaussMap(const Matrix4x4& worldMatrix, co
 		DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&edgeDestination),
 			DirectX::XMLoadFloat4x4(&worldMatrix)));
 
-	arcEdge = edgeDestination - edgeOrigin;
+	arcEdge = edgeDestination - edgeVertex;
 
 	Vector3 edgeNormalA = edge.Face->Plane.Normal();
 	Vector3 edgeNormalB = edge.Twin->Face->Plane.Normal();
 
-	DirectX::XMStoreFloat3(&vertexA,
-		DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&edgeNormalA),
-			DirectX::XMMatrixInverse(nullptr, DirectX::XMLoadFloat4x4(&worldMatrix))));
+	Matrix4x4 inverseWorld = Inverse(worldMatrix);
 
-	DirectX::XMStoreFloat3(&vertexB,
-		DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&edgeNormalB),
-			DirectX::XMMatrixInverse(nullptr, DirectX::XMLoadFloat4x4(&worldMatrix))));
+	DirectX::XMStoreFloat3(&edgeNormalA,
+		DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&edgeNormalA), DirectX::XMLoadFloat4x4(&inverseWorld)));
+	vertexA = edgeNormalA;
+
+	DirectX::XMStoreFloat3(&edgeNormalB,
+		DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&edgeNormalB), DirectX::XMLoadFloat4x4(&inverseWorld)));
+	vertexB = edgeNormalB;
 }

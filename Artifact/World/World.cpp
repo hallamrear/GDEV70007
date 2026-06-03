@@ -42,16 +42,16 @@ bool World::Initialise()
 	//testRoom->SetModel(ref);
 	//testRoom->SetPosition(Vector3(-60.0f, 0.0f, 0.0f));
 
-	Entity* AAA = CreateEntity("AAA");
-	ModelRef stacking = ServiceLocator::Locate<AssetManager>()->GetModel("Colliders/BoxCollider.glb");
-	AAA->SetModel(stacking);
-	AAA->SetPosition(Vector3(-60.0f, 0.0f, 0.0f));
-		
-	auto c = CreateEntity("Cone");
-	c->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_AABB);
-	ModelRef cone = ServiceLocator::Locate<AssetManager>()->GetModel("Barrel.glb");
-	c->SetModel(cone);
-	c->SetPosition(Vector3(-40.0f, 0.0f, 0.0f));
+	//Entity* AAA = CreateEntity("AAA");
+	//ModelRef stacking = ServiceLocator::Locate<AssetManager>()->GetModel("Colliders/BoxCollider.glb");
+	//AAA->SetModel(stacking);
+	//AAA->SetPosition(Vector3(-60.0f, 0.0f, 0.0f));
+	//	
+	//auto c = CreateEntity("Cone");
+	//c->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_AABB);
+	//ModelRef cone = ServiceLocator::Locate<AssetManager>()->GetModel("Barrel.glb");
+	//c->SetModel(cone);
+	//c->SetPosition(Vector3(-40.0f, 0.0f, 0.0f));
 
 	TestBoxA = CreateEntity("Box A");
 	TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
@@ -216,6 +216,9 @@ void World::Update(const float& deltaTime)
 		//if (colliderA != nullptr && colliderB != nullptr)
 		{
 			//state = SeparatingAxisTheorem::CheckCollision(*colliderA, *colliderB, &manifold);
+
+			TestBoxA->Translate({ 0.0f, 0.0f, 0.0f });
+			TestBoxB->Translate({ 0.0f, 0.0f, 0.0f });
 
 			state = SeparatingAxisTheorem::CheckCollision(
 				*TestBoxA->GetModel()->GetMeshes()[0]->GetConvexHull(),

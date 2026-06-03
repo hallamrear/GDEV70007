@@ -1,9 +1,11 @@
 #pragma once
-#include <System/Maths.h>
 #include <list>
 #include <unordered_set>
 #include <type_traits>
 #include <stack>
+#include <System/Maths.h>
+#include <System/Maths/Plane.h>
+#include <System/Maths/Triangle.h>
 
 //todo : find a way to remove
 #include <Rendering/VertexBuffer.h>
@@ -200,7 +202,7 @@ public:
 		m_AllocatedFaceCount = 0;
 	};
 
-	void GetEdgesAsLineList(std::vector<Vector3>& lineList);
+	void GetFacesAsList(std::vector<Vector3>& pointList);
 };
 
 

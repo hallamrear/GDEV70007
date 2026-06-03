@@ -1,15 +1,9 @@
 #pragma once
 #include <math.h>
-
-#include <System/Maths/Plane.h>
+#include <system/Maths/Triangle.h>
 
 #define DEGREES_TO_RADIANS (float)(M_PI / 180.0f)
 #define RADIANS_TO_DEGREES (float)(180.0f / M_PI)
-
-struct Triangle
-{
-	Vector3 Vertices[3] = { Vector3(0.0f, 0.0f, 0.0f) };
-};
 
 // Source - https://stackoverflow.com/a/61862608
 // Posted by bolov, modified by community. See post 'Timeline' for change history
@@ -46,6 +40,21 @@ inline static bool operator==(const Vector3& lhs, const Vector3& rhs)
 
 namespace Maths
 {
+	inline static Matrix4x4 Inverse(const Matrix4x4& matrix)
+	{
+		DirectX::XMMATRIX xmmatrix = DirectX::XMLoadFloat4x4(&matrix);
+
+		// Zero out the translation row (normals are directions, not points)
+		//xmmatrix.r[3] = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f);
+		// Compute determinant
+		DirectX::XMVECTOR det = DirectX::XMMatrixDeterminant(xmmatrix);
+
+		// Return the transposed inverse
+		Matrix4x4 result = IdentityMatrix;
+		DirectX::XMStoreFloat4x4(&result, DirectX::XMMatrixInverse(&det, xmmatrix));
+		return result;
+	}
+
 	inline static Matrix4x4 InverseTranspose(const Matrix4x4& matrix)
 	{
 		DirectX::XMMATRIX xmmatrix = DirectX::XMLoadFloat4x4(&matrix);
@@ -150,68 +159,9 @@ namespace Maths
 		return Cross(AB, AC);
 	}
 
-	inline static Plane TransformPlane(const Plane& plane, const Matrix4x4& transformMatrix)
-	{
-		Vector3 O = { plane.x * plane.w, plane.y * plane.w, plane.z * plane.w };
-		Vector3 N = { plane.x, plane.y, plane.z };
-
-		//O = M * O
-		DirectX::XMStoreFloat3(&O, DirectX::XMVector3TransformCoord(DirectX::XMLoadFloat3(&O), DirectX::XMLoadFloat4x4(&transformMatrix)));
-
-		//N = transpose(invert(M)) * N
-		Matrix4x4 invTranspose = InverseTranspose(transformMatrix);
-		DirectX::XMStoreFloat3(&N, DirectX::XMVector3TransformNormal(DirectX::XMLoadFloat3(&N), DirectX::XMLoadFloat4x4(&invTranspose)));
-
-		Plane result;
-		//d = dot(O.xyz, N.xyz)
-		result.w = Dot(O, N);
-		Normalise(N);
-		result.x = N.x;
-		result.y = N.y;
-		result.z = N.z;
-
-		return result;
-	}
-
 	inline static Vector3 GetNormalOfTriangle(const Triangle& triangle)
 	{
 		return GetNormalOfTriangle(triangle.Vertices[0], triangle.Vertices[1], triangle.Vertices[2]);
-	}
-
-	//returns a normalized plane such that ||n||=1
-	inline static Plane Normalised(const Plane& plane)
-	{
-		const auto surfaceNormal{ reinterpret_cast<const Vector3&>(plane.x) };
-		const auto iNormalMag{ 1.0f / Maths::Magnitude(surfaceNormal) };
-
-		Plane out = plane;
-		out.x *= iNormalMag;
-		out.y *= iNormalMag;
-		out.z *= iNormalMag;
-		out.w *= iNormalMag;
-		return out;
-	}
-
-	//returns the signed distance orthogonal to the plane from the point
-	inline static const float DotPoint(const Plane& f, const Vector3& p)
-	{
-		return f.x * p.x + f.y * p.y + f.z * p.z + f.w;//*1.0f;
-	}
-
-	inline static Plane GetPlaneFromTriangle(const Triangle& triangle)
-	{
-		//halved in the example?
-		Vector3 normal = GetNormalOfTriangle(triangle);
-
-		Vector3 invertedNormal = normal;
-		invertedNormal.x *= -1.0f;
-		invertedNormal.y *= -1.0f;
-		invertedNormal.z *= -1.0f;
-		
-		float offset = Dot(invertedNormal, triangle.Vertices[0]);
-
-		Plane plane = Plane(normal, offset);
-		return plane;
 	}
 
 	//Compute barycentric coordinates for pointOnTri with respect to triangle (a, b, c)
