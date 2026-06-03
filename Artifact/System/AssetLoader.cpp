@@ -598,6 +598,7 @@ bool AssetLoader::GetVertexDataFromGLTFPrimitive(Mesh& mesh, const tinygltf::Mod
 			size_t hullVertexCount = sizeof(Vertex) * hullVertices.size();
 			bool boundHullVertexData = renderer->BindVertexData(convexHull->m_RenderingVertexBuffer, hullVertices.data(), hullVertexCount);
 			assert(boundHullVertexData);
+			UNREFERENCED_PARAMETER(boundHullVertexData);
 		}
 	}
 

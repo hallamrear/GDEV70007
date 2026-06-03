@@ -10,13 +10,14 @@ struct Contact
 
 struct CollisionManifold
 {
-	std::pair<int, int> CollisionPair;
+	std::pair<Entity*, Entity*> CollisionPair;
 	Vector3 Normal = Vector3(0.0f, 0.0f, 0.0f);
 	std::vector<Contact> ContactPoints;
 
 	void Reset()
 	{
 		ContactPoints.clear();
+		CollisionPair = { nullptr, nullptr };
 	}
 };
 

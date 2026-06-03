@@ -251,13 +251,20 @@ void World::Update(const float& deltaTime)
 				*TestBoxB->GetModel()->GetMeshes()[0]->GetConvexHull(),
 				matB,
 				&manifold);
+
+			if (state)
+			{
+				manifold.CollisionPair.first = TestBoxA;
+				manifold.CollisionPair.second = TestBoxB;
+			}
 		}
 
 		if (resolveCollision && state)
 		{
 			for (size_t i = 0; i < manifold.ContactPoints.size(); i++)
 			{
-				const Contact& contact = manifold.ContactPoints[i];				
+				const Contact& contact = manifold.ContactPoints[i];	
+
 				float halfDepth = contact.Depth * 0.5f;
 
 				Vector3 displacement = Vector3(
@@ -265,14 +272,14 @@ void World::Update(const float& deltaTime)
 					manifold.Normal.y * halfDepth,
 					manifold.Normal.z * halfDepth);
 
-				TestBoxA->Translate(displacement);
+				manifold.CollisionPair.first->Translate(displacement);
 
 				displacement = Vector3(
-					manifold.Normal.x * -halfDepth,
-					manifold.Normal.y * -halfDepth,
-					manifold.Normal.z * -halfDepth);
+					-manifold.Normal.x * halfDepth,
+					-manifold.Normal.y * halfDepth,
+					-manifold.Normal.z * halfDepth);
 
-				TestBoxB->Translate(displacement);
+				manifold.CollisionPair.second->Translate(displacement);
 			}
 		}
 	}

@@ -235,10 +235,7 @@ EdgeQuery SeparatingAxisTheorem::QueryEdge(const ConvexHull& hullA, const glm::m
 
 bool SeparatingAxisTheorem::CheckCollision(SAT_Result& result, const ConvexHull& hullA, const glm::mat4x4& hullAMatrix, const ConvexHull& hullB, const glm::mat4x4& hullBMatrix, CollisionManifold* manifold)
 {
-	UNREFERENCED_PARAMETER(manifold);
-
 	result.EdgeTest.Distance = -INFINITY;
-
 	result.FaceTestA = QueryFace(hullA, hullAMatrix, hullB, hullBMatrix);
 
 	if (result.FaceTestA.Distance > SAT_EPSILON)
@@ -270,13 +267,11 @@ bool SeparatingAxisTheorem::CheckCollision(SAT_Result& result, const ConvexHull&
 
 bool SeparatingAxisTheorem::ParallelTest(const glm::vec3& crossBA, const glm::vec3& crossDC)
 {
-	constexpr float parallelToleralance = 0.0005f;
-
 	glm::vec3 crossed = glm::cross(crossBA, crossDC);
 	float crossMag = glm::length(crossed);
 	float magSum = std::sqrtf(glm::length2(crossBA) * glm::length2(crossDC));
 
-	return (crossMag < (magSum * parallelToleralance));
+	return (crossMag < (magSum * SAT_EPSILON));
 }
 
 float SeparatingAxisTheorem::EdgeEdgeDistance(
@@ -304,6 +299,42 @@ float SeparatingAxisTheorem::EdgeEdgeDistance(
 extern float Epsilon(const float& relativeTolerance, const float& relativeValue, const float& absoluteTolerance)
 {
 	return relativeTolerance * relativeValue + absoluteTolerance;
+}
+
+ConvexHullFace* SeparatingAxisTheorem::FindIncidentFace(const ConvexHull& incidentHull, const glm::mat4x4& inverseIncidentMatrix, const ConvexHullFace* referenceFace)
+{
+	ConvexHullFace* incidentFace = nullptr;
+
+	float furthestDistance = INFINITY;
+
+	glm::vec4 referencePlane = { referenceFace->Plane.x,referenceFace->Plane.y, referenceFace->Plane.z, referenceFace->Plane.w };
+	glm::vec4 potentialPlane = { };
+	glm::vec3 referencePlaneNormal = {};
+	glm::vec3 potentialPlaneNormal = {};
+	ConvexHullFace* start = incidentHull.FacesListHead;
+	ConvexHullFace* next = start ;
+	do
+	{
+		potentialPlane = { next->Plane.x, next->Plane.y, next->Plane.z, next->Plane.w };
+		potentialPlane = { potentialPlane * inverseIncidentMatrix };
+		
+		referencePlaneNormal = { referencePlane.x, referencePlane.y, referencePlane.z };
+		potentialPlaneNormal = { potentialPlane.x, potentialPlane.y, potentialPlane.z };
+
+		float distance = glm::dot(referencePlaneNormal, potentialPlaneNormal);
+
+		if (distance - SAT_EPSILON < furthestDistance)
+		{
+			furthestDistance = distance;
+			incidentFace = next;
+		}
+
+		next = next->Next;
+	} while (next != start);
+
+	assert(incidentFace != nullptr);
+
+	return incidentFace;
 }
 
 EdgeContact SeparatingAxisTheorem::CreateEdgeContacts(const EdgeQuery& edgeQuery, const ConvexHull& hullA, const glm::mat4x4& hullAMatrix, const ConvexHull& hullB, const glm::mat4x4& hullBMatrix)
@@ -341,7 +372,7 @@ EdgeContact SeparatingAxisTheorem::CreateEdgeContacts(const EdgeQuery& edgeQuery
 
 	//Make sure its pointing out!
 	glm::vec3 dirFromCentre = edgeQuery.EdgeA->Tail->Vertex - hullAPosition;
-	if (glm::dot(axis, dirFromCentre) < 0)
+	if (glm::dot(axis, dirFromCentre) < SAT_EPSILON)
 	{
 		axis = -axis;
 	}
@@ -352,23 +383,219 @@ EdgeContact SeparatingAxisTheorem::CreateEdgeContacts(const EdgeQuery& edgeQuery
 	return contact;
 }
 
+FaceContact SeparatingAxisTheorem::CreateFaceContacts(const FaceQuery& faceQuery,
+	const ConvexHull& referenceHull, const glm::mat4x4& referenceHullMatrix, 
+	const ConvexHull& incidentHull, const glm::mat4x4& incidentHullMatrix)
+{
+	UNREFERENCED_PARAMETER(referenceHull);
+
+	FaceContact faceContact;
+	faceContact.Query = faceQuery;
+
+	glm::mat4x4 inverseReferenceHullMatrix = glm::inverse(referenceHullMatrix);
+	glm::mat4x4 inverseIncidentMatrix = glm::inverse(incidentHullMatrix);
+
+	//Gather faces.
+	const ConvexHullFace* referenceFace = faceQuery.Face;
+	glm::vec4 referenceFacePlane = { referenceFace->Plane.x, referenceFace->Plane.y, referenceFace->Plane.z, referenceFace->Plane.w };
+	referenceFacePlane = referenceFacePlane * inverseReferenceHullMatrix;
+
+	const ConvexHullFace* incidentFace = FindIncidentFace(incidentHull, incidentHullMatrix, referenceFace);
+
+	std::vector<glm::vec3> incidentEdges;
+	glm::vec3 vertex;
+	glm::vec4 preTransformVertex;
+	
+	ConvexHullHalfEdge* start = incidentFace->Edge;
+	ConvexHullHalfEdge* edge = start;
+
+	//Collect edges of incident face.
+	do
+	{
+		preTransformVertex = { edge->Tail->Vertex, VECTOR_W_POSITION };
+		vertex = incidentHullMatrix * preTransformVertex;
+		incidentEdges.push_back(vertex);
+		edge = edge->Next;
+	} while (edge != start);
+
+	//Clip edges against reference face.
+	start = referenceFace->Edge;
+	edge = start;
+	ConvexHullFace* sideFace = nullptr;
+	glm::vec4 sideFacePlane;
+
+	do
+	{
+		if (edge->Face != referenceFace)
+		{
+			sideFace = edge->Face;
+		}
+		else
+		{
+			sideFace = edge->Twin->Face;
+		}
+
+		sideFacePlane = { sideFace->Plane.x, sideFace->Plane.y, sideFace->Plane.z, sideFace->Plane.w };
+		sideFacePlane = sideFacePlane * inverseReferenceHullMatrix;
+
+		incidentEdges = ClipEdgesAgainstPlane(sideFacePlane, incidentEdges);
+
+		edge = edge->Next;
+	} while (edge != start);
+
+	for (auto& incidentVertex : incidentEdges)
+	{
+		faceContact.HitPoints.push_back(ClosestPointOnPlane(referenceFacePlane, incidentVertex));
+	}
+
+	//todo : ACTUALLY REDUCE CONTACT POINTS DOWN TO 4 HOLY CHRIST
+	//ReduceContactPoints(faceContact);
+
+	//todo : is this necessary?
+	glm::vec4 incidentFacePlane = { incidentFace->Plane.x, incidentFace->Plane.y, incidentFace->Plane.z, incidentFace->Plane.w };
+	incidentFacePlane = incidentFacePlane * inverseIncidentMatrix;
+
+	faceContact.HitPoints.erase(std::remove_if(faceContact.HitPoints.begin(), faceContact.HitPoints.end(), 
+		
+		[&](glm::vec3& contactPoint) 
+		{
+			glm::vec4 cp = { contactPoint, VECTOR_W_POSITION };
+			return glm::dot(incidentFacePlane, cp) > -0.001f;
+		}), faceContact.HitPoints.end());
+
+	return faceContact;
+}
+
+bool IntersectionPlaneVsRay(
+	const glm::vec3& rayStart, const glm::vec3& rayDirection,
+	const glm::vec4& plane, glm::vec3& intersectionPoint)
+{
+	float p = glm::dot(plane, { rayStart, VECTOR_W_POSITION } );
+	float v = glm::dot(plane, { rayDirection, VECTOR_W_DIRECTION } );
+
+	float t = -1.0f * (p / v);
+
+	if (t >= -INFINITY && std::fabsf(t) != INFINITY)//t acts a  projecting scalar value of p through v
+	{
+		intersectionPoint = rayStart + (rayDirection * t);
+		return true;
+	}
+
+	return false;
+}
+
+/// <summary>
+/// Utilises the sutherland-hodg(e?)man clippibng algorithm.
+/// Returns list of clipped vertices.
+/// </summary>
+std::vector<glm::vec3> SeparatingAxisTheorem::ClipEdgesAgainstPlane(const glm::vec4& plane, const std::vector<glm::vec3>& edges)
+{
+	size_t faceVertexCount = edges.size();
+	std::vector<glm::vec3> clippedVertices;
+	clippedVertices.resize(faceVertexCount);
+
+	for (size_t i = 0; i < faceVertexCount; i++)
+	{
+		int nextVertexIndex = ((int)i + 1) % faceVertexCount;
+
+		//Determine edge.
+		glm::vec3 edgeStart = edges[i];
+		glm::vec3 edgeEnd = edges[nextVertexIndex];
+
+		//Determine edge projections 
+		float startDistance = glm::dot(plane, { edgeStart, VECTOR_W_POSITION });
+		float endDistance = glm::dot(plane, { edgeEnd, VECTOR_W_POSITION });
+
+		//(if behind plane we dont need to clip at all)
+		if (startDistance <= 0.0f && endDistance <= 0.0f)
+		{
+			if (std::find(clippedVertices.begin(), clippedVertices.end(), edgeEnd) == clippedVertices.end())
+			{
+				clippedVertices.push_back(edgeEnd);
+			}
+
+			if (std::find(clippedVertices.begin(), clippedVertices.end(), edgeStart) == clippedVertices.end())
+			{
+				clippedVertices.push_back(edgeStart);
+			}
+
+			continue;
+		}
+
+		//doign the same thing for the front.
+		if (startDistance > 0.0f && endDistance > 0.0f)
+		{
+			glm::vec3 closestEnd = ClosestPointOnPlane(plane, edgeEnd);
+			if (std::find(clippedVertices.begin(), clippedVertices.end(), closestEnd) == clippedVertices.end())
+			{
+				clippedVertices.push_back(closestEnd);
+			}
+
+			glm::vec3 closestStart = ClosestPointOnPlane(plane, edgeStart);
+			if (std::find(clippedVertices.begin(), clippedVertices.end(), closestStart) == clippedVertices.end())
+			{
+				clippedVertices.push_back(closestStart);
+			}
+
+			continue;
+		}
+
+		glm::vec3 edgeDirection = glm::normalize(edgeStart - edgeEnd);
+		glm::vec3 intersection;
+		IntersectionPlaneVsRay(edgeEnd, edgeDirection, plane, intersection);
+
+		if (endDistance <= 0.0f)
+		{
+			if (std::find(clippedVertices.begin(), clippedVertices.end(), edgeEnd) == clippedVertices.end())
+			{
+				clippedVertices.push_back(edgeEnd);
+			}
+
+			if (std::find(clippedVertices.begin(), clippedVertices.end(), intersection) == clippedVertices.end())
+			{
+				clippedVertices.push_back(intersection);
+			}
+
+			continue;
+		}
+
+		if (std::find(clippedVertices.begin(), clippedVertices.end(), intersection) == clippedVertices.end())
+		{
+			clippedVertices.push_back(intersection);
+		}
+
+		if (std::find(clippedVertices.begin(), clippedVertices.end(), edgeStart) == clippedVertices.end())
+		{
+			clippedVertices.push_back(edgeStart);
+		}
+	}
+
+	return clippedVertices;
+}
+
+/// <summary>
+/// Taken from real time collision detection
+/// </summary>
+glm::vec3 SeparatingAxisTheorem::ClosestPointOnPlane(const glm::vec4& plane, const glm::vec3& point)
+{
+	glm::vec3 planeNormal = { plane.x, plane.y, plane.z };
+	planeNormal = glm::normalize(planeNormal);
+	float t = glm::dot(planeNormal, point) + plane.w;
+	glm::vec3 result = { point - planeNormal * t };
+	return result;
+}
+
 std::vector<Contact> SeparatingAxisTheorem::ConvertContactToWorldSpace(const FaceContact& faceContact)
 {
-	UNREFERENCED_PARAMETER(faceContact);
 	std::vector<Contact> contacts;
-
-	//todo : implement
-	//ConvexHullFace* contactFace = faceContact.Query.Face;
-	//glm::vec3 faceAxis;
-	//
-	//for (const glm::vec3& vertex : faceContact.ContactVertices)
-	//{
-	//	Contact contact;
-	//	contact.Depth = faceContact.Query.Distance;
-	//	contact.HitPoint = Vector3(vertex.x, vertex.y, vertex.z);
-	//	contacts.push_back(contact);
-	//}
-
+	
+	for (const glm::vec3& vertex : faceContact.HitPoints)
+	{
+		Contact contact;
+		contact.Depth = faceContact.Query.Distance;
+		contact.HitPoint = Vector3(vertex.x, vertex.y, vertex.z);
+		contacts.push_back(contact);
+	} 
 	return contacts;
 }
 
@@ -394,37 +621,49 @@ void SeparatingAxisTheorem::ConstructContactManifold(CollisionManifold& manifold
 	constexpr float kRelFaceTolerance = (0.98f);
 	constexpr float kAbsTolerance = (0.5f * kLinearSlop);
 
+	float edgeEpsilon = Epsilon(kRelEdgeTolerance, std::fmaxf(faceADistance, faceBDistance), kAbsTolerance);
+	float faceEpsilon = Epsilon(kRelFaceTolerance, faceADistance, kAbsTolerance);
+
 	//test for edge contact first
-	if (edgeDistance > Epsilon(kRelEdgeTolerance, std::fmaxf(faceADistance, faceBDistance), kAbsTolerance))
+	if (edgeDistance > edgeEpsilon)
 	{
 		EdgeContact edgeContact = CreateEdgeContacts(satResult.EdgeTest, hullA, hullAMatrix, hullB, hullBMatrix);
-
 		Contact contact = ConvertContactToWorldSpace(edgeContact);
-
 		manifold.Normal = edgeContact.Axis;
 		manifold.ContactPoints.push_back(contact);
-		printf("Edge contact detection. Normal: %f %f %f\n", manifold.Normal.x, manifold.Normal.y, manifold.Normal.z);
 	}
-	else if (faceBDistance > Epsilon(kRelFaceTolerance, faceADistance, kAbsTolerance))
+	else if (faceBDistance > faceEpsilon)
 	{
-		//FaceContact faceContact = CreateFaceContact(query.faceQuery1, hull1,hull0) };
-		//Contact contact = ConvertContactToWorldSpace(faceContact);
-		//
-		////invert normal and convert to world space	
-		//contactManifold.Normal = contactFace->Plane.Normal();
-		//contactManifold->normal = -contactManifold->normal * glm::inverse(hullBMatrix);
-		//manifold.ContactPoints.push_back(contact);
-		printf("Contact on face B. Normal: %f %f %f\n", manifold.Normal.x, manifold.Normal.y, manifold.Normal.z);
+		FaceContact faceContact = CreateFaceContacts(satResult.FaceTestB, hullB, hullBMatrix, hullA, hullAMatrix);
+		std::vector<Contact> contacts = ConvertContactToWorldSpace(faceContact);
+		
+		////invert normal and convert to world space
+		Vector3 normal = satResult.FaceTestB.Face->Plane.Normal();
+		glm::vec4 inverseNormal = glm::vec4(-1.0f * normal.x, -1.0f * normal.y, -1.0f * normal.z, VECTOR_W_DIRECTION);
+		inverseNormal = glm::normalize(inverseNormal * glm::inverse(hullBMatrix));
+		manifold.Normal = Vector3(inverseNormal.x, inverseNormal.y, inverseNormal.z);
+
+		size_t contactCount = contacts.size();
+		for (size_t i = 0; i < contactCount; i++)
+		{
+			manifold.ContactPoints.push_back(contacts[i]);
+		}
 	}
 	else
 	{
-		//FaceContact contact = CreateFaceContact(query.faceQuery0, hull0,hull1) };
-		//Contact contact = ConvertContactToWorldSpace(faceContact);
-		//
-		////convert normal to world space	
-		//manifold.Normal = manifold.Normal * glm::inverse(hullAMatrix);
-		//manifold.ContactPoints.push_back(contact);
-		printf("Contact on face A. Normal: %f %f %f\n", manifold.Normal.x, manifold.Normal.y, manifold.Normal.z);
+		FaceContact faceContact = CreateFaceContacts(satResult.FaceTestA, hullA, hullAMatrix, hullB, hullBMatrix);
+		std::vector<Contact> contacts = ConvertContactToWorldSpace(faceContact);
+		
+		Vector3 normal = satResult.FaceTestA.Face->Plane.Normal();
+		glm::vec4 inverseNormal = glm::vec4(-1.0f * normal.x, -1.0f * normal.y, -1.0f * normal.z, VECTOR_W_DIRECTION);
+		inverseNormal = glm::normalize(inverseNormal * glm::inverse(hullAMatrix));
+		manifold.Normal = Vector3(inverseNormal.x, inverseNormal.y, inverseNormal.z);
+
+		size_t contactCount = contacts.size();
+		for (size_t i = 0; i < contactCount; i++)
+		{
+			manifold.ContactPoints.push_back(contacts[i]);
+		}
 	}
 
 	//contactManifold->constraintType = ConstraintType::CONTACT;

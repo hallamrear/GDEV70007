@@ -48,13 +48,17 @@ struct EdgeContact
 struct FaceContact
 {
 	FaceQuery Query;
-	std::vector<Vector3> vertices;
+	std::vector<glm::vec3> HitPoints;
 };
 
 class SeparatingAxisTheorem
 {
 private:	
+	static ConvexHullFace* FindIncidentFace(const ConvexHull& incidentHull, const glm::mat4x4& inverseIncidentMatrix, const ConvexHullFace* referenceFace);
 	static EdgeContact CreateEdgeContacts(const EdgeQuery& edgeQuery, const ConvexHull& hullA, const glm::mat4x4& hullAMatrix, const ConvexHull& hullB, const glm::mat4x4& hullBMatrix);
+	static FaceContact CreateFaceContacts(const FaceQuery& faceQuery, const ConvexHull& referenceHull, const glm::mat4x4& referenceHullMatrix, const ConvexHull& incidentHull, const glm::mat4x4& incidentHullMatrix);
+	static std::vector<glm::vec3> ClipEdgesAgainstPlane(const glm::vec4& plane, const std::vector<glm::vec3>& edges);
+	static glm::vec3 ClosestPointOnPlane(const glm::vec4& plane, const glm::vec3& point);
 	static std::vector<Contact> ConvertContactToWorldSpace(const FaceContact& faceContact);
 	static Contact ConvertContactToWorldSpace(const EdgeContact& edgeContact);
 	static void ConstructContactManifold(CollisionManifold& manifold, const SAT_Result& satResult, const ConvexHull& hullA, const glm::mat4x4& hullAMatrix, const ConvexHull& hullB, const glm::mat4x4& hullBMatrix);
