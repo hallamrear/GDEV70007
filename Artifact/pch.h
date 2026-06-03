@@ -8,6 +8,7 @@
 #define PCH_H
 
 #define NOMINMAX
+#define GLM_ENABLE_EXPERIMENTAL
 
 // add headers that you want to pre-compile here
 #include "framework.h"

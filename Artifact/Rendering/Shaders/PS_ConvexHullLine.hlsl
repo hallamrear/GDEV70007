@@ -2,5 +2,10 @@
 
 float4 main(VS_STANDARD_VERTEX_OUTPUT input) : SV_TARGET
 {
-    return float4(1.0f, 0.0f, 1.0f, 1.0f);
+    float4 colour = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    colour.x = PCBPadding[0][0];
+    colour.y = PCBPadding[0][1];
+    colour.z = PCBPadding[0][2];
+
+    return float4(colour.xyz, 1.0f);
 }

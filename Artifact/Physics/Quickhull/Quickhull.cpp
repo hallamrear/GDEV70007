@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Quickhull.h"
+#include <glm/gtx/norm.hpp>
 
 #define TINY_FLOAT (0.00001f)
 
@@ -9,7 +10,7 @@ using namespace Maths;
 // Posted by 463035818_is_not_an_ai, modified by community. See post 'Timeline' for change history
 // Retrieved 2026-05-30, License - CC BY-SA 4.0
 struct EqualPredicate {
-	bool operator()(const Vector3& l, const Vector3& r)
+	bool operator()(const glm::vec3& l, const glm::vec3& r)
 	{
 		//return (std::abs(l.x - r.x) < FLT_EPSILON && std::abs(l.y - r.y) < FLT_EPSILON && std::abs(l.z - r.z) < FLT_EPSILON);
 		
@@ -21,7 +22,7 @@ struct EqualPredicate {
 };
 
 struct LessThanPredicate {
-	bool operator()(const Vector3& l, const Vector3& r)
+	bool operator()(const glm::vec3& l, const glm::vec3& r)
 	{
 		if (l.x != r.x)
 			return l.x < r.x;
@@ -44,7 +45,7 @@ void PrintConflictList(ConvexHull& convexHull)
 	
 		for (size_t i = 0; i < f->ConflictList.size(); i++)
 		{
-			Vector3 point = f->ConflictList[i]->Vertex;
+			glm::vec3 point = f->ConflictList[i]->Vertex;
 			printf("Point -> %f %f %f\n", point.x, point.y, point.z);
 		}
 	
@@ -65,10 +66,16 @@ void PrintConflictList(ConvexHull& convexHull)
 }
 
 static int runs = 0;
-ConvexHull* Quickhull::GenerateConvexHull(PointCloud& pointCloud)
+ConvexHull* Quickhull::GenerateConvexHull(std::vector<Vector3>& pointCloudIn)
 {
 	runs = 0;
-	ConvexHull* convexHull = new ConvexHull((int)pointCloud.size());
+	ConvexHull* convexHull = new ConvexHull((int)pointCloudIn.size());
+
+	PointCloud pointCloud;
+	for (size_t i = 0; i < pointCloudIn.size(); i++)
+	{
+		pointCloud.push_back({ pointCloudIn[i].x,pointCloudIn[i].y, pointCloudIn[i].z });
+	}
 
 	float epsilon = Calculate3DEpsilonFromExtents(pointCloud);
 	Vector4 searchDirection = Vector4();
@@ -92,7 +99,7 @@ ConvexHull* Quickhull::GenerateConvexHull(PointCloud& pointCloud)
 
 ConvexHullVertex* Quickhull::GetNextConflictVertex(ConvexHull*& convexHull, ConvexHullFace*& conflictVertexFace)
 {
-	ConvexHullVertex* vertex =  nullptr;
+	ConvexHullVertex* conflictVertex =  nullptr;
 	conflictVertexFace = nullptr;
 	float furthestDistance = 0;
 
@@ -101,16 +108,19 @@ ConvexHullVertex* Quickhull::GetNextConflictVertex(ConvexHull*& convexHull, Conv
 	do
 	{
 		Plane facePlane = GetNormalisedSurfacePlaneFromHullFace(*subjectFace);
+		glm::vec4 plane4 = { facePlane.x, facePlane.y, facePlane.z, facePlane.w };
 
-		for (ConvexHullVertex* conflictVertex : subjectFace->ConflictList)
+		for (ConvexHullVertex* testVertex : subjectFace->ConflictList)
 		{
-			float distanceToPlane = DotPoint(facePlane, conflictVertex->Vertex); 
+			glm::vec4 vertex = { testVertex->Vertex, 1.0f };
+
+			float distanceToPlane = glm::dot(plane4, vertex);
 			//point is furthest
 			if (distanceToPlane > furthestDistance)
 			{
 				furthestDistance = distanceToPlane;
 				conflictVertexFace = subjectFace;
-				vertex = conflictVertex;
+				conflictVertex = testVertex;
 			}
 		}
 
@@ -118,12 +128,12 @@ ConvexHullVertex* Quickhull::GetNextConflictVertex(ConvexHull*& convexHull, Conv
 	} while (subjectFace != convexHull->FacesListHead);
 
 	//remove result from face
-	if (vertex != nullptr)
+	if (conflictVertex != nullptr)
 	{
-		std::erase(conflictVertexFace->ConflictList, vertex);
+		std::erase(conflictVertexFace->ConflictList, conflictVertex);
 	}
 
-	return vertex;
+	return conflictVertex;
 }
 
 /// Finds edge twin pairs within a given list rather than the hull.
@@ -210,14 +220,15 @@ void Quickhull::BuildNewFaces(std::list<ConvexHullHalfEdge*>& horizon, std::vect
 bool Quickhull::IsFaceVisible(const ConvexHullFace& face, const ConvexHullVertex& eyeVertex, const float& scaledEpsilon)
 {
 	Plane facePlane = GetNormalisedSurfacePlaneFromHullFace(face);
-	float d = DotPoint(facePlane, eyeVertex.Vertex);
+	glm::vec4 plane4 = { facePlane.x, facePlane.y, facePlane.z, facePlane.w };
+	float d = glm::dot(plane4, { eyeVertex.Vertex, 1.0f });
 	return d > -scaledEpsilon;
 }
 
 bool Quickhull::AreFacesConvex(const ConvexHullFace& faceA, const ConvexHullFace& otherFace, const float& scaledEpsilon)
 {
 	//calculate centroid	
-	Vector3 centre = Vector3(0.0f, 0.0f, 0.0f);
+	glm::vec3 centre = glm::vec3(0.0f, 0.0f, 0.0f);
 	int centroidVertexCount = GetFaceVertexCount(faceA);
 	ConvexHullHalfEdge* faceEdge = faceA.Edge;
 
@@ -237,7 +248,9 @@ bool Quickhull::AreFacesConvex(const ConvexHullFace& faceA, const ConvexHullFace
 	//calculate face plane		
 	Plane surfacePlane = GetNormalisedSurfacePlaneFromHullFace(otherFace);
 
-	float d = DotPoint(surfacePlane, centre);
+	glm::vec4 plane4 = { surfacePlane.x, surfacePlane.y, surfacePlane.z, surfacePlane.w };
+	float d = glm::dot(plane4, { centre, 1.0f });
+
 	return d - TINY_FLOAT < -scaledEpsilon;
 }
 
@@ -477,7 +490,9 @@ void Quickhull::ResolveOrphanPoints(ConvexHull& convexHull, std::vector<ConvexHu
 		for (auto& face : newFaces)
 		{
 			Plane facePlane = GetNormalisedSurfacePlaneFromHullFace(*face);
-			float distance = DotPoint(facePlane, subjectPoint->Vertex);
+
+			glm::vec4 plane4 = { facePlane.x, facePlane.y, facePlane.z, facePlane.w };
+			float distance = glm::dot(plane4, { subjectPoint->Vertex, 1.0f });
 
 			if (distance - TINY_FLOAT > furthestDistance)
 			{
@@ -582,23 +597,23 @@ void Quickhull::DetermineHorizonRecursiveSearch(std::unordered_set<ConvexHullFac
 
 Plane Quickhull::CreateNewellPlaneFromTriangle(int planarVertexCount, const ConvexHullFace& face)
 {
-	Vector3 normal = { 0.0f, 0.0f, 0.0f };
+	glm::vec3 normal = { 0.0f, 0.0f, 0.0f };
 	ConvexHullHalfEdge* faceEdge = face.Edge;
 
 	for (int edge = 0; edge < planarVertexCount; ++edge)
 	{
-		Vector3 currentVertex = faceEdge->Tail->Vertex;
-		Vector3 nextVertex = faceEdge->Next->Tail->Vertex;
+		glm::vec3 currentVertex = faceEdge->Tail->Vertex;
+		glm::vec3 nextVertex = faceEdge->Next->Tail->Vertex;
 		normal.x += (currentVertex.y - nextVertex.y) * (currentVertex.z + nextVertex.z);
 		normal.y += (currentVertex.z - nextVertex.z) * (currentVertex.x + nextVertex.x);
 		normal.z += (currentVertex.x - nextVertex.x) * (currentVertex.y + nextVertex.y);
 		faceEdge = faceEdge->Next;
 	}
 
-	float offset = -Dot(normal, face.Edge->Tail->Vertex);
-	normal = Normalised(normal);
+	float offset = -glm::dot(normal, face.Edge->Tail->Vertex);
+	normal = glm::normalize(normal);
 
-	return Plane(normal, offset);
+	return Plane(normal.x, normal.y, normal.z, offset);
 }
 
 Plane Quickhull::GetNormalisedSurfacePlaneFromHullFace(const ConvexHullFace& face)
@@ -615,9 +630,18 @@ Plane Quickhull::GetNormalisedSurfacePlaneFromHullFace(const ConvexHullFace& fac
 	{
 		assert(vertexCount == 3);
 		Triangle triangle;
-		triangle.Vertices[0] = face.Edge->Tail->Vertex;
-		triangle.Vertices[1] = face.Edge->Next->Tail->Vertex;
-		triangle.Vertices[2] = face.Edge->Prev->Tail->Vertex;
+		triangle.Vertices[0].x = face.Edge->Tail->Vertex.x;
+		triangle.Vertices[0].y = face.Edge->Tail->Vertex.y;
+		triangle.Vertices[0].z = face.Edge->Tail->Vertex.z;
+
+		triangle.Vertices[1].x = face.Edge->Next->Tail->Vertex.x;
+		triangle.Vertices[1].y = face.Edge->Next->Tail->Vertex.y;
+		triangle.Vertices[1].z = face.Edge->Next->Tail->Vertex.z;
+
+		triangle.Vertices[2].x = face.Edge->Prev->Tail->Vertex.x;
+		triangle.Vertices[2].y = face.Edge->Prev->Tail->Vertex.y;
+		triangle.Vertices[2].z = face.Edge->Prev->Tail->Vertex.z;
+
 		result = GetPlaneFromTriangle(triangle);
 	}
 
@@ -629,9 +653,9 @@ Plane Quickhull::GetNormalisedSurfacePlaneFromHullFace(const ConvexHullFace& fac
 // FLT_EPSILON is not relevant enough for a really big model and not big enough for a teeny tiny one.
 const float Quickhull::Calculate3DEpsilonFromExtents(const PointCloud& pointCloud)
 {
-	Vector3 furthestPoint = { -INFINITY, -INFINITY, -INFINITY };
+	glm::vec3 furthestPoint = { -INFINITY, -INFINITY, -INFINITY };
 
-	for (const Vector3& point : pointCloud)
+	for (const glm::vec3& point : pointCloud)
 	{
 		furthestPoint.x = std::max(furthestPoint.x, std::abs(point.x));
 		furthestPoint.y = std::max(furthestPoint.y, std::abs(point.y));
@@ -660,10 +684,10 @@ const Simplex Quickhull::BuildInitialSimplex(const PointCloud& pointCloud, Vecto
 		for (auto p1{ 0 }; p1 < cloudsize; ++p1)
 		{
 			pairIndices[pair] = { (float)p0,(float)p1 };
-			const Vector3& vertexA = pointCloud[p0];
-			const Vector3& vertexB = pointCloud[p1];
-			Vector3 vertexDifference = { vertexB.x - vertexA.x, vertexB.y - vertexA.y, vertexB.z - vertexA.z };
-			pairDistances[pair] = MagnitudeSqr(vertexDifference);
+			const glm::vec3& vertexA = pointCloud[p0];
+			const glm::vec3& vertexB = pointCloud[p1];
+			glm::vec3 vertexDifference = { vertexB.x - vertexA.x, vertexB.y - vertexA.y, vertexB.z - vertexA.z };
+			pairDistances[pair] = glm::length2(vertexDifference);
 			if (pairDistances[pair] >= currentDistance)
 			{
 				ix = p0;
@@ -676,8 +700,8 @@ const Simplex Quickhull::BuildInitialSimplex(const PointCloud& pointCloud, Vecto
 
 
 	//Construct a line between the two furthest points.
-	Vector3 p0{ pointCloud[(int)pairIndices[index].x] };
-	Vector3 p1{ pointCloud[(int)pairIndices[index].y] };
+	glm::vec3 p0{ pointCloud[(int)pairIndices[index].x] };
+	glm::vec3 p1{ pointCloud[(int)pairIndices[index].y] };
 	std::pair<int, int> furthestPointPairIndices = { (int)pairIndices[index].x, (int)pairIndices[index].y };
 	delete[] pairDistances;
 	delete[] pairIndices;
@@ -686,12 +710,12 @@ const Simplex Quickhull::BuildInitialSimplex(const PointCloud& pointCloud, Vecto
 	initialSimplex.PushBack(pointCloud[furthestPointPairIndices.first]);
 	initialSimplex.PushBack(pointCloud[furthestPointPairIndices.second]);
 
-	Vector3 AB = initialSimplex.Points[1] - initialSimplex.Points[0];
-	Normalise(AB);
+	glm::vec3 AB = initialSimplex.Points[1] - initialSimplex.Points[0];
+	AB = glm::normalize(AB);
 
 	int furthestPointFromLineIndex = -1;
 	float furthestPointFromLineDistance = 0.0f;
-	Vector3 furthestPointFromLineDirection = Vector3();
+	glm::vec3 furthestPointFromLineDirection = glm::vec3();
 	EqualPredicate equal;
 
 	//Finding furthest point from line.
@@ -700,10 +724,10 @@ const Simplex Quickhull::BuildInitialSimplex(const PointCloud& pointCloud, Vecto
 		if(i == furthestPointPairIndices.first || i == furthestPointPairIndices.second)
 			continue;
 
-		const Vector3& p = pointCloud[i];
-		Vector3 pointToLineStart = p - initialSimplex.Points[0];
-		Vector3 cross = Cross(AB, pointToLineStart);
-		float lengthSqr = MagnitudeSqr(cross);
+		const glm::vec3& p = pointCloud[i];
+		glm::vec3 pointToLineStart = p - initialSimplex.Points[0];
+		glm::vec3 cross = glm::cross(AB, pointToLineStart);
+		float lengthSqr = glm::length2(cross);
 
 		if (lengthSqr - TINY_FLOAT > furthestPointFromLineDistance &&
 			p != initialSimplex.Points[0] && p != initialSimplex.Points[1])
@@ -720,20 +744,21 @@ const Simplex Quickhull::BuildInitialSimplex(const PointCloud& pointCloud, Vecto
 	//initialSimplex.push_back(pointCloud[furthestPointFromLineIndex]);
 	
 	//Recompute normal to ensure its flipped.
-	Normalise(furthestPointFromLineDirection);
-	float dot = Dot(furthestPointFromLineDirection, AB);
-	Vector3 scaledNormalAlong01 = MultiplyScalar(dot, AB);
-	Vector3 delta =
+	furthestPointFromLineDirection = glm::normalize(furthestPointFromLineDirection);
+	float dot = glm::dot(furthestPointFromLineDirection, AB);
+
+	glm::vec3 scaledNormalAlong01 = dot * AB;
+	glm::vec3 delta =
 	{
 		furthestPointFromLineDirection.x - scaledNormalAlong01.x,
 		furthestPointFromLineDirection.y - scaledNormalAlong01.y,
 		furthestPointFromLineDirection.z - scaledNormalAlong01.z };
 
-	furthestPointFromLineDirection = Normalised(delta);
+	furthestPointFromLineDirection = glm::normalize(delta);
 
 	furthestPointFromLineIndex = -1;
 	furthestPointFromLineDistance = 0.0f;
-	float simplex3Dist = Dot(furthestPointFromLineDirection, initialSimplex.Points[2]);
+	float simplex3Dist = glm::dot(furthestPointFromLineDirection, initialSimplex.Points[2]);
 
 	//Finding furthest point from line (except simplex[2]).
 	for (size_t i = 0; i < pointCount; i++)
@@ -742,7 +767,7 @@ const Simplex Quickhull::BuildInitialSimplex(const PointCloud& pointCloud, Vecto
 			continue;
 
 		//Projected distance of point onto new normal.
-		float distance = std::abs(Dot(pointCloud[i], furthestPointFromLineDirection));
+		float distance = std::abs(glm::dot(pointCloud[i], furthestPointFromLineDirection));
 		
 		if (distance - TINY_FLOAT > furthestPointFromLineDistance)
 		{
@@ -810,14 +835,14 @@ void Quickhull::ConstructInitialHullFromSimplex(ConvexHull& convexHull, PointClo
 	p3->Vertex = simplex.Points[3];
 	convexHull.AddVertexToHull(p3);
 
-	Vector3 constructionPlaneNormal = { constructionDirection.x, constructionDirection.y, constructionDirection.z };
+	glm::vec3 constructionPlaneNormal = { constructionDirection.x, constructionDirection.y, constructionDirection.z };
 	float constructionPlaneOffset = constructionDirection.w;
 
 	//Determine winding order based on side of construction plane.
 	//Clockwise.
 	ConvexHullFace* newFaces[4] = { nullptr };
 
-	if (Dot(simplex.Points[3], constructionPlaneNormal) - constructionPlaneOffset < 0)
+	if (glm::dot(simplex.Points[3], constructionPlaneNormal) - constructionPlaneOffset < 0)
 	{
 		newFaces[0] = CreateHullFace(convexHull, p0, p1, p2);
 		newFaces[1] = CreateHullFace(convexHull, p3, p1, p0);
@@ -870,7 +895,9 @@ void Quickhull::ConstructInitialHullFromSimplex(ConvexHull& convexHull, PointClo
 		do
 		{
 			Plane facePlane = GetNormalisedSurfacePlaneFromHullFace(*testFace);
-			float distanceToPlane = DotPoint(facePlane, point);
+			glm::vec4 plane4 = { facePlane.x, facePlane.y, facePlane.z, facePlane.w };
+
+			float distanceToPlane = glm::dot(plane4, { point, 1.0f });
 
 			if (distanceToPlane - TINY_FLOAT > furthestDistance)
 			{
@@ -971,17 +998,17 @@ ConvexHullHalfEdge* Quickhull::FindTwinEdge(const ConvexHull& convexHull, const 
 /// <summary>
 /// Returns point in local space.
 /// </summary>
-Vector3 ConvexHull::FindSupportVertex(const Vector3& direction, int& vertexIndex) const
+glm::vec3 ConvexHull::FindSupportVertex(const glm::vec3& direction, int& vertexIndex) const
 {
-	Vector3 furthestPoint = { 0.0f, 0.0f, 0.0f };
+	glm::vec3 furthestPoint = { 0.0f, 0.0f, 0.0f };
 	float furthestDistance = -INFINITY;
 	int index = 0;
 	ConvexHullVertex* vertex = VerticesListHead;
 
 	do
 	{
-		Vector3 point = vertex->Vertex;
-		float distance = Dot(point, direction);
+		glm::vec3 point = vertex->Vertex;
+		float distance = glm::dot(point, direction);
 
 		if (distance - TINY_FLOAT > furthestDistance)
 		{
@@ -1168,7 +1195,8 @@ void ConvexHull::GetFacesAsList(std::vector<Vector3>& pointList)
 			ConvexHullHalfEdge* edge = face->Edge;
 			do
 			{
-				pointList.push_back(edge->Tail->Vertex);
+				Vector3 v = { edge->Tail->Vertex.x,edge->Tail->Vertex.y, edge->Tail->Vertex.z };
+				pointList.push_back(v);
 				pointCount++;
 				edge = edge->Next;
 

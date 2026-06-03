@@ -57,14 +57,17 @@ bool World::Initialise()
 	TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
 	//TestBoxA->GetCollider()->SetSize(Vector3(10.0f, 10.0f, 10.0f));
 	TestBoxA->SetPosition(Vector3(-20.0f, 30.0f, 0.0f));
-	ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("LargeSuzanne.glb");
+	//ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("TestCone.glb");
+	ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("Colliders/BoxCollider.glb");
 	TestBoxA->SetModel(suzaane);
 
 	TestBoxB = CreateEntity("Box B");
-	ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("TestConvexHull.glb");
+	//TestBoxB->AddCollider(COLLIDER_TYPE_AABB);
+	//ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("TestConvexHull.glb");
+	ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("Colliders/BoxCollider.glb");
 	TestBoxB->SetModel(test);
-	//TestBoxB->GetCollider()->SetSize(Vector3(7.0f, 3.0f, 5.0f));
-	TestBoxB->SetPosition(Vector3(20.0f, 0.0f, 0.0f));
+	////TestBoxB->GetCollider()->SetSize(Vector3(7.0f, 3.0f, 5.0f));
+	//TestBoxB->SetPosition(Vector3(20.0f, 0.0f, 0.0f));
 
 	/*Vector3 position = Vector3(0.0f, 0.0f, 0.0f);
 	Entity* entity = nullptr;
@@ -80,6 +83,9 @@ bool World::Initialise()
 
 		entity->SetPosition(position);
 	}*/
+
+	TestBoxA->SetPosition({ -1.1f, 0.0f, 0.0f });
+	TestBoxB->SetPosition({ 1.0f, 0.0f, 0.0f });
 
 	m_IsInitialised = true;
 	return true;
@@ -176,6 +182,9 @@ void World::FixedUpdate()
 #include <Physics/SAT/SeparatingAxisTheorem.h>
 #include <Rendering/Geometry/Model.h>
 #include <Rendering/Geometry/Mesh.h>
+#include <glm/glm.hpp>
+static SAT_Result result;
+
 void World::Update(const float& deltaTime)
 {
 	m_PhysicsWorld.Update(deltaTime);
@@ -217,33 +226,54 @@ void World::Update(const float& deltaTime)
 		{
 			//state = SeparatingAxisTheorem::CheckCollision(*colliderA, *colliderB, &manifold);
 
-			TestBoxA->Translate({ 0.0f, 0.0f, 0.0f });
-			TestBoxB->Translate({ 0.0f, 0.0f, 0.0f });
+			Matrix4x4 m = TestBoxA->GetWorldMatrix();
+
+			glm::mat4x4 matA = glm::mat4x4(
+				m._11, m._12, m._13, m._14,
+				m._21, m._22, m._23, m._24,
+				m._31, m._32, m._33, m._34,
+				m._41, m._42, m._43, m._44);
+			//matA = glm::transpose(matA);
+
+			m = TestBoxB->GetWorldMatrix();
+
+			glm::mat4x4 matB = glm::mat4x4(
+				m._11, m._12, m._13, m._14,
+				m._21, m._22, m._23, m._24,
+				m._31, m._32, m._33, m._34,
+				m._41, m._42, m._43, m._44);
+			//matB = glm::transpose(matB);
 
 			state = SeparatingAxisTheorem::CheckCollision(
+				result,
 				*TestBoxA->GetModel()->GetMeshes()[0]->GetConvexHull(),
-				TestBoxA->GetWorldMatrix(),
+				matA,
 				*TestBoxB->GetModel()->GetMeshes()[0]->GetConvexHull(),
-				TestBoxB->GetWorldMatrix(),
-				nullptr);
+				matB,
+				&manifold);
 		}
 
 		if (resolveCollision && state)
 		{
-			float halfDepth = -manifold.Depth * 0.5f;
-			Vector3 displacement = Vector3(
-				manifold.ContactPoints[0].Normal.x * halfDepth,
-				manifold.ContactPoints[0].Normal.y * halfDepth,
-				manifold.ContactPoints[0].Normal.z * halfDepth);
+			for (size_t i = 0; i < manifold.ContactPoints.size(); i++)
+			{
+				const Contact& contact = manifold.ContactPoints[i];				
+				float halfDepth = contact.Depth * 0.5f;
 
-			TestBoxA->Translate(displacement);
+				Vector3 displacement = Vector3(
+					manifold.Normal.x * halfDepth,
+					manifold.Normal.y * halfDepth,
+					manifold.Normal.z * halfDepth);
 
-			displacement = Vector3(
-				manifold.ContactPoints[1].Normal.x * halfDepth,
-				manifold.ContactPoints[1].Normal.y * halfDepth,
-				manifold.ContactPoints[1].Normal.z * halfDepth);
+				TestBoxA->Translate(displacement);
 
-			TestBoxB->Translate(displacement);
+				displacement = Vector3(
+					manifold.Normal.x * -halfDepth,
+					manifold.Normal.y * -halfDepth,
+					manifold.Normal.z * -halfDepth);
+
+				TestBoxB->Translate(displacement);
+			}
 		}
 	}
 }
@@ -257,15 +287,18 @@ void World::OnIMGUIRender()
 	ImGui::Text(state ? "Colliding" : "Not Colliding");
 
 	ImGui::SeparatorText("Manifold Details");
+
 	if (state)
 	{
-		ImGui::Text("Depth : %f", manifold.Depth);
+		ImGui::Text("COLLISION DETECTED! face distance 0: %f face distance 1: %f edge distance: %f", result.FaceTestA.Distance, result.FaceTestB.Distance, result.EdgeTest.Distance);
+		
+		ImGui::Text("Normal: %f %f %f", manifold.Normal.x, manifold.Normal.y, manifold.Normal.z);
 
 		if (ImGui::BeginTable("Hit Points", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
 		{
 			ImGui::TableSetupColumn("Index");
 			ImGui::TableSetupColumn("Hit Point");
-			ImGui::TableSetupColumn("Normal");
+			ImGui::TableSetupColumn("Depth");
 			ImGui::TableHeadersRow();
 
 			for (size_t i = 0; i < manifold.ContactPoints.size(); i++)
@@ -275,10 +308,10 @@ void World::OnIMGUIRender()
 				ImGui::Text("%i", i);
 
 				ImGui::TableSetColumnIndex(1);
-				ImGui::Text("%f %f %f\n", manifold.ContactPoints[i].HitPoint.x, manifold.ContactPoints[i].HitPoint.y, manifold.ContactPoints[i].HitPoint.z);
+				ImGui::Text("%f %f %f", manifold.ContactPoints[i].HitPoint.x, manifold.ContactPoints[i].HitPoint.y, manifold.ContactPoints[i].HitPoint.z);
 
 				ImGui::TableSetColumnIndex(2);
-				ImGui::Text("%f %f %f\n", manifold.ContactPoints[i].Normal.x, manifold.ContactPoints[i].Normal.y, manifold.ContactPoints[i].Normal.z);
+				ImGui::Text("%f", manifold.ContactPoints[i].Depth);
 			}
 
 			ImGui::EndTable();
@@ -286,6 +319,7 @@ void World::OnIMGUIRender()
 	}
 	else
 	{
+		ImGui::Text("NO COLLISION DETECTED! face distance 0: %f face distance 1: %f edge distance: %f", result.FaceTestA.Distance, result.FaceTestB.Distance, result.EdgeTest.Distance);
 		ImGui::Text("No collision.");
 	}
 

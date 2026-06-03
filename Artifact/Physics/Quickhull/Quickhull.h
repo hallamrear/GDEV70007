@@ -6,6 +6,7 @@
 #include <System/Maths.h>
 #include <System/Maths/Plane.h>
 #include <System/Maths/Triangle.h>
+#include <glm/glm.hpp>
 
 //todo : find a way to remove
 #include <Rendering/VertexBuffer.h>
@@ -18,7 +19,7 @@ struct ConvexHullVertex
 	int VertexID = -1;
 	ConvexHullVertex* Next = nullptr;
 	ConvexHullVertex* Prev = nullptr;
-	Vector3 Vertex = Vector3(0.0f, 0.0f, 0.0f);
+	glm::vec3 Vertex = glm::vec3(0.0f, 0.0f, 0.0f);
 	bool Dead = false;
 
 protected:
@@ -30,7 +31,7 @@ protected:
 	}
 };
 
-typedef std::vector<Vector3> PointCloud;
+typedef std::vector<glm::vec3> PointCloud;
 typedef std::vector<ConvexHullVertex*> ConflictList;
 
 struct Simplex
@@ -39,9 +40,9 @@ private:
 	int m_Size;
 
 public:
-	Vector3 Points[4];
+	glm::vec3 Points[4];
 	
-	void PushFront(const Vector3& point)
+	void PushFront(const glm::vec3& point)
 	{
 		Points[3] = Points[2];
 		Points[2] = Points[1];
@@ -50,7 +51,7 @@ public:
 		m_Size = std::min(m_Size + 1, 4);
 	}
 
-	void PushBack(const Vector3& point)
+	void PushBack(const glm::vec3& point)
 	{
 		Points[m_Size] = point;
 		m_Size = std::min(m_Size + 1, 4);
@@ -139,7 +140,7 @@ public:
 
 	const std::vector<ConvexHullHalfEdge*>& GetEdgeList() const { return m_FinalEdgeList; };
 
-	Vector3 FindSupportVertex(const Vector3& direction, int& vertexIndex) const;
+	glm::vec3 FindSupportVertex(const glm::vec3& direction, int& vertexIndex) const;
 
 	ConvexHullVertex* GetNewVertex();
 	ConvexHullHalfEdge* GetNewEdge();
@@ -209,7 +210,7 @@ public:
 class Quickhull
 {
 public:
-	static ConvexHull* GenerateConvexHull(PointCloud& pointCloud);
+	static ConvexHull* GenerateConvexHull(std::vector<Vector3>& pointCloud);
 
 	//Specific Maths helpers
 private:

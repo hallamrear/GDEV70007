@@ -275,11 +275,14 @@ void Engine::Update(const float& deltaTime)
 
 		if (m_World->TestBoxA != nullptr)
 		{
-			if (thumbstickRight.x > (0.0f + FLT_EPSILON) || thumbstickRight.x < (0.0f - FLT_EPSILON) ||
-				thumbstickRight.y >(0.0f + FLT_EPSILON) || thumbstickRight.y < (0.0f - FLT_EPSILON))
-			{
-				//m_World->TestBoxA->Rotate(Vector3(rotationSpeed * -thumbstickRight.y, rotationSpeed * thumbstickRight.x, 0.0f));
-			}
+			float leftTrigger = m_InputListener.GetControllerAnalogValue(0, CONTROLLER_ANALOG_LEFT_TRIGGER);
+			float rightTrigger = m_InputListener.GetControllerAnalogValue(0, CONTROLLER_ANALOG_RIGHT_TRIGGER);
+
+			if (leftTrigger > 0)
+				m_World->TestBoxA->Rotate(Vector3(rotationSpeed * leftTrigger, 0.0f, 0.0f));
+
+			if (rightTrigger > 0)
+				m_World->TestBoxA->Rotate(Vector3(0.0f, rotationSpeed * rightTrigger, 0.0f));
 
 			Vector3 localForward = m_World->TestBoxB->GetForwardVector();
 			Vector3 localRight = m_World->TestBoxB->GetRightVector();

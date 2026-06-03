@@ -394,7 +394,7 @@ bool GJK::CheckCollision(const Collider& colliderA, const Collider& colliderB, C
 				EPA_Result CSO = EPA::GetCollisionDetails(simplex, colliderA, colliderB, manifold);
 
 				////This is our closest point to the origin on the CSO’s boundary.
-				Vector3 PointOnTri = Vector3(CSO.Tri.Normal.x * manifold->Depth, CSO.Tri.Normal.y * manifold->Depth, CSO.Tri.Normal.z * manifold->Depth);
+				Vector3 PointOnTri = Vector3(CSO.Tri.Normal.x * CSO.Depth, CSO.Tri.Normal.y * CSO.Depth, CSO.Tri.Normal.z * CSO.Depth);
 				//
 				//Compute the barycentric coordinates of this closest point in the CSO triangle.
 				Vector3 BaryCentPointOnTri = Maths::CalculateBarycentricPositionOnTriangle(PointOnTri, CSO.Tri.Points[0].MinkowskiDifference, CSO.Tri.Points[1].MinkowskiDifference, CSO.Tri.Points[2].MinkowskiDifference);
@@ -412,17 +412,13 @@ bool GJK::CheckCollision(const Collider& colliderA, const Collider& colliderB, C
 				Vector3 Bc = Maths::MultiplyScalar(BaryCentPointOnTri.z, CSO.Tri.Points[2].SupportVertexB);
 				Vector3 HitPointB = Vector3(Ba.x + Bb.x + Bc.x, Ba.y + Bb.y + Bc.y, Ba.z + Bb.z + Bc.z);
 
-				manifold->ContactPoints.push_back(Contact());
-				manifold->ContactPoints[0].HitPoint = HitPointA;
-				manifold->ContactPoints[0].SubjectA = &colliderA;
-				manifold->ContactPoints[0].SubjectB = &colliderB;
-				manifold->ContactPoints[0].Normal = CSO.Tri.Normal;
+				//manifold->CollisionPair = { colliderA, colliderB };
+				manifold->Normal = CSO.Tri.Normal;
 
-				manifold->ContactPoints.push_back(Contact());
-				manifold->ContactPoints[1].HitPoint = HitPointB;
-				manifold->ContactPoints[1].SubjectA = &colliderB;
-				manifold->ContactPoints[1].SubjectB = &colliderA;
-				manifold->ContactPoints[1].Normal = Vector3(-CSO.Tri.Normal.x, -CSO.Tri.Normal.y, -CSO.Tri.Normal.z);
+				Contact contactA;
+				contactA.HitPoint = HitPointA;
+				contactA.Depth = CSO.Depth;
+				manifold->ContactPoints.push_back(contactA);
 			}
 				
 			return true;

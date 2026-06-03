@@ -668,15 +668,33 @@ void DX12Renderer::Render(const ModelRef& model, const Matrix4x4& worldMatrix)
             GetCommandList()->DrawInstanced(mesh->GetVertexBuffer().GetElementCount(), 1, 0, 0);
         }
 
+        static Vector4 colours[4] =
+        {
+            { 1.0f, 0.0f, 0.0f, 1.0f},
+            { 1.0f, 1.0f, 0.0f, 1.0f},
+            { 1.0f, 0.0f, 1.0f, 1.0f},
+            { 1.0f, 1.0f, 1.0f, 1.0f},
+        };
+
         if (mesh->GetConvexHull() != nullptr)
         {
             const ConvexHull* hull = mesh->GetConvexHull();
 
+            //int index = (model->GetDisplayName() == "BoxCollider.glb") ? 0 : 1;
+            int index = 0;
+
             //SetLineDrawMode();
             SetDebugDrawMode();
+            m_PushConstants->Padding.m[0][0] = colours[index].x;
+            m_PushConstants->Padding.m[0][1] = colours[index].y;
+            m_PushConstants->Padding.m[0][2] = colours[index].z;
+            m_PushConstants->Padding.m[0][3] = colours[index].w;
+
             GetCommandList()->IASetVertexBuffers(0, 1, &hull->GetDrawVertexBuffer().GetBufferView());
             GetCommandList()->DrawInstanced(hull->GetDrawVertexBuffer().GetElementCount(), 1, 0, 0);
             SetDefaultDrawMode();
+
+            index = index + 1 % 4;
         }
     }
 }

@@ -4,53 +4,19 @@
 
 struct Contact
 {
-	const Collider* SubjectA;
-	const Collider* SubjectB;
-	/// <summary>
-	/// Hit point is always relative to the position of subject A.
-	/// </summary>
-	Vector3 HitPoint;
-	Vector3 Normal;
-
-	Contact(const Collider* subjectA, const Collider* subjectB, const Vector3 hitPoint, const Vector3 contactNormal) :
-		SubjectA(subjectA),
-		SubjectB(subjectB),
-		HitPoint(hitPoint),
-		Normal(contactNormal)
-	{
-
-	}
-
-	Contact()
-	{
-		SubjectA = nullptr;
-		SubjectB = nullptr;
-		HitPoint = Vector3(0.0f, 0.0f, 0.0f);
-		Normal = Vector3(0.0f, 0.0f, 0.0f);
-	}
+	Vector3 HitPoint = Vector3(0.0f, 0.0f, 0.0f);
+	float Depth = 0.0f;
 };
 
 struct CollisionManifold
 {
-	float Depth;
+	std::pair<int, int> CollisionPair;
+	Vector3 Normal = Vector3(0.0f, 0.0f, 0.0f);
 	std::vector<Contact> ContactPoints;
-
-	CollisionManifold()
-	{
-		ContactPoints = std::vector<Contact>();
-		Depth = 0.0f;
-	}
-
-	~CollisionManifold()
-	{
-		Reset();
-		Depth = 0.0f;
-	}
 
 	void Reset()
 	{
 		ContactPoints.clear();
-		Depth = 0.0f;
 	}
 };
 
@@ -111,4 +77,5 @@ public:
 	} Tri;
 
 	SupportVertex supportVertex;
+	float Depth = 0.0f;
 };

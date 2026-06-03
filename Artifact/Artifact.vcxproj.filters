@@ -370,5 +370,7 @@
     <None Include="Content\Barrel.glb" />
     <None Include="Content\blasterG.glb" />
     <None Include="Content\police.glb" />
+    <None Include="Content\LongBox.glb" />
+    <None Include="Content\TestCone.glb" />
   </ItemGroup>
 </Project>

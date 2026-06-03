@@ -343,7 +343,6 @@ EPA_Result EPA::GetCollisionDetails(std::vector<SupportVertex>& simplex, const C
 
 	//Return the normal and depth (add a tiny amount to avoid multiple collisions).
 	//manifold->Normal = glm::normalize(minNormal);
-	manifold->Depth = minDistance + 0.001f;
 
 	EPA_Result::Triangle triangle;
 	for (size_t i = 0; i < 3; i++)
@@ -355,6 +354,7 @@ EPA_Result EPA::GetCollisionDetails(std::vector<SupportVertex>& simplex, const C
 	triangle.Normal = Maths::GetNormalOfTriangle(triangle.Points[0].MinkowskiDifference, triangle.Points[1].MinkowskiDifference, triangle.Points[2].MinkowskiDifference);
 
 	result.Tri = triangle;
+	result.Depth = minDistance + 0.001f;
 
 	return result;
 }

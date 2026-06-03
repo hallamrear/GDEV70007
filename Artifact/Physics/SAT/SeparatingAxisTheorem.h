@@ -1,7 +1,9 @@
 #pragma once
+#include <Physics/Structures.h>
 #include <System/Maths.h>
 #include <System/Maths/Plane.h>
 #include <System/Maths/Triangle.h>
+#include <glm/glm.hpp>
 
 #define SAT_EPSILON (0.00001f)
 
@@ -36,21 +38,39 @@ struct SAT_Result
 	EdgeQuery EdgeTest;
 };
 
+struct EdgeContact
+{
+	EdgeQuery Query;
+	Vector3 MidPoint = Vector3(0.0f, 0.0f, 0.0f);
+	Vector3 Axis = Vector3(0.0f, 0.0f, 0.0f);
+};
+
+struct FaceContact
+{
+	FaceQuery Query;
+	std::vector<Vector3> vertices;
+};
+
 class SeparatingAxisTheorem
 {
 private:	
-	static bool IsMinkowskiFace(const Vector3& BxA, const Vector3& DxC, const Vector3& a, const Vector3& b, const Vector3& c, const Vector3& d);
-	static bool ParallelTest(const Vector3& crossBA, const Vector3& crossDC);
+	static EdgeContact CreateEdgeContacts(const EdgeQuery& edgeQuery, const ConvexHull& hullA, const glm::mat4x4& hullAMatrix, const ConvexHull& hullB, const glm::mat4x4& hullBMatrix);
+	static std::vector<Contact> ConvertContactToWorldSpace(const FaceContact& faceContact);
+	static Contact ConvertContactToWorldSpace(const EdgeContact& edgeContact);
+	static void ConstructContactManifold(CollisionManifold& manifold, const SAT_Result& satResult, const ConvexHull& hullA, const glm::mat4x4& hullAMatrix, const ConvexHull& hullB, const glm::mat4x4& hullBMatrix);
 
-	static float EdgeEdgeDistance(const Vector3& crossBA, const Vector3& crossDC, const Vector3& edgeA_WSOrigin, const Vector3& edgeB_WSOrigin, const Vector3& colliderWSOrigin);
+	static bool IsMinkowskiFace(const glm::vec3& BxA, const glm::vec3& DxC, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec3& d);
+	static bool ParallelTest(const glm::vec3& crossBA, const glm::vec3& crossDC);
 
-	static void MapVertexToGaussMap(const Matrix4x4& worldMatrix, const ConvexHullHalfEdge& edge,
-		   Vector3& edgeOrigin, Vector3& arcEdge, Vector3& vertexA, Vector3& vertexB);
+	static float EdgeEdgeDistance(const glm::vec3& crossBA, const glm::vec3& crossDC, const glm::vec3& edgeA_WSOrigin, const glm::vec3& edgeB_WSOrigin, const glm::vec3& colliderWSOrigin);
 
-	static FaceQuery QueryFace(const ConvexHull& hullA, const Matrix4x4& hullAMatrix, const ConvexHull& hullB, const Matrix4x4& hullBMatrix);
-	static EdgeQuery QueryEdge(const ConvexHull& hullA, const Matrix4x4& hullAMatrix, const ConvexHull& hullB, const Matrix4x4& hullBMatrix);
+	static void MapVertexToGaussMap(const glm::mat3x3& worldMatrix, const ConvexHullHalfEdge& edge,
+		   glm::vec3& edgeOrigin, glm::vec3& arcEdge, glm::vec3& vertexA, glm::vec3& vertexB);
+
+	static FaceQuery QueryFace(const ConvexHull& hullA, const glm::mat4x4& hullAMatrix, const ConvexHull& hullB, const glm::mat4x4& hullBMatrix);
+	static EdgeQuery QueryEdge(const ConvexHull& hullA, const glm::mat4x4& hullAMatrix, const ConvexHull& hullB, const glm::mat4x4& hullBMatrix);
 
 public:
-	static bool CheckCollision(const ConvexHull& hullA, const Matrix4x4& hullAMatrix, const ConvexHull& hullB, const Matrix4x4& hullBMatrix, CollisionManifold* manifold = nullptr);
+	static bool CheckCollision(SAT_Result& result, const ConvexHull& hullA, const glm::mat4x4& hullAMatrix, const ConvexHull& hullB, const glm::mat4x4& hullBMatrix, CollisionManifold* manifold = nullptr);
 };
 
