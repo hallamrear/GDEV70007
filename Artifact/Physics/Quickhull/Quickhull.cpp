@@ -13,7 +13,7 @@ struct EqualPredicate {
 	bool operator()(const glm::vec3& l, const glm::vec3& r)
 	{
 		//return (std::abs(l.x - r.x) < FLT_EPSILON && std::abs(l.y - r.y) < FLT_EPSILON && std::abs(l.z - r.z) < FLT_EPSILON);
-		
+
 		if ((l.x == r.x) && (l.y == r.y) && (l.z == r.z))
 			return true;
 		else

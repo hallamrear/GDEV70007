@@ -6,6 +6,8 @@
 #include <Physics/Quickhull/Quickhull.h>
 #include <glm/gtx/norm.hpp>
 #include <glm/gtc/matrix_access.hpp>
+#include <World/Entity.h>
+#include <Rendering/Geometry/Mesh.h>
 
 using namespace Maths;
 
@@ -233,8 +235,25 @@ EdgeQuery SeparatingAxisTheorem::QueryEdge(const ConvexHull& hullA, const glm::m
 	return edgeQuery;
 }
 
-bool SeparatingAxisTheorem::CheckCollision(SAT_Result& result, const ConvexHull& hullA, const glm::mat4x4& hullAMatrix, const ConvexHull& hullB, const glm::mat4x4& hullBMatrix, CollisionManifold* manifold)
+bool SeparatingAxisTheorem::CheckCollision(SAT_Result& result, Entity const* entityA, Entity const* entityB, CollisionManifold* manifold)
 {
+	Matrix4x4 mA = entityA->GetWorldMatrix();
+	glm::mat4x4 hullAMatrix = glm::mat4x4(
+		mA._11, mA._12, mA._13, mA._14,
+		mA._21, mA._22, mA._23, mA._24,
+		mA._31, mA._32, mA._33, mA._34,
+		mA._41, mA._42, mA._43, mA._44);
+
+	Matrix4x4 mB = entityB->GetWorldMatrix();
+	glm::mat4x4 hullBMatrix = glm::mat4x4(
+		mB._11, mB._12, mB._13, mB._14,
+		mB._21, mB._22, mB._23, mB._24,
+		mB._31, mB._32, mB._33, mB._34,
+		mB._41, mB._42, mB._43, mB._44);
+
+	const ConvexHull& hullA = *entityA->GetModel()->GetMeshes()[0]->GetConvexHull();
+	const ConvexHull& hullB = *entityB->GetModel()->GetMeshes()[0]->GetConvexHull();
+
 	result.EdgeTest.Distance = -INFINITY;
 	result.FaceTestA = QueryFace(hullA, hullAMatrix, hullB, hullBMatrix);
 
@@ -260,6 +279,9 @@ bool SeparatingAxisTheorem::CheckCollision(SAT_Result& result, const ConvexHull&
 	if (manifold != nullptr)
 	{
 		ConstructContactManifold(*manifold, result, hullA, hullAMatrix, hullB, hullBMatrix);
+		manifold->Normal = Normalised(manifold->Normal);
+		manifold->CollisionPair.first = entityA;
+		manifold->CollisionPair.second = entityB;
 	}
 
 	return true;
@@ -448,8 +470,7 @@ FaceContact SeparatingAxisTheorem::CreateFaceContacts(const FaceQuery& faceQuery
 		faceContact.HitPoints.push_back(ClosestPointOnPlane(referenceFacePlane, incidentVertex));
 	}
 
-	//todo : ACTUALLY REDUCE CONTACT POINTS DOWN TO 4 HOLY CHRIST
-	//ReduceContactPoints(faceContact);
+	ReduceContactPoints(faceContact);
 
 	//todo : is this necessary?
 	glm::vec4 incidentFacePlane = { incidentFace->Plane.x, incidentFace->Plane.y, incidentFace->Plane.z, incidentFace->Plane.w };
@@ -482,6 +503,137 @@ bool IntersectionPlaneVsRay(
 	}
 
 	return false;
+}
+
+struct LessThanPredicate {
+	bool operator()(const glm::vec3& l, const glm::vec3& r)
+	{
+		if (l.x != r.x)
+			return (r.x - l.x) > SAT_EPSILON;
+
+		if (l.y != r.y)
+			return (r.y - l.y) > SAT_EPSILON;
+
+		return (r.z - l.z) > SAT_EPSILON;
+	}
+};
+
+void SeparatingAxisTheorem::ReduceContactPoints(FaceContact& faceContact)
+{
+	static LessThanPredicate lessThan;
+
+	glm::vec3 searchDirection = glm::normalize(glm::vec3(1.0f, 1.0f, 1.0f));
+
+	//std::unique erasing requires a sorted list.
+	std::sort(faceContact.HitPoints.begin(), faceContact.HitPoints.end(), lessThan);
+	faceContact.HitPoints.erase(std::unique(faceContact.HitPoints.begin(), faceContact.HitPoints.end()), faceContact.HitPoints.end());
+
+	std::vector<glm::vec3> refinedPoints;
+	refinedPoints.resize(4);
+
+	std::vector<float> refinedPointDistances;
+	refinedPointDistances.resize(4);
+	refinedPointDistances[0] = -INFINITY;
+	refinedPointDistances[1] = -INFINITY;
+	refinedPointDistances[2] = 0.0f;
+	refinedPointDistances[3] = 0.0f;
+
+	size_t initialVertexCount = faceContact.HitPoints.size();
+	for (size_t i = 0; i < initialVertexCount; i++)
+	{
+		const glm::vec3& vertex = faceContact.HitPoints[i];
+
+		float distance = glm::dot(searchDirection, vertex);
+
+		//if (distance > refinedPointDistances[0])
+		if (distance - refinedPointDistances[0] > 0.01f)
+		{
+			refinedPoints[0] = vertex;
+			refinedPointDistances[0] = distance;
+		}
+	}
+
+	for (size_t i = 0; i < initialVertexCount; i++)
+	{
+		const glm::vec3& vertex = faceContact.HitPoints[i];
+		searchDirection = (vertex - refinedPoints[0]);
+
+		float distance = glm::dot(searchDirection, searchDirection);
+
+		//if (distance - SAT_EPSILON > refinedPointDistances[1])
+		if (distance - refinedPointDistances[1] > 0.01f)
+		{
+			refinedPoints[1] = vertex;
+			refinedPointDistances[1] = distance;
+		}
+	}
+
+
+	glm::vec3 faceNormal = { faceContact.Query.Face->Plane.x, faceContact.Query.Face->Plane.y, faceContact.Query.Face->Plane.z };
+
+	for (size_t i = 0; i < initialVertexCount; i++)
+	{
+		const glm::vec3& vertex = faceContact.HitPoints[i];
+		glm::vec3 triangleNormal = glm::cross(refinedPoints[0] - vertex, refinedPoints[1] - vertex);
+		float distance = glm::dot(triangleNormal, faceNormal);
+
+		if (distance - refinedPointDistances[2] > 0.01f)
+		//if (area - SAT_EPSILON > refinedPointDistances[2])
+		{
+			refinedPointDistances[2] = distance;
+			refinedPoints[2] = vertex;
+		}
+	}
+
+	for (size_t i = 0; i < initialVertexCount; i++)
+	{
+		const glm::vec3& Q = faceContact.HitPoints[i];
+
+		//ABQ
+		glm::vec3 normal = glm::cross(refinedPoints[0] - Q, refinedPoints[1] - Q);
+		float windingOrder = glm::dot(normal, faceNormal);
+
+		//Testing against 0 to ensure winding order. < 0 is clockwise.
+
+		if (windingOrder - refinedPointDistances[3] > 0.01f)
+		//if (windingOrder - SAT_EPSILON < refinedPointDistances[3])
+		{
+			refinedPoints[3] = Q;
+			refinedPointDistances[3] = windingOrder;
+		}
+
+		//Test other axis.
+		//BCQ
+		normal = glm::cross(refinedPoints[0] - Q, refinedPoints[2] - Q);
+		windingOrder = glm::dot(normal, faceNormal);
+
+		//Testing against 0 to ensure winding order. < 0 is clockwise.
+		if (windingOrder - refinedPointDistances[3] > 0.01f)
+		//if (windingOrder < refinedPointDistances[3])
+		{
+			refinedPoints[3] = Q;
+			refinedPointDistances[3] = windingOrder;
+		}
+		
+		//CAQ
+		normal = glm::cross(refinedPoints[2] - Q, refinedPoints[1] - Q);
+		windingOrder = glm::dot(normal, faceNormal);
+
+		//Testing against 0 to ensure winding order. < 0 is clockwise.
+		if (windingOrder - refinedPointDistances[3] > 0.01f)
+		//if (windingOrder < refinedPointDistances[3])
+		{
+			refinedPoints[3] = Q;
+			refinedPointDistances[3] = windingOrder;
+		}
+	}
+
+	faceContact.HitPoints.clear();
+	faceContact.HitPoints.resize(4);
+	faceContact.HitPoints[0] = refinedPoints[0];
+	faceContact.HitPoints[1] = refinedPoints[1];
+	faceContact.HitPoints[2] = refinedPoints[2];
+	faceContact.HitPoints[3] = refinedPoints[3];
 }
 
 /// <summary>
@@ -665,8 +817,6 @@ void SeparatingAxisTheorem::ConstructContactManifold(CollisionManifold& manifold
 			manifold.ContactPoints.push_back(contacts[i]);
 		}
 	}
-
-	//contactManifold->constraintType = ConstraintType::CONTACT;
 }
 
 bool SeparatingAxisTheorem::IsMinkowskiFace(const glm::vec3& BxA, const glm::vec3& DxC, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec3& d)

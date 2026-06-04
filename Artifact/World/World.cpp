@@ -163,6 +163,13 @@ Entity* World::CreateEntity(const std::string& displayName)
 	return entity;
 }
 
+
+#include <System/InputListener.h>
+#include <Physics/SAT/SeparatingAxisTheorem.h>
+#include <Rendering/Geometry/Model.h>
+#include <Rendering/Geometry/Mesh.h>
+#include <glm/glm.hpp>
+static SAT_Result result;
 void World::FixedUpdate()
 {
 	for (auto& itr : m_EntityMap)
@@ -175,15 +182,58 @@ void World::FixedUpdate()
 
 	DestroyDeadEntities();
 
+
+	state = false;
+	manifold.Reset();
+
+	if (TestBoxA && TestBoxB)
+	{
+		//Collider* colliderA = TestBoxA->GetCollider();
+		//Collider* colliderB = TestBoxB->GetCollider();
+		//if (colliderA != nullptr && colliderB != nullptr)
+		{
+			state = SeparatingAxisTheorem::CheckCollision(
+				result,
+				TestBoxA,
+				TestBoxB,
+				&manifold);
+
+			if (state)
+			{
+				manifold.CollisionPair.first = TestBoxA;
+				manifold.CollisionPair.second = TestBoxB;
+			}
+		}
+
+		if (resolveCollision && state)
+		{
+			float split = (1.0f / (float)manifold.ContactPoints.size());
+
+			for (size_t i = 0; i < manifold.ContactPoints.size(); i++)
+			{
+				const Contact& contact = manifold.ContactPoints[i];
+
+				float halfDepth = contact.Depth * 0.5f * split;
+
+				Vector3 displacement = Vector3(
+					-manifold.Normal.x * halfDepth,
+					-manifold.Normal.y * halfDepth,
+					-manifold.Normal.z * halfDepth);
+
+				manifold.CollisionPair.first->Translate(displacement);
+
+				displacement = Vector3(
+					manifold.Normal.x * halfDepth,
+					manifold.Normal.y * halfDepth,
+					manifold.Normal.z * halfDepth);
+
+				manifold.CollisionPair.second->Translate(displacement);
+			}
+		}
+	}
+
 	m_PhysicsWorld.FixedUpdate();
 }
-
-#include <System/InputListener.h>
-#include <Physics/SAT/SeparatingAxisTheorem.h>
-#include <Rendering/Geometry/Model.h>
-#include <Rendering/Geometry/Mesh.h>
-#include <glm/glm.hpp>
-static SAT_Result result;
 
 void World::Update(const float& deltaTime)
 {
@@ -214,75 +264,6 @@ void World::Update(const float& deltaTime)
 		}*/
 	}
 
-
-	state = false;
-	manifold.Reset();
-
-	if (TestBoxA && TestBoxB)
-	{	
-		//Collider* colliderA = TestBoxA->GetCollider();
-		//Collider* colliderB = TestBoxB->GetCollider();
-		//if (colliderA != nullptr && colliderB != nullptr)
-		{
-			//state = SeparatingAxisTheorem::CheckCollision(*colliderA, *colliderB, &manifold);
-
-			Matrix4x4 m = TestBoxA->GetWorldMatrix();
-
-			glm::mat4x4 matA = glm::mat4x4(
-				m._11, m._12, m._13, m._14,
-				m._21, m._22, m._23, m._24,
-				m._31, m._32, m._33, m._34,
-				m._41, m._42, m._43, m._44);
-			//matA = glm::transpose(matA);
-
-			m = TestBoxB->GetWorldMatrix();
-
-			glm::mat4x4 matB = glm::mat4x4(
-				m._11, m._12, m._13, m._14,
-				m._21, m._22, m._23, m._24,
-				m._31, m._32, m._33, m._34,
-				m._41, m._42, m._43, m._44);
-			//matB = glm::transpose(matB);
-
-			state = SeparatingAxisTheorem::CheckCollision(
-				result,
-				*TestBoxA->GetModel()->GetMeshes()[0]->GetConvexHull(),
-				matA,
-				*TestBoxB->GetModel()->GetMeshes()[0]->GetConvexHull(),
-				matB,
-				&manifold);
-
-			if (state)
-			{
-				manifold.CollisionPair.first = TestBoxA;
-				manifold.CollisionPair.second = TestBoxB;
-			}
-		}
-
-		if (resolveCollision && state)
-		{
-			for (size_t i = 0; i < manifold.ContactPoints.size(); i++)
-			{
-				const Contact& contact = manifold.ContactPoints[i];	
-
-				float halfDepth = contact.Depth * 0.5f;
-
-				Vector3 displacement = Vector3(
-					manifold.Normal.x * halfDepth,
-					manifold.Normal.y * halfDepth,
-					manifold.Normal.z * halfDepth);
-
-				manifold.CollisionPair.first->Translate(displacement);
-
-				displacement = Vector3(
-					-manifold.Normal.x * halfDepth,
-					-manifold.Normal.y * halfDepth,
-					-manifold.Normal.z * halfDepth);
-
-				manifold.CollisionPair.second->Translate(displacement);
-			}
-		}
-	}
 }
 
 void World::OnIMGUIRender()

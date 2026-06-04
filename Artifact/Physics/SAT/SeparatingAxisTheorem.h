@@ -51,12 +51,15 @@ struct FaceContact
 	std::vector<glm::vec3> HitPoints;
 };
 
+class Entity;
+
 class SeparatingAxisTheorem
 {
 private:	
 	static ConvexHullFace* FindIncidentFace(const ConvexHull& incidentHull, const glm::mat4x4& inverseIncidentMatrix, const ConvexHullFace* referenceFace);
 	static EdgeContact CreateEdgeContacts(const EdgeQuery& edgeQuery, const ConvexHull& hullA, const glm::mat4x4& hullAMatrix, const ConvexHull& hullB, const glm::mat4x4& hullBMatrix);
 	static FaceContact CreateFaceContacts(const FaceQuery& faceQuery, const ConvexHull& referenceHull, const glm::mat4x4& referenceHullMatrix, const ConvexHull& incidentHull, const glm::mat4x4& incidentHullMatrix);
+	static void ReduceContactPoints(FaceContact& faceContact);
 	static std::vector<glm::vec3> ClipEdgesAgainstPlane(const glm::vec4& plane, const std::vector<glm::vec3>& edges);
 	static glm::vec3 ClosestPointOnPlane(const glm::vec4& plane, const glm::vec3& point);
 	static std::vector<Contact> ConvertContactToWorldSpace(const FaceContact& faceContact);
@@ -75,6 +78,6 @@ private:
 	static EdgeQuery QueryEdge(const ConvexHull& hullA, const glm::mat4x4& hullAMatrix, const ConvexHull& hullB, const glm::mat4x4& hullBMatrix);
 
 public:
-	static bool CheckCollision(SAT_Result& result, const ConvexHull& hullA, const glm::mat4x4& hullAMatrix, const ConvexHull& hullB, const glm::mat4x4& hullBMatrix, CollisionManifold* manifold = nullptr);
+	static bool CheckCollision(SAT_Result& result, Entity const* entityA, Entity const* entityB, CollisionManifold* manifold = nullptr);
 };
 
