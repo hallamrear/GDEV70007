@@ -10,7 +10,7 @@ struct Contact
 
 struct CollisionManifold
 {
-	std::pair<Entity const*, Entity const*> CollisionPair;
+	std::pair<Entity*, Entity*> CollisionPair;
 	Vector3 Normal = Vector3(0.0f, 0.0f, 0.0f);
 	std::vector<Contact> ContactPoints;
 

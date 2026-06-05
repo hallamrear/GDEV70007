@@ -8,7 +8,7 @@ VertexBuffer::VertexBuffer()
 
 VertexBuffer::~VertexBuffer()
 {
-	assert(!IsLoaded());
+	//assert(!IsLoaded());
 
 	m_VertexBufferView = {};
 

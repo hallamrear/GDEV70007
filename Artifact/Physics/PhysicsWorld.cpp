@@ -1,11 +1,13 @@
 #include "pch.h"
 #include "PhysicsWorld.h"
 #include "Rigidbody.h"
+#include <Physics/SAT/SeparatingAxisTheorem.h>
 
 PhysicsWorld::PhysicsWorld()
 {
 	m_RigidbodyList = new Rigidbody[c_MaxRigidbodyCount];
 	m_ActiveRigidbodyCount = 0;
+	m_ResolutionType = 0;
 }
 
 PhysicsWorld::~PhysicsWorld()
@@ -38,6 +40,62 @@ Rigidbody& PhysicsWorld::GetFreshRigidbody()
 	m_ActiveRigidbodyCount++;
 	rb.IsActive = true;
 	return rb;
+}
+
+void PhysicsWorld::OnIMGUIRender()
+{
+	ImGui::Begin("Physics");
+
+	if (ImGui::CollapsingHeader("Physics Settings"))
+	{
+		ImGui::DragInt("Resolution Type", &m_ResolutionType, 1.0f, 0, 2);
+		ImGui::DragInt("Resolver Iterations", &CollisionResolver::RESOLUTION_ITERATIONS, 1, 1, 100);
+		ImGui::DragFloat("Air Friction", &CollisionResolver::AIR_FRICTION, 0.01f, 0.0f, 1.0f);
+		ImGui::DragFloat("Baumgarte", &CollisionResolver::BAUMGARTE_STABILISATION_VALUE, 0.01f, 0.0f, 1.0f);
+		ImGui::DragFloat("Intersection allowance", &CollisionResolver::ALLOWED_INTERSECTION, 0.01f, 0.0f, 1.0f);
+	}
+
+	if (ImGui::CollapsingHeader("Data"))
+	{
+		ImGui::SeparatorText("Manifold Details");
+
+		if (m_FrameCollisionManifolds.size() > 0)
+		{
+			for (size_t f = 0; f < m_FrameCollisionManifolds.size(); f++)
+			{
+				ImGui::Text("Normal: %f %f %f", m_FrameCollisionManifolds[f].Normal.x, m_FrameCollisionManifolds[f].Normal.y, m_FrameCollisionManifolds[f].Normal.z);
+
+				if (ImGui::BeginTable("Hit Points", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
+				{
+					ImGui::TableSetupColumn("Index");
+					ImGui::TableSetupColumn("Hit Point");
+					ImGui::TableSetupColumn("Depth");
+					ImGui::TableHeadersRow();
+
+					for (size_t i = 0; i < m_FrameCollisionManifolds[f].ContactPoints.size(); i++)
+					{
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0);
+						ImGui::Text("%i", i);
+
+						ImGui::TableSetColumnIndex(1);
+						ImGui::Text("%f %f %f", m_FrameCollisionManifolds[f].ContactPoints[i].HitPoint.x, m_FrameCollisionManifolds[f].ContactPoints[i].HitPoint.y, m_FrameCollisionManifolds[f].ContactPoints[i].HitPoint.z);
+
+						ImGui::TableSetColumnIndex(2);
+						ImGui::Text("%f", m_FrameCollisionManifolds[f].ContactPoints[i].Depth);
+					}
+
+					ImGui::EndTable();
+				}
+			}
+		}
+		else
+		{
+			ImGui::Text("No collisions this frame.");
+		}
+	}
+
+	ImGui::End();
 }
 
 void PhysicsWorld::IntegrateVelocities()
@@ -91,12 +149,77 @@ void PhysicsWorld::IntegrateVelocities()
 
 void PhysicsWorld::CollectCollisionPairs()
 {
+	m_FrameCollisionManifolds.clear();
+	m_FrameConstraintPoints.clear();
 
+	CollisionManifold manifold;
+	Entity* entityA = nullptr;
+	Entity* entityB = nullptr;
+
+	for (size_t x = 0; x < c_MaxRigidbodyCount; x++)
+	{
+		for (size_t y = x; y < c_MaxRigidbodyCount; y++)
+		{
+			if (m_RigidbodyList[x].IsActive == false ||
+				m_RigidbodyList[y].IsActive == false || 
+				x == y)
+				continue;
+
+			entityA = m_RigidbodyList[x].GetEntity();
+			entityB = m_RigidbodyList[y].GetEntity();
+
+			assert(entityA != nullptr);
+			assert(entityB != nullptr);
+
+			manifold.Reset();
+
+			bool collision = SeparatingAxisTheorem::CheckCollision(entityA, entityB, &manifold);
+
+			if (collision)
+			{
+				manifold.CollisionPair.first = entityA;
+				manifold.CollisionPair.second = entityB;
+				m_FrameCollisionManifolds.push_back(manifold);
+			}
+		}
+	}
 }
  
 void PhysicsWorld::SolveConstaints()
 {
+	if (m_FrameCollisionManifolds.size() > 0)
+	{
+		switch (m_ResolutionType)
+		{
+		case 1:
+		{
+			for (size_t i = 0; i < m_FrameCollisionManifolds.size(); i++)
+			{
+				CollisionResolver::SoftResolveCollision(m_FrameCollisionManifolds[i]);
+			}
+		}
+		break;
 
+		case 2:
+		{
+
+			CollisionResolver::ConvertContactManifoldsToConstrainedPoints(m_FrameCollisionManifolds, m_FrameConstraintPoints);
+			CollisionResolver::PrepareConstrainedContacts(m_FrameConstraintPoints);
+
+			m_FrameJacobians = CollisionResolver::CalculateJacobians(m_FrameConstraintPoints);
+			m_FrameConstraints = CollisionResolver::CalculateConstraints(m_FrameJacobians, m_FrameConstraintPoints);
+
+			InverseMassMatrix m_InverseMassMatrix = CollisionResolver::ComputeInverseMassMatrix(m_FrameConstraintPoints);
+
+			CollisionResolver::ResolvePositionConstraint(FIXED_TIMESTEP, m_FrameJacobians, m_InverseMassMatrix, m_FrameConstraints, m_FrameConstraintPoints);
+			CollisionResolver::ResolveVelocityConstraint(FIXED_TIMESTEP, m_FrameJacobians, m_InverseMassMatrix, m_FrameConstraints, m_FrameConstraintPoints);
+		}
+		break;
+
+		default:
+			break;
+		}
+	}
 }
 
 void PhysicsWorld::IntergratePositions()

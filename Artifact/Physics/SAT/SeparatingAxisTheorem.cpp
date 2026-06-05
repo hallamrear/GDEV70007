@@ -235,8 +235,10 @@ EdgeQuery SeparatingAxisTheorem::QueryEdge(const ConvexHull& hullA, const glm::m
 	return edgeQuery;
 }
 
-bool SeparatingAxisTheorem::CheckCollision(SAT_Result& result, Entity const* entityA, Entity const* entityB, CollisionManifold* manifold)
+bool SeparatingAxisTheorem::CheckCollision(Entity* entityA, Entity* entityB, CollisionManifold* manifold)
 {
+	SAT_Result result;
+
 	Matrix4x4 mA = entityA->GetWorldMatrix();
 	glm::mat4x4 hullAMatrix = glm::mat4x4(
 		mA._11, mA._12, mA._13, mA._14,
@@ -251,25 +253,36 @@ bool SeparatingAxisTheorem::CheckCollision(SAT_Result& result, Entity const* ent
 		mB._31, mB._32, mB._33, mB._34,
 		mB._41, mB._42, mB._43, mB._44);
 
-	const ConvexHull& hullA = *entityA->GetModel()->GetMeshes()[0]->GetConvexHull();
-	const ConvexHull& hullB = *entityB->GetModel()->GetMeshes()[0]->GetConvexHull();
+	if (entityA->HasModel() == false ||
+		entityB->HasModel() == false)
+	{
+		return false;
+	}
+
+	const ConvexHull* hullA = entityA->GetModel()->GetMeshes()[0]->GetConvexHull();
+	const ConvexHull* hullB = entityB->GetModel()->GetMeshes()[0]->GetConvexHull();
+
+	if (hullA == nullptr || hullB == nullptr)
+	{
+		return false;
+	}
 
 	result.EdgeTest.Distance = -INFINITY;
-	result.FaceTestA = QueryFace(hullA, hullAMatrix, hullB, hullBMatrix);
+	result.FaceTestA = QueryFace(*hullA, hullAMatrix, *hullB, hullBMatrix);
 
 	if (result.FaceTestA.Distance > SAT_EPSILON)
 	{
 		return false;
 	}
 
-	result.FaceTestB = QueryFace(hullB, hullBMatrix, hullA, hullAMatrix);
+	result.FaceTestB = QueryFace(*hullB, hullBMatrix, *hullA, hullAMatrix);
 
 	if (result.FaceTestB.Distance > SAT_EPSILON)
 	{
 		return false;
 	}
 
-	result.EdgeTest = QueryEdge(hullA, hullAMatrix, hullB, hullBMatrix);
+	result.EdgeTest = QueryEdge(*hullA, hullAMatrix, *hullB, hullBMatrix);
 	
 	if (result.EdgeTest.Distance > SAT_EPSILON)
 	{
@@ -278,7 +291,7 @@ bool SeparatingAxisTheorem::CheckCollision(SAT_Result& result, Entity const* ent
 
 	if (manifold != nullptr)
 	{
-		ConstructContactManifold(*manifold, result, hullA, hullAMatrix, hullB, hullBMatrix);
+		ConstructContactManifold(*manifold, result, *hullA, hullAMatrix, *hullB, hullBMatrix);
 		manifold->Normal = Normalised(manifold->Normal);
 		manifold->CollisionPair.first = entityA;
 		manifold->CollisionPair.second = entityB;
@@ -472,7 +485,6 @@ FaceContact SeparatingAxisTheorem::CreateFaceContacts(const FaceQuery& faceQuery
 
 	ReduceContactPoints(faceContact);
 
-	//todo : is this necessary?
 	glm::vec4 incidentFacePlane = { incidentFace->Plane.x, incidentFace->Plane.y, incidentFace->Plane.z, incidentFace->Plane.w };
 	incidentFacePlane = incidentFacePlane * inverseIncidentMatrix;
 

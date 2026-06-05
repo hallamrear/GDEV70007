@@ -3,7 +3,7 @@
 #include <Rendering/Renderer.h>
 #include <System/AssetManagement.h>
 #include <World/World.h>
-
+#include <Physics/Rigidbody.h>
 #include <World/Entity.h>
 
 std::filesystem::path Engine::m_ContentFolderLocation = std::filesystem::path();
@@ -244,8 +244,8 @@ void Engine::Update(const float& deltaTime)
 	//ScreenToClient(m_Renderer->GetWindowHandle(), &centre);
 	//InputListener::SetMousePosition(m_Renderer->GetWindowCentre());
 
-	const float moveSpeed = +80.0f * deltaTime;
-	const float rotationSpeed = 5.0f * deltaTime;
+	float moveSpeed = +80.0f * deltaTime;
+	float rotationSpeed = 5.0f * deltaTime;
 	Vector3 forward = m_Renderer->GetCamera().GetForwardVector();
 	Vector3 right = m_Renderer->GetCamera().GetRightVector();
 	Vector3 up = m_Renderer->GetCamera().GetUpVector();

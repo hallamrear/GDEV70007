@@ -46,11 +46,13 @@ public:
 	void Translate(const Vector3& translation);
 	void Rotate(const Vector3& rotation);
 	const Vector3& GetPosition() const;
+	const Vector4& GetRotation() const;
 
 	void SetWorldMatrix(const Matrix4x4& worldMatrix);
 	const Matrix4x4& GetWorldMatrix() const;
 
 	void SetModel(ModelRef& model);
+	const bool HasModel() const;
 	const ModelRef& GetModel() const;
 
 	void FixedUpdate();

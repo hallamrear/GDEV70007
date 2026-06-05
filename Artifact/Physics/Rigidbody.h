@@ -5,6 +5,7 @@ class Entity;
 class Rigidbody
 {
 private:
+	Entity* m_Entity;
 	static constexpr float c_DefaultMass = 100.0f;
 	float m_Mass;
 	float m_InverseMass;
@@ -30,6 +31,10 @@ public:
 	const float& GetMass() const;
 
 	float GetInverseMass();
+
+	void SetEntity(Entity* entity);
+	const Entity& GetEntity() const;
+	Entity* GetEntity();
 
 	void StopMoving();
 

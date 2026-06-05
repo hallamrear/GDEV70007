@@ -1,7 +1,13 @@
 #pragma once
+#include <Rendering/IMGUIRenderable.h>
+#include <Physics/Structures.h>
+#include <Physics/Resolution/CollisionResolver.h>
+#include <Physics/Resolution/ContraintContact.h>
+#include <Physics/Resolution/Constraint.h>
+
 class Rigidbody;
 
-class PhysicsWorld
+class PhysicsWorld : public IIMGUIRenderable
 {
 private:
 	static constexpr float c_RestSpeed = 0.00000001f;
@@ -9,6 +15,11 @@ private:
 	static constexpr float c_LinearDamping = 0.98f;
 	static constexpr float c_AngularDamping = 0.98f;
 	static constexpr int c_MaxRigidbodyCount = 1000;
+
+	std::vector<CollisionManifold> m_FrameCollisionManifolds;
+	std::vector<ConstrainedContact> m_FrameConstraintPoints;
+	std::vector<Jacobian> m_FrameJacobians;
+	std::vector<Constraint> m_FrameConstraints;
 
 	Rigidbody* m_RigidbodyList;
 	int m_ActiveRigidbodyCount;
@@ -21,6 +32,8 @@ private:
 	void UpdateSleepers();
 	void CleanupPhysicsObjects();
 
+	int m_ResolutionType;
+
 public:
 	PhysicsWorld();
 	~PhysicsWorld();
@@ -29,5 +42,8 @@ public:
 	void Update(const float& deltaTime);
 
 	Rigidbody& GetFreshRigidbody();
+
+	// Inherited via IIMGUIRenderable
+	void OnIMGUIRender() override;
 };
 

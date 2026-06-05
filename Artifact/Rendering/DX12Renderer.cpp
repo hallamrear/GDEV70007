@@ -713,8 +713,6 @@ void DX12Renderer::RenderIMGUIFrame()
     ImGui::NewFrame();
     ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_::ImGuiDockNodeFlags_PassthruCentralNode);
 
-    ImGui::ShowDemoWindow();
-
     IIMGUIRenderable::RenderAllIMGUIInstances();
 
     if (m_CommandList == nullptr)

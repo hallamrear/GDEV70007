@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Rigidbody.h"
 
-Rigidbody::Rigidbody() 
+Rigidbody::Rigidbody() : m_Entity(nullptr)
 {
 	m_Mass = 0.0f;
 	m_InverseMass = 0.0f;
@@ -22,6 +22,7 @@ Rigidbody::Rigidbody()
 
 Rigidbody::~Rigidbody()
 {
+	m_Entity = nullptr;
 	m_Mass = 0.0f;
 	m_InverseMass = 0.0f;
 	m_CentreOfMass = Vector3(0.0f, 0.0f, 0.0f);
@@ -55,6 +56,7 @@ void Rigidbody::SetMass(const float& mass)
 	float w = 10.0f;
 	float h = w;
 	float d = w;
+
 	InertiaTensor =
 	{
 		(m_Mass / 12.0f) * (h * h + d * d),
@@ -115,6 +117,21 @@ const float& Rigidbody::GetMass() const
 float Rigidbody::GetInverseMass()
 {
 	return m_InverseMass;
+}
+
+void Rigidbody::SetEntity(Entity* entity)
+{
+	m_Entity = entity;
+}
+
+const Entity& Rigidbody::GetEntity() const
+{
+	return *m_Entity;
+}
+
+Entity* Rigidbody::GetEntity()
+{
+	return m_Entity;
 }
 
 void Rigidbody::StopMoving()

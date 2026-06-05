@@ -188,6 +188,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Artifact.h" />
+    <ClInclude Include="Physics\Resolution\Constraint.h" />
+    <ClInclude Include="Physics\Resolution\CollisionResolver.h" />
+    <ClInclude Include="Physics\Resolution\ContraintContact.h" />
+    <ClInclude Include="Physics\Resolution\Jacobian.h" />
     <ClInclude Include="Physics\Quickhull\ConvexHull.h" />
     <ClInclude Include="Physics\Colliders\OBBCollider.h" />
     <ClInclude Include="Physics\Structures.h">
@@ -252,6 +256,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Artifact.cpp" />
+    <ClCompile Include="Physics\Resolution\Constraint.cpp" />
+    <ClCompile Include="Physics\Resolution\CollisionResolver.cpp" />
+    <ClCompile Include="Physics\Resolution\ContraintContact.cpp" />
+    <ClCompile Include="Physics\Resolution\Jacobian.cpp" />
     <ClCompile Include="Physics\Quickhull\ConvexHull.cpp" />
     <ClCompile Include="Physics\Colliders\OBBCollider.cpp" />
     <ClCompile Include="Physics\EPA\EPA.cpp">
@@ -356,6 +364,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Content\Barrel.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="Content\BigCube.glb">
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Content\blasterG.glb">

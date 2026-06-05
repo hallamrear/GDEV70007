@@ -68,6 +68,7 @@ const Rigidbody& Entity::GetRigidbody() const
 void Entity::SetRigidbody(Rigidbody& rigidbody)
 {
 	m_Rigidbody = &rigidbody;
+	m_Rigidbody->SetEntity(this);
 }
 
 Collider* Entity::GetCollider() const
@@ -181,6 +182,11 @@ const Vector3& Entity::GetPosition() const
 	return m_Rigidbody->Translation;
 }
 
+const Vector4& Entity::GetRotation() const
+{
+	return m_Rigidbody->Rotation;
+}
+
 void Entity::SetWorldMatrix(const Matrix4x4& worldMatrix)
 {
 	m_WorldMatrix = worldMatrix;
@@ -209,6 +215,11 @@ void Entity::UpdateWorldMatrix()
 void Entity::SetModel(ModelRef& model)
 {
 	m_Model = model;
+}
+
+const bool Entity::HasModel() const
+{
+	return (m_Model != nullptr);
 }
 
 const ModelRef& Entity::GetModel() const
