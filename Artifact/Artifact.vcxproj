@@ -384,6 +384,9 @@
     <None Include="Content\Demo_Level.glb">
       <DeploymentContent>true</DeploymentContent>
     </None>
+    <None Include="Content\Icosphere.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="Content\LargeSuzanne.glb">
       <DeploymentContent>true</DeploymentContent>
     </None>
@@ -394,6 +397,9 @@
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Content\police.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="Content\Pyramid.glb">
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Content\Suzanne.glb">
