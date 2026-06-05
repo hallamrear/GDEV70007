@@ -35,6 +35,7 @@ private:
 
 	void RenderEntityDetails(Entity& entity);
 	void DestroyDeadEntities();
+	Camera* m_Camera;
 
 public:
 	static Entity* TestBoxA;

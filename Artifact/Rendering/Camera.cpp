@@ -18,6 +18,12 @@ Camera::~Camera()
 
 }
 
+void Camera::SetPosition(const Vector3& translation)
+{
+	m_Translation = translation;
+	UpdateTransformMatrix();
+}
+
 const Vector3& Camera::GetForwardVector() const
 {
 	return m_ForwardVector;

@@ -28,6 +28,7 @@ public:
 	void RotateQuat(const Quaternion& rotationQuat);
 
 	const Vector3& GetPosition() const;
+	void SetPosition(const Vector3& position);
 
 	const DirectX::XMFLOAT4X4 GetViewMatrix() const;
 };

@@ -399,5 +399,6 @@
     <None Include="Content\BigCube.glb" />
     <None Include="Content\Pyramid.glb" />
     <None Include="Content\Icosphere.glb" />
+    <None Include="Content\Axe.glb" />
   </ItemGroup>
 </Project>

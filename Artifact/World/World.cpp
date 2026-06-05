@@ -8,9 +8,36 @@
 #include <Physics/Optimisations/Octree.h>
 #include <Physics/Rigidbody.h>
 #include <Physics/GJK/GJK.h>
+#include <System/Maths.h>
 
+//Temporary stuff.
 Entity* World::TestBoxA = nullptr;
 Entity* World::TestBoxB = nullptr;
+bool loadDemoScene = true;
+
+std::string modelList[] =
+{
+	"LongBox.glb",
+	"LongBox.glb",
+	"LongBox.glb",
+	"LongBox.glb",
+	"LongBox.glb",
+	"LongBox.glb",
+	"LongBox.glb",
+};
+
+Vector3 rotations[] =
+{
+	Vector3(0.0f, 0.0f, 0.0f),
+	Vector3(0.0f, 0.0f, 45.0f),
+	Vector3(45.0f, 0.0f, 0.0f),
+	Vector3(45.0f, 0.0f, 0.0f),
+	Vector3(45.0f, 0.0f, 45.0f),
+};
+
+float modelSpacing = 15.0f;
+float timeToCover = 20.0f;
+float timeElapsed = 0.0f;
 
 const bool& World::IsInitialised() const
 {
@@ -29,23 +56,41 @@ World::~World()
 	assert(m_IsInitialised);
 }
 
+std::vector<ModelRef> modelStorage;
 bool World::Initialise()
 {
-	bool loadDemoScene = false;
+	m_Camera = &ServiceLocator::Locate<Renderer>()->GetCamera();
 
 	if (loadDemoScene)
 	{
-		TestBoxA = CreateEntity("Box A");
-		TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
-		TestBoxA->SetPosition(Vector3(-20.0f, 30.0f, 0.0f));
-
-		TestBoxB = CreateEntity("Box B");
+		TestBoxB = CreateEntity("Tracking Box");
 		TestBoxB->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
 		TestBoxB->SetPosition(Vector3(0.0f, 0.0f, -10.0f));
 		ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("Colliders/BoxCollider.glb");
 		TestBoxB->SetModel(suzaane);
-	}
 
+		TestBoxA = CreateEntity("Follow Box");
+		TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
+		TestBoxA->SetPosition(Vector3(0.0f, 0.0f, -15.0f));
+		ModelRef barrel = ServiceLocator::Locate<AssetManager>()->GetModel("Barrel.glb");
+		TestBoxA->SetModel(barrel);
+
+		for (size_t i = 0; i < _countof(modelList); i++)
+		{
+			Entity* entity = CreateEntity("Test Model");
+			entity->SetPosition(Vector3(i * modelSpacing, 0.0f, 0.0f));
+
+			float r_x = (rand() % 100) / 100.0f;
+			float r_y = (rand() % 100) / 100.0f;
+			float r_z = (rand() % 100) / 100.0f;
+
+			entity->Rotate(Vector3(r_x * 360.0f, r_y * 360.0f, r_z * 360.0f));
+			ModelRef model = ServiceLocator::Locate<AssetManager>()->GetModel(modelList[i]);
+			entity->SetModel(model);
+		}
+
+		return true;
+	}
 
 	Vector3 position = Vector3(0.0f, 0.0f, 0.0f);
 	//m_OctreeRoot = OctreeNode::BuildOctree(nullptr, Vector3(0.0f, 0.0f, 0.0f), 8192.0f, 0);
@@ -191,6 +236,7 @@ void World::FixedUpdate()
 	m_PhysicsWorld.FixedUpdate();
 }
 
+static float m_CameraDistance = 20.0f;
 void World::Update(const float& deltaTime)
 {
 	m_PhysicsWorld.Update(deltaTime);
@@ -203,22 +249,71 @@ void World::Update(const float& deltaTime)
 		}
 	}
 
+	if (loadDemoScene)
+	{
+		const Vector3 start = { -10.0f, 0.0f, 0.0f };
+		const Vector3 end = { ((float)(_countof(modelList) - 1) * modelSpacing) + 10.0f, 0.0f, 0.0f};
+
+		timeElapsed += deltaTime;
+
+		static bool flipped = false;
+
+		if (timeElapsed >= timeToCover)
+		{
+			timeElapsed = 0.0f;
+			flipped = !flipped;
+		}
+
+		float t = timeElapsed / timeToCover;
+		Vector3 lerpPosition = (flipped) ? Maths::Lerp(end, start, t) : Maths::Lerp(start, end, t);
+
+		Vector3 followBoxPosition = lerpPosition;
+
+		Vector3 cameraPosition;
+		cameraPosition.x = (lerpPosition.x + followBoxPosition.x) * 0.5f;
+		cameraPosition.y = (lerpPosition.y + followBoxPosition.y) * 0.5f;
+		cameraPosition.z = lerpPosition.z - m_CameraDistance;
+
+		if (flipped)
+			lerpPosition.y = (sinf(1.0f - t) * 2.0f - 0.5f) * 3.0f;
+		else
+			lerpPosition.y = (sinf(t) * 2.0f - 0.5f) * 3.0f;
+
+		if (!flipped)
+			followBoxPosition.y = 2.0f * (sinf(1.0f - t) * 2.0f - 0.5f) * 0.75f;
+		else
+			followBoxPosition.y = 2.0f * (sinf(t) * 2.0f - 0.5f) * 0.75f;
+
+		followBoxPosition.x = lerpPosition.x - 5.0f;
+
+		TestBoxB->SetPosition(lerpPosition);
+		TestBoxA->SetPosition(followBoxPosition);
+
+		if (m_Camera)
+		{
+			m_Camera->SetPosition(cameraPosition);
+		}
+		
+		float r_x = ((rand() % 100) / 100.0f) * deltaTime;
+		float r_y = ((rand() % 100) / 100.0f) * deltaTime;
+		float r_z = ((rand() % 100) / 100.0f) * deltaTime;
+
+		TestBoxB->Rotate(Vector3(r_x, r_y, r_z));
+
+		r_x = ((rand() % 100) / 100.0f) * -deltaTime;
+		r_y = ((rand() % 100) / 100.0f) * deltaTime;
+		r_z = ((rand() % 100) / 100.0f) * -deltaTime;
+
+		TestBoxA->Rotate(Vector3(r_x, r_y, r_z));
+	}
+
 }
 
 void World::OnIMGUIRender()
 {
 	ImGui::Begin("World");
 
-	Renderer* renderer = ServiceLocator::Locate<Renderer>();
-	Camera& camera = renderer->GetCamera();
-	ImGui::Text("Camera Forward %f %f %f",
-		camera.GetForwardVector().x, camera.GetForwardVector().y, camera.GetForwardVector().z);
-
-	ImGui::Text("Camera Right %f %f %f",
-		camera.GetRightVector().x, camera.GetRightVector().y, camera.GetRightVector().z);
-
-	ImGui::Text("Camera Up %f %f %f",
-		camera.GetUpVector().x, camera.GetUpVector().y, camera.GetUpVector().z);
+	ImGui::DragFloat("Camera Distance", &m_CameraDistance, 1.0f, 5.0f, 30.0f);
 
 	if (ImGui::Button("Create New Entity"))
 	{

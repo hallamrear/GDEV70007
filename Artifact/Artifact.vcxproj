@@ -363,6 +363,9 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Content\Axe.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="Content\Barrel.glb">
       <DeploymentContent>true</DeploymentContent>
     </None>
