@@ -520,13 +520,15 @@ bool IntersectionPlaneVsRay(
 struct LessThanPredicate {
 	bool operator()(const glm::vec3& l, const glm::vec3& r)
 	{
+		static constexpr float epsilon = 0.00001f;
+
 		if (l.x != r.x)
-			return (r.x - l.x) > SAT_EPSILON;
+			return (r.x - l.x) > epsilon;
 
 		if (l.y != r.y)
-			return (r.y - l.y) > SAT_EPSILON;
+			return (r.y - l.y) > epsilon;
 
-		return (r.z - l.z) > SAT_EPSILON;
+		return (r.z - l.z) > epsilon;
 	}
 };
 
@@ -550,6 +552,8 @@ void SeparatingAxisTheorem::ReduceContactPoints(FaceContact& faceContact)
 	refinedPointDistances[2] = 0.0f;
 	refinedPointDistances[3] = 0.0f;
 
+	size_t refinedPointIndices[4] = { (size_t)-1};
+
 	size_t initialVertexCount = faceContact.HitPoints.size();
 	for (size_t i = 0; i < initialVertexCount; i++)
 	{
@@ -558,25 +562,30 @@ void SeparatingAxisTheorem::ReduceContactPoints(FaceContact& faceContact)
 		float distance = glm::dot(searchDirection, vertex);
 
 		//if (distance > refinedPointDistances[0])
-		if (distance - refinedPointDistances[0] > 0.01f)
+		if (abs(distance - refinedPointDistances[0]) > 0.01f)
 		{
 			refinedPoints[0] = vertex;
 			refinedPointDistances[0] = distance;
+			refinedPointIndices[0] = i;
 		}
 	}
 
 	for (size_t i = 0; i < initialVertexCount; i++)
 	{
+		if (i == refinedPointIndices[0])
+			continue;
+
 		const glm::vec3& vertex = faceContact.HitPoints[i];
 		searchDirection = (vertex - refinedPoints[0]);
 
 		float distance = glm::dot(searchDirection, searchDirection);
 
 		//if (distance - SAT_EPSILON > refinedPointDistances[1])
-		if (distance - refinedPointDistances[1] > 0.01f)
+		if (abs(distance - refinedPointDistances[1]) > 0.01f)
 		{
 			refinedPoints[1] = vertex;
 			refinedPointDistances[1] = distance;
+			refinedPointIndices[1] = i;
 		}
 	}
 
@@ -585,20 +594,27 @@ void SeparatingAxisTheorem::ReduceContactPoints(FaceContact& faceContact)
 
 	for (size_t i = 0; i < initialVertexCount; i++)
 	{
+		if (i == refinedPointIndices[0] || i == refinedPointIndices[1])
+			continue;
+
 		const glm::vec3& vertex = faceContact.HitPoints[i];
 		glm::vec3 triangleNormal = glm::cross(refinedPoints[0] - vertex, refinedPoints[1] - vertex);
 		float distance = glm::dot(triangleNormal, faceNormal);
 
-		if (distance - refinedPointDistances[2] > 0.01f)
+		if (abs(distance - refinedPointDistances[2]) > 0.01f)
 		//if (area - SAT_EPSILON > refinedPointDistances[2])
 		{
 			refinedPointDistances[2] = distance;
 			refinedPoints[2] = vertex;
+			refinedPointIndices[2] = i;
 		}
 	}
 
 	for (size_t i = 0; i < initialVertexCount; i++)
 	{
+		if (i == refinedPointIndices[0] || i == refinedPointIndices[1] || i == refinedPointIndices[2])
+			continue;
+
 		const glm::vec3& Q = faceContact.HitPoints[i];
 
 		//ABQ
@@ -607,11 +623,12 @@ void SeparatingAxisTheorem::ReduceContactPoints(FaceContact& faceContact)
 
 		//Testing against 0 to ensure winding order. < 0 is clockwise.
 
-		if (windingOrder - refinedPointDistances[3] > 0.01f)
+		if (abs(windingOrder - refinedPointDistances[3]) > 0.01f)
 		//if (windingOrder - SAT_EPSILON < refinedPointDistances[3])
 		{
 			refinedPoints[3] = Q;
 			refinedPointDistances[3] = windingOrder;
+			refinedPointIndices[3] = i;
 		}
 
 		//Test other axis.
@@ -620,11 +637,12 @@ void SeparatingAxisTheorem::ReduceContactPoints(FaceContact& faceContact)
 		windingOrder = glm::dot(normal, faceNormal);
 
 		//Testing against 0 to ensure winding order. < 0 is clockwise.
-		if (windingOrder - refinedPointDistances[3] > 0.01f)
+		if (abs(windingOrder - refinedPointDistances[3]) > 0.01f)
 		//if (windingOrder < refinedPointDistances[3])
 		{
 			refinedPoints[3] = Q;
 			refinedPointDistances[3] = windingOrder;
+			refinedPointIndices[3] = i;
 		}
 		
 		//CAQ
@@ -632,11 +650,12 @@ void SeparatingAxisTheorem::ReduceContactPoints(FaceContact& faceContact)
 		windingOrder = glm::dot(normal, faceNormal);
 
 		//Testing against 0 to ensure winding order. < 0 is clockwise.
-		if (windingOrder - refinedPointDistances[3] > 0.01f)
+		if (abs(windingOrder - refinedPointDistances[3]) > 0.01f)
 		//if (windingOrder < refinedPointDistances[3])
 		{
 			refinedPoints[3] = Q;
 			refinedPointDistances[3] = windingOrder;
+			refinedPointIndices[3] = i;
 		}
 	}
 

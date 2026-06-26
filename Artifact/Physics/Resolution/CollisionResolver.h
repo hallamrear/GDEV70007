@@ -12,7 +12,7 @@ struct Jacobian;
 struct InverseMassPair
 {
 	float inverseContactMass;
-	glm::vec3 iTensor;
+	glm::mat3x3 iTensor;
 };
 
 using InverseMassVector = std::array<InverseMassPair, 2>;

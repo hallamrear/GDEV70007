@@ -21,7 +21,7 @@ struct ConstrainedContact
 	
 	glm::vec3 RelativeVelocity;
 
-	glm::vec3 InverseInertiaTensors[2];
+	glm::mat3x3 InverseInertiaTensors[2];
 
 	glm::vec3 LinearVelocity[2];
 	glm::vec3 AngularVelocity[2];

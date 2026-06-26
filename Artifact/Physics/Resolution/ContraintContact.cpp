@@ -126,6 +126,8 @@ void ConstrainedContact::ComputeContactOrthoVectors(const glm::vec3& relativeVel
 	binormal = glm::normalize(binormal);
 
 	GramSchmidt(normal, tangent, binormal);
-	//todo : Reorthoganise?
-	//GranSchmidt?
+
+	normal = glm::normalize(normal);
+	tangent = glm::normalize(tangent);
+	binormal = glm::normalize(binormal);
 }

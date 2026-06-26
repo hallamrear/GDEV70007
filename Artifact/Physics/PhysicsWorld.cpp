@@ -7,7 +7,7 @@ PhysicsWorld::PhysicsWorld()
 {
 	m_RigidbodyList = new Rigidbody[c_MaxRigidbodyCount];
 	m_ActiveRigidbodyCount = 0;
-	m_ResolutionType = 0;
+	m_ResolutionType = 2;
 }
 
 PhysicsWorld::~PhysicsWorld()
@@ -87,7 +87,43 @@ void PhysicsWorld::OnIMGUIRender()
 
 					ImGui::EndTable();
 				}
+
+				/*std::string name = "Manifold " + std::to_string(f);
+				if (ImGui::CollapsingHeader(name.c_str()))
+				{
+					m_Frame
+				}*/
 			}
+
+			/*if (ImGui::CollapsingHeader("Constraint Point Data"))
+			{
+
+				if (m_FrameConstraintPoints.size() > 0)
+				{
+					if (ImGui::BeginTable("Frame Contraint Point Datas", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
+					{
+						ImGui::TableSetupColumn("Index");
+						ImGui::TableSetupColumn("Position 0");
+						ImGui::TableSetupColumn("Position 1");
+						ImGui::TableHeadersRow();
+
+						for (size_t cp = 0; cp < m_FrameConstraintPoints.size(); cp++)
+						{
+							ImGui::TableNextRow();
+							ImGui::TableSetColumnIndex(0);
+							ImGui::Text("%i", cp);
+
+							ImGui::TableSetColumnIndex(1);
+							ImGui::Text("%f %f %f", m_FrameConstraintPoints[cp].Positions[0].x, m_FrameConstraintPoints[cp].Positions[0].y, m_FrameConstraintPoints[cp].Positions[0].z);
+
+							ImGui::TableSetColumnIndex(2);
+							ImGui::Text("%f %f %f", m_FrameConstraintPoints[cp].Positions[1].x, m_FrameConstraintPoints[cp].Positions[1].y, m_FrameConstraintPoints[cp].Positions[1].z);
+						}
+
+						ImGui::EndTable();
+					}
+				}
+			}*/
 		}
 		else
 		{
@@ -126,7 +162,9 @@ void PhysicsWorld::IntegrateVelocities()
 		rb.LinearVelocity.z += (linearAcceleration.z * FIXED_TIMESTEP);
 
 		//Calculate Angular Acceleration
-		Vector3 angularAcceleration{ rb.Torques.x * rb.InertiaTensor.x, rb.Torques.y * rb.InertiaTensor.y, rb.Torques.z * rb.InertiaTensor.z };
+		glm::mat3x3 m_WorldSpaceInverseInertiaTensor;
+
+		glm::vec3 angularAcceleration = rb.Torques * m_WorldSpaceInverseInertiaTensor;
 
 		//Calculate Angular Velocity
 		rb.AngularVelocity.x += (angularAcceleration.x * FIXED_TIMESTEP);
@@ -142,8 +180,8 @@ void PhysicsWorld::IntegrateVelocities()
 		rb.AngularVelocity.z *= (c_AngularDamping);
 
 		//Reset Forces
-		rb.Forces = Vector3(0.0f, 0.0f, 0.0f);
-		rb.Torques = Vector3(0.0f, 0.0f, 0.0f);
+		rb.Forces = { 0.0f, 0.0f, 0.0f };
+		rb.Torques = { 0.0f, 0.0f, 0.0f };
 	}
 }
 
@@ -235,10 +273,9 @@ void PhysicsWorld::IntergratePositions()
 		rb.Translation.z += (rb.LinearVelocity.z * FIXED_TIMESTEP);
 
 		//Integrating angular velocity.
-		Quaternion omega = Quaternion(rb.AngularVelocity.x, rb.AngularVelocity.y, rb.AngularVelocity.z, 0.0f);
+		glm::quat omega = { rb.AngularVelocity.x, rb.AngularVelocity.y, rb.AngularVelocity.z, 0.0f };
 		
-		Quaternion angularDeriv;
-		DirectX::XMStoreFloat4(&angularDeriv, DirectX::XMQuaternionMultiply(DirectX::XMLoadFloat4(&omega), DirectX::XMLoadFloat4(&rb.Rotation)));
+		glm::quat angularDeriv = omega * rb.Rotation;
 		angularDeriv.x *= 0.5f;
 		angularDeriv.y *= 0.5f;
 		angularDeriv.z *= 0.5f; 
@@ -249,7 +286,9 @@ void PhysicsWorld::IntergratePositions()
 		rb.Rotation.z += (angularDeriv.z * FIXED_TIMESTEP);
 		rb.Rotation.w += (angularDeriv.w * FIXED_TIMESTEP);
 
-		DirectX::XMStoreFloat4(&rb.Rotation, DirectX::XMQuaternionNormalize(DirectX::XMLoadFloat4(&rb.Rotation)));
+		rb.Rotation = glm::normalize(rb.Rotation);
+
+		rb.UpdateInertiaTensor();
 	}
 }
 

@@ -103,6 +103,30 @@ InverseMassMatrix CollisionResolver::ComputeInverseMassMatrix(const std::vector<
 	return matrix;
 }
 
+struct EqualVectorPredicate
+{
+	bool operator()(const glm::vec3& l, const glm::vec3& r)
+	{
+		static constexpr float epsilon = 0.00001f;
+		return abs(r.x - l.x) < epsilon && abs(r.y - l.y) < epsilon && abs(r.z - l.z) < epsilon;
+	}
+};
+
+struct LessThanPredicate {
+	bool operator()(const glm::vec3& l, const glm::vec3& r)
+	{
+		static constexpr float epsilon = 0.00001f;
+
+		if (l.x != r.x)
+			return (r.x - l.x) > epsilon;
+
+		if (l.y != r.y)
+			return (r.y - l.y) > epsilon;
+
+		return (r.z - l.z) > epsilon;
+	}
+};
+
 void CollisionResolver::ConvertContactManifoldsToConstrainedPoints(const std::vector<CollisionManifold>& collisionManifolds, std::vector<ConstrainedContact>& constraintContacts)
 {
 	constraintContacts.clear();
@@ -159,31 +183,15 @@ void CollisionResolver::ConvertContactManifoldsToConstrainedPoints(const std::ve
 
 			constrainedContact.InverseContactMasses[0] = rigidbodyA.GetInverseMass() * invContactPointCount;
 			constrainedContact.InverseContactMasses[1] = rigidbodyB.GetInverseMass() * invContactPointCount;
-
-			glm::vec3 inertiaTensorA = { rigidbodyA.InertiaTensor.x,rigidbodyA.InertiaTensor.y, rigidbodyA.InertiaTensor.z };
-			constrainedContact.InverseInertiaTensors[0] = inertiaTensorA;
-			//constrainedContact.InverseInertiaTensors[0] =
-			//{
-			//	inertiaTensorA.x, 0.0f, 0.0f,
-			//	0.0f, inertiaTensorA.y, 0.0f,
-			//	0.0f, 0.0f, inertiaTensorA.z
-			//};
-
-			glm::vec3 inertiaTensorB = { rigidbodyB.InertiaTensor.x, rigidbodyB.InertiaTensor.y, rigidbodyB.InertiaTensor.z };
-			constrainedContact.InverseInertiaTensors[1] = inertiaTensorB;
-			//constrainedContact.InverseInertiaTensors[1] =
-			//{
-			//	inertiaTensorB.x, 0.0f, 0.0f,
-			//	0.0f, inertiaTensorB.y, 0.0f,
-			//	0.0f, 0.0f, inertiaTensorB.z
-			//};
-
+			
+			constrainedContact.InverseInertiaTensors[0] = glm::inverse(rigidbodyA.InertiaTensor);
+			constrainedContact.InverseInertiaTensors[1] = glm::inverse(rigidbodyB.InertiaTensor);
+	
 			//todo : potentially clamp the normal and offsets?
 
 			constraintContacts.push_back(constrainedContact);
 		}
 	}
-
 }
 
 void CollisionResolver::PrepareConstrainedContacts(std::vector<ConstrainedContact>& constrainedContacts)
@@ -240,6 +248,7 @@ std::vector<Constraint> CollisionResolver::CalculateConstraints(const std::vecto
 			glm::dot(jacobian.Vector.v[3], inverseJTranspose.v[3]);
 
 		constraint.EffectiveMass = (1.0f / inverseEffectiveMass);
+		constraint.EffectiveMass = inverseEffectiveMass;
 
 		CalculateConstraintBounds(constraint.ImpulseBounds, jacobian.Type, contact);
 
@@ -456,22 +465,8 @@ void CollisionResolver::SoftResolveCollision(const CollisionManifold& manifold)
 		glm::vec3 rpAxN = glm::cross(relativePositionA, relativeNormal);
 		glm::vec3 rpBxN = glm::cross(relativePositionB, relativeNormal);
 
-		glm::mat3x3 inertiaTensorA = 
-		{
-			 objectA.InertiaTensor.x, 0.0f, 0.0f,
-			0.0f,  objectA.InertiaTensor.y, 0.0f,
-			0.0f, 0.0f,  objectA.InertiaTensor.z
-		};
-
-		glm::mat3x3 inertiaTensorB =
-		{
-			objectB.InertiaTensor.x, 0.0f, 0.0f,
-			0.0f, objectB.InertiaTensor.y, 0.0f,
-			0.0f, 0.0f, objectB.InertiaTensor.z
-		};
-
-		float inertiaA = glm::dot(rpAxN, inertiaTensorA * rpAxN);
-		float inertiaB = glm::dot(rpBxN, inertiaTensorB * rpBxN);
+		float inertiaA = glm::dot(rpAxN, objectA.InertiaTensor * rpAxN);
+		float inertiaB = glm::dot(rpBxN, objectB.InertiaTensor * rpBxN);
 
 		float totalInvMass = objectA.GetInverseMass() + objectB.GetInverseMass() + inertiaA + inertiaB;
 

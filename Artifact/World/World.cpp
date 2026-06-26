@@ -13,7 +13,8 @@
 //Temporary stuff.
 Entity* World::TestBoxA = nullptr;
 Entity* World::TestBoxB = nullptr;
-bool loadDemoScene = true;
+bool loadDemoScene = false;
+bool isMoving = true;
 
 std::string modelList[] =
 {
@@ -49,6 +50,7 @@ World::World()
 	m_EntityMap = EntityMap();
 	m_IsInitialised = false;
 	m_OctreeRoot = nullptr;
+	m_Camera = &ServiceLocator::Locate<Renderer>()->GetCamera();
 }
 
 World::~World()
@@ -59,8 +61,6 @@ World::~World()
 std::vector<ModelRef> modelStorage;
 bool World::Initialise()
 {
-	m_Camera = &ServiceLocator::Locate<Renderer>()->GetCamera();
-
 	if (loadDemoScene)
 	{
 		TestBoxB = CreateEntity("Tracking Box");
@@ -114,7 +114,7 @@ bool World::Initialise()
 	TestBoxA = CreateEntity("Box A");
 	TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
 	//TestBoxA->GetCollider()->SetSize(Vector3(10.0f, 10.0f, 10.0f));
-	TestBoxA->SetPosition(Vector3(-20.0f, 30.0f, 0.0f));
+	TestBoxA->SetPosition(Vector3(0.0f, 5.0f, 0.0f));
 	//ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("TestCone.glb");
 	ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("Colliders/BoxCollider.glb");
 	TestBoxA->SetModel(suzaane);
@@ -125,7 +125,7 @@ bool World::Initialise()
 	ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("Colliders/BoxCollider.glb");
 	TestBoxB->SetModel(test);
 	////TestBoxB->GetCollider()->SetSize(Vector3(7.0f, 3.0f, 5.0f));
-	//TestBoxB->SetPosition(Vector3(20.0f, 0.0f, 0.0f));
+	TestBoxB->SetPosition(Vector3(0.0f, 0.0f, 0.0f));
 
 	/*Vector3 position = Vector3(0.0f, 0.0f, 0.0f);
 	Entity* entity = nullptr;
@@ -141,9 +141,6 @@ bool World::Initialise()
 
 		entity->SetPosition(position);
 	}*/
-
-	TestBoxA->SetPosition({ -1.1f, 0.0f, 0.0f });
-	TestBoxB->SetPosition({ 1.0f, 0.0f, 0.0f });
 
 	m_IsInitialised = true;
 	return true;
@@ -254,63 +251,71 @@ void World::Update(const float& deltaTime)
 		const Vector3 start = { -10.0f, 0.0f, 0.0f };
 		const Vector3 end = { ((float)(_countof(modelList) - 1) * modelSpacing) + 10.0f, 0.0f, 0.0f};
 
-		timeElapsed += deltaTime;
-
-		static bool flipped = false;
-
-		if (timeElapsed >= timeToCover)
+		if (isMoving)
 		{
-			timeElapsed = 0.0f;
-			flipped = !flipped;
+
+			timeElapsed += deltaTime;
+
+			static bool flipped = false;
+
+			if (timeElapsed >= timeToCover)
+			{
+				timeElapsed = 0.0f;
+				flipped = !flipped;
+			}
+
+			float t = timeElapsed / timeToCover;
+			Vector3 lerpPosition = (flipped) ? Maths::Lerp(end, start, t) : Maths::Lerp(start, end, t);
+
+			Vector3 followBoxPosition = lerpPosition;
+
+			Vector3 cameraPosition;
+			cameraPosition.x = (lerpPosition.x + followBoxPosition.x) * 0.5f;
+			cameraPosition.y = (lerpPosition.y + followBoxPosition.y) * 0.5f;
+			cameraPosition.z = lerpPosition.z - m_CameraDistance;
+
+			if (flipped)
+				lerpPosition.y = (sinf(1.0f - t) * 2.0f - 0.5f) * 3.0f;
+			else
+				lerpPosition.y = (sinf(t) * 2.0f - 0.5f) * 3.0f;
+
+			if (!flipped)
+				followBoxPosition.y = 2.0f * (sinf(1.0f - t) * 2.0f - 0.5f) * 0.75f;
+			else
+				followBoxPosition.y = 2.0f * (sinf(t) * 2.0f - 0.5f) * 0.75f;
+
+			followBoxPosition.x = lerpPosition.x - 5.0f;
+
+			TestBoxB->SetPosition(lerpPosition);
+			TestBoxA->SetPosition(followBoxPosition);
+
+			if (m_Camera)
+			{
+				m_Camera->SetPosition(cameraPosition);
+			}
+
+			float r_x = ((rand() % 100) / 100.0f) * deltaTime;
+			float r_y = ((rand() % 100) / 100.0f) * deltaTime;
+			float r_z = ((rand() % 100) / 100.0f) * deltaTime;
+
+			TestBoxB->Rotate(Vector3(r_x, r_y, r_z));
+
+			r_x = ((rand() % 100) / 100.0f) * -deltaTime;
+			r_y = ((rand() % 100) / 100.0f) * deltaTime;
+			r_z = ((rand() % 100) / 100.0f) * -deltaTime;
+
+			TestBoxA->Rotate(Vector3(r_x, r_y, r_z));
 		}
-
-		float t = timeElapsed / timeToCover;
-		Vector3 lerpPosition = (flipped) ? Maths::Lerp(end, start, t) : Maths::Lerp(start, end, t);
-
-		Vector3 followBoxPosition = lerpPosition;
-
-		Vector3 cameraPosition;
-		cameraPosition.x = (lerpPosition.x + followBoxPosition.x) * 0.5f;
-		cameraPosition.y = (lerpPosition.y + followBoxPosition.y) * 0.5f;
-		cameraPosition.z = lerpPosition.z - m_CameraDistance;
-
-		if (flipped)
-			lerpPosition.y = (sinf(1.0f - t) * 2.0f - 0.5f) * 3.0f;
-		else
-			lerpPosition.y = (sinf(t) * 2.0f - 0.5f) * 3.0f;
-
-		if (!flipped)
-			followBoxPosition.y = 2.0f * (sinf(1.0f - t) * 2.0f - 0.5f) * 0.75f;
-		else
-			followBoxPosition.y = 2.0f * (sinf(t) * 2.0f - 0.5f) * 0.75f;
-
-		followBoxPosition.x = lerpPosition.x - 5.0f;
-
-		TestBoxB->SetPosition(lerpPosition);
-		TestBoxA->SetPosition(followBoxPosition);
-
-		if (m_Camera)
-		{
-			m_Camera->SetPosition(cameraPosition);
-		}
-		
-		float r_x = ((rand() % 100) / 100.0f) * deltaTime;
-		float r_y = ((rand() % 100) / 100.0f) * deltaTime;
-		float r_z = ((rand() % 100) / 100.0f) * deltaTime;
-
-		TestBoxB->Rotate(Vector3(r_x, r_y, r_z));
-
-		r_x = ((rand() % 100) / 100.0f) * -deltaTime;
-		r_y = ((rand() % 100) / 100.0f) * deltaTime;
-		r_z = ((rand() % 100) / 100.0f) * -deltaTime;
-
-		TestBoxA->Rotate(Vector3(r_x, r_y, r_z));
 	}
 
 }
 
 void World::OnIMGUIRender()
 {
+	ImGui::Begin("Demo");
+	ImGui::Checkbox("Moving?", &isMoving);
+	ImGui::End();
+
 	ImGui::Begin("World");
 
 	ImGui::DragFloat("Camera Distance", &m_CameraDistance, 1.0f, 5.0f, 30.0f);
@@ -371,7 +376,7 @@ void World::RenderEntityDetails(Entity& entity)
 
 		if (ImGui::Button("Reset Position"))
 		{
-			entity.GetRigidbody().Translation = Vector3(0.0f, 0.0f, 0.0f);
+			entity.GetRigidbody().Translation = { 0.0f, 0.0f, 0.0f };
 		}
 
 		ImGui::InputFloat4("Rotation (Quat)", &entity.GetRigidbody().Rotation.x);
@@ -379,7 +384,7 @@ void World::RenderEntityDetails(Entity& entity)
 
 		if (ImGui::Button("Reset Rotation"))
 		{
-			entity.GetRigidbody().Rotation = Vector4(0.0f, 0.0f, 0.0f, 1.0f);
+			entity.GetRigidbody().Rotation = { 0.0f, 0.0f, 0.0f, 1.0f };
 		}
 
 		ImGui::SeparatorText("Models and Colliders");
@@ -460,7 +465,7 @@ void World::RenderEntityDetails(Entity& entity)
 				float boxSize[3] = { collider.GetSize().x, collider.GetSize().y, collider.GetSize().z };
 				if (ImGui::DragFloat3("Box Collider (half-size)", &boxSize[0], 1.0f, 0.1f, 10.0f, "%.1f", ImGuiSliderFlags_::ImGuiSliderFlags_AlwaysClamp))
 				{
-					collider.SetSize(Vector3(boxSize));
+					collider.SetSize({ boxSize[0], boxSize[1], boxSize[2] });
 				}
 			}
 			break;

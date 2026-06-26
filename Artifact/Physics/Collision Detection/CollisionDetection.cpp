@@ -49,9 +49,12 @@ bool CollisionDetection::SphereSphereCollision(const Collider* sphereColliderA, 
 
 	float r2 = (colliderA->GetSize().x * colliderA->GetSize().x) + (colliderB->GetSize().x * colliderB->GetSize().x);
 	
+	Vector3 posA = colliderA->GetAttachedEntity().GetPosition();
+	Vector3 posB = colliderB->GetAttachedEntity().GetPosition();
+
 	Vector3 direction;
 	DirectX::XMStoreFloat3(&direction,
-		DirectX::XMVectorSubtract(XMLoadFloat3(&colliderB->GetAttachedEntity().GetPosition()), XMLoadFloat3(&colliderA->GetAttachedEntity().GetPosition())));
+		DirectX::XMVectorSubtract(XMLoadFloat3(&posB), XMLoadFloat3(&posA)));
 
 	Vector3 lengthSqr = Vector3(0.0f, 0.0f, 0.0f);
 	DirectX::XMStoreFloat3(&lengthSqr, DirectX::XMVector3LengthSq(XMLoadFloat3(&direction)));

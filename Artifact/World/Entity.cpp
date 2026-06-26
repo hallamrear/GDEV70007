@@ -154,7 +154,9 @@ void Entity::RemoveCollider()
 
 void Entity::SetPosition(const Vector3& translation)
 {
-	m_Rigidbody->Translation = translation;	
+	m_Rigidbody->Translation.x = translation.x;
+	m_Rigidbody->Translation.y = translation.y;
+	m_Rigidbody->Translation.z = translation.z;
 	UpdateWorldMatrix();
 }
 
@@ -168,23 +170,20 @@ void Entity::Translate(const Vector3& translation)
 
 void Entity::Rotate(const Vector3& rotation)
 {
-	DirectX::XMStoreFloat4(&m_Rigidbody->Rotation,
-		DirectX::XMQuaternionMultiply(XMLoadFloat4(&m_Rigidbody->Rotation),
-		DirectX::XMQuaternionRotationRollPitchYaw(rotation.x, rotation.y, rotation.z)));
-
-	DirectX::XMStoreFloat4(&m_Rigidbody->Rotation, DirectX::XMQuaternionNormalize(XMLoadFloat4(&m_Rigidbody->Rotation)));
-
+	glm::vec3 angles = { rotation.x, rotation.y, rotation.z };
+	m_Rigidbody->Rotation *= glm::toQuat(glm::orientate3(angles));
+	m_Rigidbody->Rotation = glm::normalize(m_Rigidbody->Rotation);
 	UpdateWorldMatrix();
 }
 
-const Vector3& Entity::GetPosition() const
+const Vector3 Entity::GetPosition() const
 {
-	return m_Rigidbody->Translation;
+	return { m_Rigidbody->Translation.x, m_Rigidbody->Translation.y, m_Rigidbody->Translation.z };
 }
 
-const Vector4& Entity::GetRotation() const
+const Vector4 Entity::GetRotation() const
 {
-	return m_Rigidbody->Rotation;
+	return { m_Rigidbody->Rotation.x, m_Rigidbody->Rotation.y, m_Rigidbody->Rotation.z, m_Rigidbody->Rotation.w };
 }
 
 void Entity::SetWorldMatrix(const Matrix4x4& worldMatrix)
@@ -200,8 +199,10 @@ const Matrix4x4& Entity::GetWorldMatrix() const
 
 void Entity::UpdateWorldMatrix()
 {
+	DirectX::XMFLOAT4 rotation = { m_Rigidbody->Rotation.x, m_Rigidbody->Rotation.y, m_Rigidbody->Rotation.z, m_Rigidbody->Rotation.w };
+
 	DirectX::XMStoreFloat4x4(&m_RotationMatrix,
-		DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&m_Rigidbody->Rotation)));
+		DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&rotation)));
 
 	DirectX::XMStoreFloat4x4(&m_WorldMatrix,
 		DirectX::XMLoadFloat4x4(&m_RotationMatrix) *

@@ -1,5 +1,6 @@
 #pragma once
 #include <Rendering/Geometry/Model.h>
+#include <glm/glm.hpp>
 
 class Collider;
 enum COLLIDER_TYPE : int;
@@ -45,8 +46,8 @@ public:
 	void SetPosition(const Vector3& position);
 	void Translate(const Vector3& translation);
 	void Rotate(const Vector3& rotation);
-	const Vector3& GetPosition() const;
-	const Vector4& GetRotation() const;
+	const Vector3 GetPosition() const;
+	const Vector4 GetRotation() const;
 
 	void SetWorldMatrix(const Matrix4x4& worldMatrix);
 	const Matrix4x4& GetWorldMatrix() const;
