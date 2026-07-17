@@ -184,8 +184,8 @@ void CollisionResolver::ConvertContactManifoldsToConstrainedPoints(const std::ve
 			constrainedContact.InverseContactMasses[0] = rigidbodyA.GetInverseMass() * invContactPointCount;
 			constrainedContact.InverseContactMasses[1] = rigidbodyB.GetInverseMass() * invContactPointCount;
 			
-			constrainedContact.InverseInertiaTensors[0] = glm::inverse(rigidbodyA.InertiaTensor);
-			constrainedContact.InverseInertiaTensors[1] = glm::inverse(rigidbodyB.InertiaTensor);
+			constrainedContact.InverseInertiaTensors[0] = glm::inverse(rigidbodyA.InverseInertiaTensor);
+			constrainedContact.InverseInertiaTensors[1] = glm::inverse(rigidbodyB.InverseInertiaTensor);
 	
 			//todo : potentially clamp the normal and offsets?
 
@@ -465,8 +465,8 @@ void CollisionResolver::SoftResolveCollision(const CollisionManifold& manifold)
 		glm::vec3 rpAxN = glm::cross(relativePositionA, relativeNormal);
 		glm::vec3 rpBxN = glm::cross(relativePositionB, relativeNormal);
 
-		float inertiaA = glm::dot(rpAxN, objectA.InertiaTensor * rpAxN);
-		float inertiaB = glm::dot(rpBxN, objectB.InertiaTensor * rpBxN);
+		float inertiaA = glm::dot(rpAxN, objectA.InverseInertiaTensor * rpAxN);
+		float inertiaB = glm::dot(rpBxN, objectB.InverseInertiaTensor * rpBxN);
 
 		float totalInvMass = objectA.GetInverseMass() + objectB.GetInverseMass() + inertiaA + inertiaB;
 

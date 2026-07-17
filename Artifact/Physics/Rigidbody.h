@@ -14,7 +14,7 @@ private:
 	Vector3 m_CentreOfMass;
 
 public:
-	glm::mat3x3 InertiaTensor;
+	glm::vec3 InverseInertiaTensor;
 	glm::mat3x3 WorldInverseInertiaTensor;
 	glm::vec3 Forces;
 	glm::vec3 Torques;
@@ -41,8 +41,13 @@ public:
 
 	void StopMoving();
 
-	void AddForce(const Vector3& force);
-	void AddTorque(const Vector3& torque);
+	void ApplyAngularInpulse(const glm::vec3& force);
+	void ApplyLinearImpulse(const glm::vec3& force);
+	void AddForce(const glm::vec3& force);
+	void AddForceAtPosition(const glm::vec3& force, const glm::vec3& position);
+	void AddTorque(const glm::vec3& torque);
+	void ClearForces();
+
 	Vector3 GetAngularVelocityAtPoint(const Vector3& point);
 
 	void UpdateInertiaTensor();

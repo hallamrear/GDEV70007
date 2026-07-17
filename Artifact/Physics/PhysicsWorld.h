@@ -24,7 +24,7 @@ private:
 	Rigidbody* m_RigidbodyList;
 	int m_ActiveRigidbodyCount;
 
-	void IntegrateVelocities();
+	void IntegrateAccelerationAndVelocities();
 	void CollectCollisionPairs();
 	//Sequential Impulse Constaint Solver
 	void SolveConstaints();

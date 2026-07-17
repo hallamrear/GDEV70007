@@ -21,12 +21,18 @@ PhysicsWorld::~PhysicsWorld()
 
 void PhysicsWorld::FixedUpdate()
 {
-	IntegrateVelocities();
+	IntegrateAccelerationAndVelocities();
 	CollectCollisionPairs();
 	SolveConstaints();
 	IntergratePositions();
 	UpdateSleepers();
 	CleanupPhysicsObjects();
+
+	for (size_t i = 0; i < c_MaxRigidbodyCount; i++)
+	{
+		m_RigidbodyList[i].StopMoving();
+		m_RigidbodyList[i].ClearForces();
+	}
 }
 
 void PhysicsWorld::Update(const float& deltaTime)
@@ -134,54 +140,31 @@ void PhysicsWorld::OnIMGUIRender()
 	ImGui::End();
 }
 
-void PhysicsWorld::IntegrateVelocities()
+void PhysicsWorld::IntegrateAccelerationAndVelocities()
 {
 	for (size_t i = 0; i < c_MaxRigidbodyCount; i++)
 	{
 		Rigidbody& rb = m_RigidbodyList[i];
-		
+
 		if (rb.GetInverseMass() <= FLT_EPSILON || rb.IsSleeping || rb.IsStatic || (rb.IsActive == false))
 			continue;
-		
-		float mass = rb.GetMass();
+
 		float inverseMass = rb.GetInverseMass();
+		glm::vec3 acceleration = rb.Forces * inverseMass;
 
 		//Add Gravity
 		if (rb.IsGravityEnabled)
 		{
-			Vector3 gravity = Vector3(c_Gravity.x * mass, c_Gravity.y * mass, c_Gravity.z * mass);
-			rb.AddForce(gravity);
+			acceleration += glm::vec3(c_Gravity.x, c_Gravity.y, c_Gravity.z);
 		}
 
-		//Calculate Acceleration
-		Vector3 linearAcceleration{ rb.Forces.x * inverseMass, rb.Forces.y * inverseMass, rb.Forces.z * inverseMass };
+		rb.LinearVelocity += acceleration * FIXED_TIMESTEP;
 
-		//Calculate Velocity
-		rb.LinearVelocity.x += (linearAcceleration.x * FIXED_TIMESTEP);
-		rb.LinearVelocity.y += (linearAcceleration.y * FIXED_TIMESTEP);
-		rb.LinearVelocity.z += (linearAcceleration.z * FIXED_TIMESTEP);
+		rb.UpdateInertiaTensor();
 
-		//Calculate Angular Acceleration
-		glm::mat3x3 m_WorldSpaceInverseInertiaTensor;
+		glm::vec3 angularAcceleration = rb.WorldInverseInertiaTensor * rb.Torques;
+		rb.AngularVelocity += angularAcceleration * FIXED_TIMESTEP;
 
-		glm::vec3 angularAcceleration = rb.Torques * m_WorldSpaceInverseInertiaTensor;
-
-		//Calculate Angular Velocity
-		rb.AngularVelocity.x += (angularAcceleration.x * FIXED_TIMESTEP);
-		rb.AngularVelocity.y += (angularAcceleration.y * FIXED_TIMESTEP);
-		rb.AngularVelocity.z += (angularAcceleration.z * FIXED_TIMESTEP);
-
-		//Apply Damping
-		rb.LinearVelocity.x *= (c_LinearDamping);
-		rb.LinearVelocity.y *= (c_LinearDamping);
-		rb.LinearVelocity.z *= (c_LinearDamping);
-		rb.AngularVelocity.x *= (c_AngularDamping);
-		rb.AngularVelocity.y *= (c_AngularDamping);
-		rb.AngularVelocity.z *= (c_AngularDamping);
-
-		//Reset Forces
-		rb.Forces = { 0.0f, 0.0f, 0.0f };
-		rb.Torques = { 0.0f, 0.0f, 0.0f };
 	}
 }
 
@@ -268,27 +251,18 @@ void PhysicsWorld::IntergratePositions()
 		if (rb.GetInverseMass() <= FLT_EPSILON || rb.IsSleeping || rb.IsStatic || (rb.IsActive == false))
 			continue;
 
-		rb.Translation.x += (rb.LinearVelocity.x * FIXED_TIMESTEP);
-		rb.Translation.y += (rb.LinearVelocity.y * FIXED_TIMESTEP);
-		rb.Translation.z += (rb.LinearVelocity.z * FIXED_TIMESTEP);
+		rb.Translation += (rb.LinearVelocity * FIXED_TIMESTEP);
+
+		//Apply Damping
+		rb.LinearVelocity *= (c_LinearDamping);
 
 		//Integrating angular velocity.
-		glm::quat omega = { rb.AngularVelocity.x, rb.AngularVelocity.y, rb.AngularVelocity.z, 0.0f };
-		
-		glm::quat angularDeriv = omega * rb.Rotation;
-		angularDeriv.x *= 0.5f;
-		angularDeriv.y *= 0.5f;
-		angularDeriv.z *= 0.5f; 
-		angularDeriv.w *= 0.5f;
-
-		rb.Rotation.x += (angularDeriv.x * FIXED_TIMESTEP);
-		rb.Rotation.y += (angularDeriv.y * FIXED_TIMESTEP);
-		rb.Rotation.z += (angularDeriv.z * FIXED_TIMESTEP);
-		rb.Rotation.w += (angularDeriv.w * FIXED_TIMESTEP);
-
+		glm::vec3 omega = rb.AngularVelocity * FIXED_TIMESTEP * 0.5f;
+		glm::quat angularDeriv = glm::quat(omega.x, omega.y, omega.z, 0.0f) * rb.Rotation;
+		rb.Rotation += angularDeriv;
 		rb.Rotation = glm::normalize(rb.Rotation);
 
-		rb.UpdateInertiaTensor();
+		rb.AngularVelocity *= (c_AngularDamping);
 	}
 }
 

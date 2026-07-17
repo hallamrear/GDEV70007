@@ -6,7 +6,7 @@ Rigidbody::Rigidbody() : m_Entity(nullptr)
 	m_Mass = 0.0f;
 	m_InverseMass = 0.0f;
 	m_CentreOfMass = Vector3(0.0f, 0.0f, 0.0f);
-	InertiaTensor = glm::mat3x3();
+	InverseInertiaTensor = glm::vec3();
 	WorldInverseInertiaTensor = glm::mat3x3();
 	Translation = glm::vec3(0.0f, 0.0f, 0.0f);
 	Rotation = glm::quat(0.0f, 0.0f, 0.0f, 1.0f);
@@ -27,7 +27,7 @@ Rigidbody::~Rigidbody()
 	m_Mass = 0.0f;
 	m_InverseMass = 0.0f;
 	m_CentreOfMass = Vector3(0.0f, 0.0f, 0.0f);
-	InertiaTensor = glm::mat3x3();
+	InverseInertiaTensor = glm::vec3();
 	WorldInverseInertiaTensor = glm::mat3x3();
 	Translation = glm::vec3(0.0f, 0.0f, 0.0f);
 	Rotation = glm::quat(0.0f, 0.0f, 0.0f, 1.0f);
@@ -59,11 +59,15 @@ void Rigidbody::SetMass(const float& mass)
 	float h = w;
 	float d = w;
 
-	InertiaTensor =
+	InverseInertiaTensor =
 	{
-		(m_Mass / 12.0f) * (h * h + d * d), 0.0f, 0.0f,
-		0.0f, (m_Mass / 12.0f) * (w * w + d * d), 0.0f,
-		0.0f, 0.0f, (m_Mass / 12.0f) * (w * w + h * h)
+		//(m_Mass / 12.0f) * (h * h + d * d), 0.0f, 0.0f,
+		//0.0f, (m_Mass / 12.0f) * (w * w + d * d), 0.0f,
+		//0.0f, 0.0f, (m_Mass / 12.0f) * (w * w + h * h)
+
+		(m_InverseMass * 12.0f) * (h * h + d * d),
+		(m_InverseMass * 12.0f) * (w * w + d * d),
+		(m_InverseMass * 12.0f) * (w * w + h * h)
 	};
 }
 
@@ -100,18 +104,38 @@ void Rigidbody::StopMoving()
 	AngularVelocity = { 0.0f, 0.0f, 0.0f };
 }
 
-void Rigidbody::AddForce(const Vector3& force)
+void Rigidbody::ApplyAngularInpulse(const glm::vec3& force)
 {
-	Forces.x += force.x;
-	Forces.y += force.y;
-	Forces.z += force.z;
+	AngularVelocity += WorldInverseInertiaTensor * force;
 }
 
-void Rigidbody::AddTorque(const Vector3& torque)
+void Rigidbody::ApplyLinearImpulse(const glm::vec3& force)
 {
-	Torques.x += torque.x;
-	Torques.y += torque.y;
-	Torques.z += torque.z;
+	LinearVelocity += force * m_InverseMass;
+}
+
+void Rigidbody::AddForce(const glm::vec3& force)
+{
+	Forces += force;
+}
+
+//Position is in world space. 
+void Rigidbody::AddForceAtPosition(const glm::vec3& force, const glm::vec3& position)
+{
+	glm::vec3 localPosition = position - Translation;
+	AddForce(force);
+	AddTorque(glm::cross(localPosition, force));
+}
+
+void Rigidbody::AddTorque(const glm::vec3& torque)
+{
+	Torques += torque;
+}
+
+void Rigidbody::ClearForces()
+{
+	Forces = glm::vec3(0.0f, 0.0f, 0.0f);
+	Torques = glm::vec3(0.0f, 0.0f, 0.0f);
 }
 
 Vector3 Rigidbody::GetAngularVelocityAtPoint(const Vector3& point)
@@ -123,6 +147,7 @@ Vector3 Rigidbody::GetAngularVelocityAtPoint(const Vector3& point)
 
 void Rigidbody::UpdateInertiaTensor()
 {
-	glm::mat3 rotationMatrix = glm::mat3_cast(Rotation);
-	WorldInverseInertiaTensor = glm::inverse(rotationMatrix) * glm::inverse(InertiaTensor) * rotationMatrix;
+	glm::mat3 orientation = glm::mat3_cast(Rotation);
+	glm::mat3 inverseOrientation = glm::mat3_cast(glm::inverse(Rotation));
+	WorldInverseInertiaTensor = orientation * glm::mat3(glm::scale(InverseInertiaTensor)) * inverseOrientation;
 }
