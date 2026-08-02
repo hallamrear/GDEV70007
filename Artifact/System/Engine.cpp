@@ -206,34 +206,34 @@ void Engine::FixedUpdate()
 		m_World->FixedUpdate();
 	}
 
-	//float deltaTime = FIXED_TIMESTEP;
-	//Vector3 forward = m_Renderer->GetCamera().GetForwardVector();
-	//Vector3 right = m_Renderer->GetCamera().GetRightVector();
-	//Vector3 up = m_Renderer->GetCamera().GetUpVector();
-	//
-	//const float moveSpeed = deltaTime;
-	//const float rotationSpeed = deltaTime;
-	//
-	//if (m_InputListener.GetKeyDown(VK_KEY_W)) { m_Renderer->GetCamera().Move(Vector3(forward.x * moveSpeed, forward.y * moveSpeed, forward.z * moveSpeed)); }
-	//if (m_InputListener.GetKeyDown(VK_KEY_S)) { m_Renderer->GetCamera().Move(Vector3(forward.x * -moveSpeed, forward.y * -moveSpeed, forward.z * -moveSpeed)); }
-	//if (m_InputListener.GetKeyDown(VK_KEY_A)) { m_Renderer->GetCamera().Move(Vector3(right.x * -moveSpeed, right.y * -moveSpeed, right.z * -moveSpeed)); }
-	//if (m_InputListener.GetKeyDown(VK_KEY_D)) { m_Renderer->GetCamera().Move(Vector3(right.x * moveSpeed, right.y * moveSpeed, right.z * moveSpeed)); }
-	//
-	//if (m_InputListener.GetKeyDown(VK_LSHIFT)) { m_Renderer->GetCamera().Move(Vector3(up.x * -moveSpeed, up.y * -moveSpeed, up.z * -moveSpeed)); }
-	//if (m_InputListener.GetKeyDown(VK_SPACE)) { m_Renderer->GetCamera().Move(Vector3(up.x * moveSpeed, up.y * moveSpeed, up.z * moveSpeed)); }
-	//
-	//if (m_InputListener.GetKeyDown(VK_LEFT)) { m_Renderer->GetCamera().RotateEulerDegrees(Vector3(0.0f, -rotationSpeed, 0.0f)); }
-	//if (m_InputListener.GetKeyDown(VK_RIGHT)) { m_Renderer->GetCamera().RotateEulerDegrees(Vector3(0.0f, rotationSpeed, 0.0f)); }
-	//if (m_InputListener.GetKeyDown(VK_UP)) { m_Renderer->GetCamera().RotateEulerDegrees(Vector3(-rotationSpeed, 0.0f, 0.0f)); }
-	//if (m_InputListener.GetKeyDown(VK_DOWN)) { m_Renderer->GetCamera().RotateEulerDegrees(Vector3(rotationSpeed, 0.0f, 0.0f)); }
-	//
-	//Vector2 delta = m_InputListener.GetMouseState().GetMouseDelta();
-	//float sensitivity = 0.0f;
-	//
-	//if (abs(delta.x) > FLT_EPSILON || abs(delta.y) > FLT_EPSILON)
-	//{
-	//	m_Renderer->GetCamera().RotateEulerDegrees(Vector3(rotationSpeed * -delta.y * sensitivity, rotationSpeed * delta.x * sensitivity, 0.0f));
-	//}
+	float deltaTime = FIXED_TIMESTEP;
+	Vector3 forward = m_Renderer->GetCamera().GetForwardVector();
+	Vector3 right = m_Renderer->GetCamera().GetRightVector();
+	Vector3 up = m_Renderer->GetCamera().GetUpVector();
+
+	float moveSpeed = +180.0f * deltaTime;
+	float rotationSpeed = 5.0f * deltaTime;
+	
+	if (m_InputListener.GetKeyDown(VK_KEY_W)) { m_Renderer->GetCamera().Move(Vector3(forward.x * moveSpeed, forward.y * moveSpeed, forward.z * moveSpeed)); }
+	if (m_InputListener.GetKeyDown(VK_KEY_S)) { m_Renderer->GetCamera().Move(Vector3(forward.x * -moveSpeed, forward.y * -moveSpeed, forward.z * -moveSpeed)); }
+	if (m_InputListener.GetKeyDown(VK_KEY_A)) { m_Renderer->GetCamera().Move(Vector3(right.x * -moveSpeed, right.y * -moveSpeed, right.z * -moveSpeed)); }
+	if (m_InputListener.GetKeyDown(VK_KEY_D)) { m_Renderer->GetCamera().Move(Vector3(right.x * moveSpeed, right.y * moveSpeed, right.z * moveSpeed)); }
+	
+	if (m_InputListener.GetKeyDown(VK_LSHIFT)) { m_Renderer->GetCamera().Move(Vector3(up.x * -moveSpeed, up.y * -moveSpeed, up.z * -moveSpeed)); }
+	if (m_InputListener.GetKeyDown(VK_SPACE)) { m_Renderer->GetCamera().Move(Vector3(up.x * moveSpeed, up.y * moveSpeed, up.z * moveSpeed)); }
+	
+	if (m_InputListener.GetKeyDown(VK_LEFT)) { m_Renderer->GetCamera().RotateEulerDegrees(Vector3(0.0f, -rotationSpeed, 0.0f)); }
+	if (m_InputListener.GetKeyDown(VK_RIGHT)) { m_Renderer->GetCamera().RotateEulerDegrees(Vector3(0.0f, rotationSpeed, 0.0f)); }
+	if (m_InputListener.GetKeyDown(VK_UP)) { m_Renderer->GetCamera().RotateEulerDegrees(Vector3(-rotationSpeed, 0.0f, 0.0f)); }
+	if (m_InputListener.GetKeyDown(VK_DOWN)) { m_Renderer->GetCamera().RotateEulerDegrees(Vector3(rotationSpeed, 0.0f, 0.0f)); }
+	
+	Vector2 delta = m_InputListener.GetMouseState().GetMouseDelta();
+	float sensitivity = 0.0f;
+	
+	if (abs(delta.x) > FLT_EPSILON || abs(delta.y) > FLT_EPSILON)
+	{
+		m_Renderer->GetCamera().RotateEulerDegrees(Vector3(rotationSpeed * -delta.y * sensitivity, rotationSpeed * delta.x * sensitivity, 0.0f));
+	}
 
 
 }
@@ -262,81 +262,81 @@ void Engine::Update(const float& deltaTime)
 		m_World->Update(deltaTime);
 	}
 
-	//float moveSpeed = +80.0f * deltaTime;
-	//float rotationSpeed = 5.0f * deltaTime;
-	//Vector3 forward = m_Renderer->GetCamera().GetForwardVector();
-	//Vector3 right = m_Renderer->GetCamera().GetRightVector();
-	//Vector3 up = m_Renderer->GetCamera().GetUpVector();
-	//
-	//if (m_InputListener.IsControllerSupportEnabled())
-	//{
-	//	Vector2 thumbstickLeft =
-	//	{
-	//		m_InputListener.GetControllerAnalogValue(0, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_LEFT_THUMBSTICK_X),
-	//		m_InputListener.GetControllerAnalogValue(0, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_LEFT_THUMBSTICK_Y)
-	//	};
-	//
-	//	if ((thumbstickLeft.y > (0.0f + FLT_EPSILON)) || (thumbstickLeft.y < (0.0f - FLT_EPSILON))) { m_Renderer->GetCamera().Move(Vector3(forward.x * moveSpeed * thumbstickLeft.y, forward.y * moveSpeed * thumbstickLeft.y, forward.z * moveSpeed * thumbstickLeft.y)); }
-	//	if ((thumbstickLeft.x > (0.0f + FLT_EPSILON)) || (thumbstickLeft.x < (0.0f - FLT_EPSILON))) { m_Renderer->GetCamera().Move(Vector3(right.x * moveSpeed * thumbstickLeft.x, right.y * moveSpeed * thumbstickLeft.x, right.z * moveSpeed * thumbstickLeft.x)); }
-	//
-	//	Vector2 thumbstickRight =
-	//	{
-	//		m_InputListener.GetControllerAnalogValue(0, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_RIGHT_THUMBSTICK_X),
-	//		m_InputListener.GetControllerAnalogValue(0, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_RIGHT_THUMBSTICK_Y)
-	//	};
-	//
-	//	if (thumbstickRight.x > (0.0f + FLT_EPSILON) || thumbstickRight.x < (0.0f - FLT_EPSILON) ||
-	//		thumbstickRight.y >(0.0f + FLT_EPSILON) || thumbstickRight.y < (0.0f - FLT_EPSILON))
-	//	{
-	//		m_Renderer->GetCamera().RotateEulerDegrees(Vector3(rotationSpeed * -thumbstickRight.y, rotationSpeed * thumbstickRight.x, 0.0f));
-	//	}
-	//
-	//	if (m_World->TestBoxA != nullptr)
-	//	{
-	//		float leftTrigger = m_InputListener.GetControllerAnalogValue(0, CONTROLLER_ANALOG_LEFT_TRIGGER);
-	//		float rightTrigger = m_InputListener.GetControllerAnalogValue(0, CONTROLLER_ANALOG_RIGHT_TRIGGER);
-	//
-	//		if (leftTrigger > 0)
-	//			m_World->TestBoxA->Rotate(Vector3(rotationSpeed * leftTrigger, 0.0f, 0.0f));
-	//
-	//		if (rightTrigger > 0)
-	//			m_World->TestBoxA->Rotate(Vector3(0.0f, rotationSpeed * rightTrigger, 0.0f));
-	//
-	//		Vector3 localForward = m_World->TestBoxB->GetForwardVector();
-	//		Vector3 localRight = m_World->TestBoxB->GetRightVector();
-	//		Vector3 localUp = m_World->TestBoxB->GetUpVector();
-	//
-	//		if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_DPAD_UP) || m_InputListener.GetKeyDown(VK_KEY_I))
-	//		{
-	//			m_World->TestBoxB->Translate(Vector3(localForward.x * moveSpeed * 5 * FIXED_TIMESTEP, localForward.y * moveSpeed * 5 * FIXED_TIMESTEP, localForward.z * moveSpeed * 5 * FIXED_TIMESTEP));
-	//		}
-	//
-	//		if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_DPAD_RIGHT) || m_InputListener.GetKeyDown(VK_KEY_L))
-	//		{
-	//			m_World->TestBoxB->Translate(Vector3(localRight.x * moveSpeed * 5 * FIXED_TIMESTEP, localRight.y * moveSpeed * 5 * FIXED_TIMESTEP, localRight.z * moveSpeed * 5 * FIXED_TIMESTEP));
-	//		}
-	//
-	//		if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_DPAD_DOWN) || m_InputListener.GetKeyDown(VK_KEY_K))
-	//		{
-	//			m_World->TestBoxB->Translate(Vector3(-localForward.x * moveSpeed * 5 * FIXED_TIMESTEP, -localForward.y * moveSpeed * 5 * FIXED_TIMESTEP, -localForward.z * moveSpeed * 5 * FIXED_TIMESTEP));
-	//		}
-	//
-	//		if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_DPAD_LEFT) || m_InputListener.GetKeyDown(VK_KEY_J))
-	//		{
-	//			m_World->TestBoxB->Translate(Vector3(-localRight.x * moveSpeed * 5 * FIXED_TIMESTEP, -localRight.y * moveSpeed * 5 * FIXED_TIMESTEP, -localRight.z * moveSpeed * 5 * FIXED_TIMESTEP));
-	//		}
-	//
-	//		if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_LEFT_SHOULDER) || m_InputListener.GetKeyDown(VK_KEY_U))
-	//		{
-	//			m_World->TestBoxB->Translate(Vector3(-localUp.x * moveSpeed * 5 * FIXED_TIMESTEP, -localUp.y * moveSpeed * 5 * FIXED_TIMESTEP, -localUp.z * moveSpeed * 5 * FIXED_TIMESTEP));
-	//		}
-	//
-	//		if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_RIGHT_SHOULDER) || m_InputListener.GetKeyDown(VK_KEY_O))
-	//		{
-	//			m_World->TestBoxB->Translate(Vector3(localUp.x * moveSpeed * 5 * FIXED_TIMESTEP, localUp.y * moveSpeed * 5 * FIXED_TIMESTEP, localUp.z * moveSpeed * 5 * FIXED_TIMESTEP));
-	//		}
-	//	}
-	//}
+	float moveSpeed = +180.0f * deltaTime;
+	float rotationSpeed = 5.0f * deltaTime;
+	Vector3 forward = m_Renderer->GetCamera().GetForwardVector();
+	Vector3 right = m_Renderer->GetCamera().GetRightVector();
+	Vector3 up = m_Renderer->GetCamera().GetUpVector();
+	
+	if (m_InputListener.IsControllerSupportEnabled())
+	{
+		Vector2 thumbstickLeft =
+		{
+			m_InputListener.GetControllerAnalogValue(0, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_LEFT_THUMBSTICK_X),
+			m_InputListener.GetControllerAnalogValue(0, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_LEFT_THUMBSTICK_Y)
+		};
+	
+		if ((thumbstickLeft.y > (0.0f + FLT_EPSILON)) || (thumbstickLeft.y < (0.0f - FLT_EPSILON))) { m_Renderer->GetCamera().Move(Vector3(forward.x * moveSpeed * thumbstickLeft.y, forward.y * moveSpeed * thumbstickLeft.y, forward.z * moveSpeed * thumbstickLeft.y)); }
+		if ((thumbstickLeft.x > (0.0f + FLT_EPSILON)) || (thumbstickLeft.x < (0.0f - FLT_EPSILON))) { m_Renderer->GetCamera().Move(Vector3(right.x * moveSpeed * thumbstickLeft.x, right.y * moveSpeed * thumbstickLeft.x, right.z * moveSpeed * thumbstickLeft.x)); }
+	
+		Vector2 thumbstickRight =
+		{
+			m_InputListener.GetControllerAnalogValue(0, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_RIGHT_THUMBSTICK_X),
+			m_InputListener.GetControllerAnalogValue(0, CONTROLLER_ANALOG_STICK::CONTROLLER_ANALOG_RIGHT_THUMBSTICK_Y)
+		};
+	
+		if (thumbstickRight.x > (0.0f + FLT_EPSILON) || thumbstickRight.x < (0.0f - FLT_EPSILON) ||
+			thumbstickRight.y >(0.0f + FLT_EPSILON) || thumbstickRight.y < (0.0f - FLT_EPSILON))
+		{
+			m_Renderer->GetCamera().RotateEulerDegrees(Vector3(rotationSpeed * -thumbstickRight.y, rotationSpeed * thumbstickRight.x, 0.0f));
+		}
+	
+		if (m_World->TestBoxA != nullptr)
+		{
+			float leftTrigger = m_InputListener.GetControllerAnalogValue(0, CONTROLLER_ANALOG_LEFT_TRIGGER);
+			float rightTrigger = m_InputListener.GetControllerAnalogValue(0, CONTROLLER_ANALOG_RIGHT_TRIGGER);
+	
+			if (leftTrigger > 0)
+				m_World->TestBoxA->Rotate(Vector3(rotationSpeed * leftTrigger, 0.0f, 0.0f));
+	
+			if (rightTrigger > 0)
+				m_World->TestBoxA->Rotate(Vector3(0.0f, rotationSpeed * rightTrigger, 0.0f));
+	
+			Vector3 localForward = m_World->TestBoxB->GetForwardVector();
+			Vector3 localRight = m_World->TestBoxB->GetRightVector();
+			Vector3 localUp = m_World->TestBoxB->GetUpVector();
+	
+			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_DPAD_UP) || m_InputListener.GetKeyDown(VK_KEY_I))
+			{
+				m_World->TestBoxB->Translate(Vector3(localForward.x * moveSpeed * 5 * FIXED_TIMESTEP, localForward.y * moveSpeed * 5 * FIXED_TIMESTEP, localForward.z * moveSpeed * 5 * FIXED_TIMESTEP));
+			}
+	
+			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_DPAD_RIGHT) || m_InputListener.GetKeyDown(VK_KEY_L))
+			{
+				m_World->TestBoxB->Translate(Vector3(localRight.x * moveSpeed * 5 * FIXED_TIMESTEP, localRight.y * moveSpeed * 5 * FIXED_TIMESTEP, localRight.z * moveSpeed * 5 * FIXED_TIMESTEP));
+			}
+	
+			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_DPAD_DOWN) || m_InputListener.GetKeyDown(VK_KEY_K))
+			{
+				m_World->TestBoxB->Translate(Vector3(-localForward.x * moveSpeed * 5 * FIXED_TIMESTEP, -localForward.y * moveSpeed * 5 * FIXED_TIMESTEP, -localForward.z * moveSpeed * 5 * FIXED_TIMESTEP));
+			}
+	
+			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_DPAD_LEFT) || m_InputListener.GetKeyDown(VK_KEY_J))
+			{
+				m_World->TestBoxB->Translate(Vector3(-localRight.x * moveSpeed * 5 * FIXED_TIMESTEP, -localRight.y * moveSpeed * 5 * FIXED_TIMESTEP, -localRight.z * moveSpeed * 5 * FIXED_TIMESTEP));
+			}
+	
+			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_LEFT_SHOULDER) || m_InputListener.GetKeyDown(VK_KEY_U))
+			{
+				m_World->TestBoxB->Translate(Vector3(-localUp.x * moveSpeed * 5 * FIXED_TIMESTEP, -localUp.y * moveSpeed * 5 * FIXED_TIMESTEP, -localUp.z * moveSpeed * 5 * FIXED_TIMESTEP));
+			}
+	
+			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_RIGHT_SHOULDER) || m_InputListener.GetKeyDown(VK_KEY_O))
+			{
+				m_World->TestBoxB->Translate(Vector3(localUp.x * moveSpeed * 5 * FIXED_TIMESTEP, localUp.y * moveSpeed * 5 * FIXED_TIMESTEP, localUp.z * moveSpeed * 5 * FIXED_TIMESTEP));
+			}
+		}
+	}
 }
 
 void Engine::Render()

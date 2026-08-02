@@ -7,13 +7,13 @@ EPA::Edge::Edge()
 
 }
 
-EPA::Edge::Edge(const Vector3& a, const Vector3& b)
+EPA::Edge::Edge(const glm::vec3& a, const glm::vec3& b)
 {
 	start = a;
 	end = b;
 }
 
-EPA::Face::Face(const Vector3& a, const Vector3& b, const Vector3& c)
+EPA::Face::Face(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c)
 {
 	points[0] = a;
 	points[1] = b;
@@ -29,16 +29,11 @@ EPA::Face::Face(const Vector3& a, const Vector3& b, const Vector3& c)
 	normal = Maths::GetNormalOfTriangle(a, b, c);
 }
 
-float EPA::DistanceFromPointToPlane(const Vector3& point, const Vector3& planeOrigin, const Vector3& planeNormal)
+float EPA::DistanceFromPointToPlane(const glm::vec3& point, const glm::vec3& planeOrigin, const glm::vec3& planeNormal)
 {
-	Vector3 diff;
-	diff.x = point.x - planeOrigin.x;
-	diff.y = point.y - planeOrigin.y;
-	diff.z = point.z - planeOrigin.z;
-
-	Vector3 length;
-	DirectX::XMStoreFloat3(&length, DirectX::XMVector3Dot(DirectX::XMLoadFloat3(&diff), DirectX::XMLoadFloat3(&planeNormal)));
-	return fabsf(length.x);
+	glm::vec3 diff = point - planeOrigin;
+	float length = glm::dot(diff, planeNormal);
+	return fabsf(length);
 }
 
 void EPA::DetermineClosestFaceToOrigin(size_t& closestFaceIndex, float& closestFaceDistance, const Polytope& polytope)
@@ -49,7 +44,7 @@ void EPA::DetermineClosestFaceToOrigin(size_t& closestFaceIndex, float& closestF
 	for (size_t i = 0; i < polytope.size(); i++)
 	{
 		const Face& face = polytope[i];
-		float distance = DistanceFromPointToPlane(Vector3(0.0f, 0.0f, 0.0f), face.centre, face.normal);
+		float distance = DistanceFromPointToPlane(glm::vec3(0.0f, 0.0f, 0.0f), face.centre, face.normal);
 
 		if (distance < closestFaceDistance)
 		{
@@ -87,16 +82,15 @@ void EPA::ExtendPolytopeWithNewPoint(Polytope& polytope, const SupportVertex& ne
 		Face face = *itr;
 
 		//Detemine if face is visible
-		Vector3 triToNew = Vector3(
+		glm::vec3 triToNew = glm::vec3(
 			newVertex.MinkowskiDifference.x - face.centre.x, 
 			newVertex.MinkowskiDifference.y - face.centre.y,
 			newVertex.MinkowskiDifference.z - face.centre.z);
-		XMStoreFloat3(&triToNew, DirectX::XMVector3Normalize(XMLoadFloat3(&triToNew)));
+		triToNew = glm::normalize(triToNew);
 
-		Vector3 dot;
-		XMStoreFloat3(&dot, DirectX::XMVector3Dot(XMLoadFloat3(&face.normal), XMLoadFloat3(&triToNew)));
+		float dot = glm::dot(face.normal, triToNew);
 
-		if (dot.x > 0.0f)
+		if (dot > 0.0f)
 		{
 			itr = polytope.erase(itr);
 
@@ -135,27 +129,25 @@ void EPA::ExtendPolytopeWithNewPoint(Polytope& polytope, const SupportVertex& ne
 	//}
 }
 
-int EPA::GetFaceNormals(std::vector<Vector3>& normals, std::vector<float>& distances, const std::vector<SupportVertex>& simplex, const std::vector<size_t>& faces)
+int EPA::GetFaceNormals(std::vector<glm::vec3>& normals, std::vector<float>& distances, const std::vector<SupportVertex>& simplex, const std::vector<size_t>& faces)
 {
 	int minIndex = -1;
 	float minDistance = FLT_MAX;
 
 	for (int i = 0; i < faces.size(); i += 3)
 	{
-		Vector3 a = simplex[faces[i + 0]].MinkowskiDifference;
-		Vector3 b = simplex[faces[i + 1]].MinkowskiDifference;
-		Vector3 c = simplex[faces[i + 2]].MinkowskiDifference;
+		glm::vec3 a = simplex[faces[i + 0]].MinkowskiDifference;
+		glm::vec3 b = simplex[faces[i + 1]].MinkowskiDifference;
+		glm::vec3 c = simplex[faces[i + 2]].MinkowskiDifference;
 
-		Vector3 lineAB = Vector3(b.x - a.x, b.y - a.y, b.z - a.z);
-		Vector3 lineAC = Vector3(c.x - a.x, c.y - a.y, c.z - a.z);
+		glm::vec3 lineAB = glm::vec3(b.x - a.x, b.y - a.y, b.z - a.z);
+		glm::vec3 lineAC = glm::vec3(c.x - a.x, c.y - a.y, c.z - a.z);
 
-
-		Vector3 cross = Maths::Cross(lineAB, lineAC);
-		Vector3 normal;
-		DirectX::XMStoreFloat3(&normal, DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&cross)));
+		glm::vec3 cross = glm::cross(lineAB, lineAC);
+		glm::vec3 normal= glm::normalize(cross);
 
 		//Project face line onto normal.
-		float distance = Maths::Dot(normal, a);
+		float distance = glm::dot(normal, a);
 
 		//Ensure normal is facing the right direction.
 		if (distance < 0)
@@ -163,7 +155,6 @@ int EPA::GetFaceNormals(std::vector<Vector3>& normals, std::vector<float>& dista
 			normal.x *= -1.0f;
 			normal.y *= -1.0f;
 			normal.z *= -1.0f;
-
 			distance *= -1.0f;
 		}
 
@@ -226,12 +217,12 @@ EPA_Result EPA::GetCollisionDetails(std::vector<SupportVertex>& simplex, const C
 	};
 
 	//Get and store the inital normals and distance values for each face.
-	std::vector<Vector3> faceNormals = std::vector<Vector3>();
+	std::vector<glm::vec3> faceNormals = std::vector<glm::vec3>();
 	std::vector<float> faceDistances = std::vector<float>();
 	size_t minIndex = GetFaceNormals(faceNormals, faceDistances, simplex, polytopeFaces);
 
 	float minDistance = FLT_MAX;
-	Vector3 minNormal = Vector3();
+	glm::vec3 minNormal = glm::vec3();
 
 	while (minDistance == FLT_MAX)
 	{
@@ -257,7 +248,7 @@ EPA_Result EPA::GetCollisionDetails(std::vector<SupportVertex>& simplex, const C
 		SupportVertex supportVertex = SupportVertex::GetSupportVertex(colliderA, colliderB, minNormal);
 		//if this point is further out in the direction, we insert this vertex into the simplex and test again.
 
-		float supportDistance = Maths::Dot(minNormal, supportVertex.MinkowskiDifference);
+		float supportDistance = glm::dot(minNormal, supportVertex.MinkowskiDifference);
 
 		if (abs(supportDistance - minDistance) > 0.001f)
 		{
@@ -308,7 +299,7 @@ EPA_Result EPA::GetCollisionDetails(std::vector<SupportVertex>& simplex, const C
 
 			polytope.push_back(supportVertex);
 
-			std::vector<Vector3> newNormals = std::vector<Vector3>();
+			std::vector<glm::vec3> newNormals = std::vector<glm::vec3>();
 			std::vector<float> newDistances = std::vector<float>();
 			int newMinIndex = GetFaceNormals(newNormals, newDistances, polytope, newFaces);
 
@@ -351,7 +342,8 @@ EPA_Result EPA::GetCollisionDetails(std::vector<SupportVertex>& simplex, const C
 		triangle.Points[i] = (polytope[polytopeFaces[triFaceIndex]]);
 	}
 
-	triangle.Normal = Maths::GetNormalOfTriangle(triangle.Points[0].MinkowskiDifference, triangle.Points[1].MinkowskiDifference, triangle.Points[2].MinkowskiDifference);
+	glm::vec3 triNormal = Maths::GetNormalOfTriangle(triangle.Points[0].MinkowskiDifference, triangle.Points[1].MinkowskiDifference, triangle.Points[2].MinkowskiDifference);
+	triangle.Normal = { triNormal.x, triNormal.y, triNormal.z };
 
 	result.Tri = triangle;
 	result.Depth = minDistance + 0.001f;
@@ -412,7 +404,7 @@ EPA_Result EPA::GetCollisionDetails(std::vector<SupportVertex>& simplex, const C
 //		SupportVertex furtherPointInNormal = SupportVertex::GetSupportVertex(colliderA, colliderB, polytope[closestFaceIndex].normal);
 //
 //		float dot;
-//		XMStoreFloat(&dot, DirectX::XMVector3Dot(XMLoadFloat3(&polytope[closestFaceIndex].normal), XMLoadFloat3(&furtherPointInNormal.MinkowskiDifference)));
+//		XMStoreFloat(&dot, DirectX::XMglm::vec3Dot(XMLoadFloat3(&polytope[closestFaceIndex].normal), XMLoadFloat3(&furtherPointInNormal.MinkowskiDifference)));
 //		float distanceToFurthestPointInNormal = dot;
 //
 //		static constexpr float EPA_TOLERANCE = 0.05f;
@@ -443,7 +435,7 @@ EPA_Result EPA::GetCollisionDetails(std::vector<SupportVertex>& simplex, const C
 //	}
 //
 //	//We have closest face
-//	float depth = DistanceFromPointToPlane(Vector3(0.0f, 0.0f, 0.0f), polytope[closestFaceIndex].points[0], polytope[closestFaceIndex].normal);
+//	float depth = DistanceFromPointToPlane(glm::vec3(0.0f, 0.0f, 0.0f), polytope[closestFaceIndex].points[0], polytope[closestFaceIndex].normal);
 //	manifold->Depth = depth;
 //
 //	//Return the normal and depth (add a tiny amount to avoid multiple collisions).

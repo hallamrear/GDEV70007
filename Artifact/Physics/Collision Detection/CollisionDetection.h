@@ -34,6 +34,7 @@ private:
 
 public:
 
+	static bool Use_GJK;
 	static bool CheckCollision(const Collider* colliderA, const Collider* colliderB, CollisionManifold* manifold = nullptr);
 };
 

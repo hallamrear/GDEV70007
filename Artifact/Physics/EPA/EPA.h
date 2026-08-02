@@ -6,11 +6,11 @@ class EPA
 private:
 	struct Edge
 	{
-		Vector3 start = Vector3(0.0f, 0.0f, 0.0f);
-		Vector3 end = Vector3(0.0f, 0.0f, 0.0f);
+		glm::vec3 start = glm::vec3(0.0f, 0.0f, 0.0f);
+		glm::vec3 end = glm::vec3(0.0f, 0.0f, 0.0f);
 
 		Edge();
-		Edge(const Vector3& a, const Vector3& b);
+		Edge(const glm::vec3& a, const glm::vec3& b);
 
 		bool operator==(const Edge& rhs)
 		{
@@ -26,12 +26,12 @@ private:
 
 	struct Face
 	{
-		Vector3 points[3];
+		glm::vec3 points[3];
 		Edge edges[3];
-		Vector3 normal;
-		Vector3 centre;
+		glm::vec3 normal;
+		glm::vec3 centre;
 
-		Face(const Vector3& a, const Vector3& b, const Vector3& c);
+		Face(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c);
 	};
 
 	typedef std::vector<Face> Polytope;
@@ -44,7 +44,7 @@ private:
 	/// <param name="planeOrigin">Position of the plane</param>
 	/// <param name="planeNormal">Normal of the plane</param>
 	/// <returns></returns>
-	static float DistanceFromPointToPlane(const Vector3& point, const Vector3& planeOrigin, const Vector3& planeNormal);
+	static float DistanceFromPointToPlane(const glm::vec3& point, const glm::vec3& planeOrigin, const glm::vec3& planeNormal);
 
 	/// <summary>
 	/// 
@@ -60,7 +60,7 @@ private:
 	/// <param name="polytope"></param>
 	/// <param name="newVertex"></param>
 	static void ExtendPolytopeWithNewPoint(Polytope& polytope, const SupportVertex& newVertex);
-	static int GetFaceNormals(std::vector<Vector3>& normals, std::vector<float>& distances, const std::vector<SupportVertex>& simplex, const std::vector<size_t>& faces);
+	static int GetFaceNormals(std::vector<glm::vec3>& normals, std::vector<float>& distances, const std::vector<SupportVertex>& simplex, const std::vector<size_t>& faces);
 	static void AddEdgeIfUnique(std::vector<std::pair<size_t, size_t>>& edgeList, const std::vector<size_t>& faceList, const size_t& indexA, const size_t& indexB);
 
 

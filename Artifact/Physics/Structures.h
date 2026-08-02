@@ -1,6 +1,7 @@
 #pragma once
 #include <System/Types.h>
 #include <Physics/Colliders/Collider.h>
+#include <glm/glm.hpp>
 
 struct Contact
 {
@@ -31,11 +32,37 @@ struct SupportVertex
 		return SupportVertex(colliderA.GetFurthestPointInDirection(dirNorm), colliderB.GetFurthestPointInDirection(invDirNorm));
 	};
 
-	Vector3 SupportVertexA;
-	Vector3 SupportVertexB;
-	Vector3 MinkowskiDifference;
+	inline static SupportVertex GetSupportVertex(const Collider& colliderA, const Collider& colliderB, const glm::vec3& direction)
+	{
+		glm::vec3 dirNorm = glm::normalize(direction);
+		glm::vec3 invDirNorm = dirNorm * -1.0f;
+
+		Vector3 v3CollAFar = colliderA.GetFurthestPointInDirection({ dirNorm.x, dirNorm.y, dirNorm.z });
+		Vector3 v3CollBFar = colliderB.GetFurthestPointInDirection({ invDirNorm.x, invDirNorm.y, invDirNorm.z });
+
+		return SupportVertex(v3CollAFar, v3CollBFar);
+	};
+
+	glm::vec3 SupportVertexA;
+	glm::vec3 SupportVertexB;
+	glm::vec3 MinkowskiDifference;
 
 	SupportVertex(const Vector3& supportA, const Vector3& supportB)
+	{
+		SupportVertexA.x = supportA.x;
+		SupportVertexA.y = supportA.y;
+		SupportVertexA.z = supportA.z;
+
+		SupportVertexB.x = supportB.x;
+		SupportVertexB.y = supportB.y;
+		SupportVertexB.z = supportB.z;
+
+		MinkowskiDifference.x = (SupportVertexA.x - SupportVertexB.x);
+		MinkowskiDifference.y = (SupportVertexA.y - SupportVertexB.y);
+		MinkowskiDifference.z = (SupportVertexA.z - SupportVertexB.z);
+	}
+	
+	SupportVertex(const glm::vec3& supportA, const glm::vec3& supportB)
 	{
 		SupportVertexA = supportA;
 		SupportVertexB = supportB;
@@ -54,9 +81,9 @@ struct SupportVertex
 
 	SupportVertex()
 	{
-		SupportVertexA = Vector3();
-		SupportVertexB = Vector3();
-		MinkowskiDifference = Vector3();
+		SupportVertexA = { 0.0f, 0.0f, 0.0f };
+		SupportVertexB = { 0.0f, 0.0f, 0.0f };
+		MinkowskiDifference = { 0.0f, 0.0f, 0.0f };
 	}
 };
 

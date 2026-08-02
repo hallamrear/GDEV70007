@@ -110,7 +110,7 @@ void Entity::AddCollider(const COLLIDER_TYPE& colliderType)
 	{
 		if (m_Model != nullptr)
 		{
-			//m_Collider = new ConvexHullCollider(*this, m_Model);
+			m_Collider = new ConvexHullCollider(*this, m_Model);
 		}
 	}
 

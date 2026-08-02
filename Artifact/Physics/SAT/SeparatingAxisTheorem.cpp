@@ -348,6 +348,8 @@ ConvexHullFace* SeparatingAxisTheorem::FindIncidentFace(const ConvexHull& incide
 	glm::vec3 potentialPlaneNormal = {};
 	ConvexHullFace* start = incidentHull.FacesListHead;
 	ConvexHullFace* next = start ;
+
+	int i = 0;
 	do
 	{
 		potentialPlane = { next->Plane.x, next->Plane.y, next->Plane.z, next->Plane.w };
@@ -365,6 +367,7 @@ ConvexHullFace* SeparatingAxisTheorem::FindIncidentFace(const ConvexHull& incide
 		}
 
 		next = next->Next;
+		i++;
 	} while (next != start);
 
 	assert(incidentFace != nullptr);

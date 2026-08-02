@@ -1,6 +1,7 @@
 #pragma once
 #include <math.h>
 #include <system/Maths/Triangle.h>
+#include <glm/glm.hpp>
 
 #define DEGREES_TO_RADIANS (float)(M_PI / 180.0f)
 #define RADIANS_TO_DEGREES (float)(180.0f / M_PI)
@@ -113,6 +114,11 @@ namespace Maths
 		return Dot(A, B) > 0;
 	}
 
+	inline static bool SameDirection(const glm::vec3& A, const glm::vec3& B)
+	{
+		return glm::dot(A, B) > 0;
+	}
+
 	inline static void Normalise(Vector3& vec)
 	{
 		DirectX::XMStoreFloat3(&vec, DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&vec)));
@@ -173,6 +179,13 @@ namespace Maths
 		return GetNormalOfTriangle(triangle.Vertices[0], triangle.Vertices[1], triangle.Vertices[2]);
 	}
 
+	inline static glm::vec3 GetNormalOfTriangle(const glm::vec3& A, const glm::vec3& B, const glm::vec3& C)
+	{
+		glm::vec3 AB = glm::vec3(B.x - A.x, B.y - A.y, B.z - A.z);
+		glm::vec3 AC = glm::vec3(C.x - A.x, C.y - A.y, C.z - A.z);
+		return glm::cross(AB, AC);
+	}
+
 	//Compute barycentric coordinates for pointOnTri with respect to triangle (a, b, c)
 	//Calculation implementation taken from 'Real Time Collision Detection' by Christer Ericson.
 	inline static Vector3 CalculateBarycentricPositionOnTriangle(const Vector3& pointOnTri, const Vector3& triA, const Vector3& triB, const Vector3& triC)
@@ -187,6 +200,26 @@ namespace Maths
 		float d11 = Dot(v1, v1);
 		float d20 = Dot(v2, v0);
 		float d21 = Dot(v2, v1);
+
+		float denom = d00 * d11 - d01 * d01;
+		uvw.y = (d11 * d20 - d01 * d21) / denom;
+		uvw.z = (d00 * d21 - d01 * d20) / denom;
+		uvw.x = 1.0f - uvw.y - uvw.z;
+		return uvw;
+	}
+
+	inline static glm::vec3 CalculateBarycentricPositionOnTriangle(const glm::vec3& pointOnTri, const glm::vec3& triA, const glm::vec3& triB, const glm::vec3& triC)
+	{
+		glm::vec3 uvw = glm::vec3(0.0f, 0.0f, 0.0f);
+		glm::vec3 v0 = glm::vec3(triB.x - triA.x, triB.y - triA.y, triB.z - triA.z);
+		glm::vec3 v1 = glm::vec3(triC.x - triA.x, triC.y - triA.y, triC.z - triA.z);
+		glm::vec3 v2 = glm::vec3(pointOnTri.x - triA.x, pointOnTri.y - triA.y, pointOnTri.z - triA.z);
+
+		float d00 = glm::dot(v0, v0);
+		float d01 = glm::dot(v0, v1);
+		float d11 = glm::dot(v1, v1);
+		float d20 = glm::dot(v2, v0);
+		float d21 = glm::dot(v2, v1);
 
 		float denom = d00 * d11 - d01 * d01;
 		uvw.y = (d11 * d20 - d01 * d21) / denom;

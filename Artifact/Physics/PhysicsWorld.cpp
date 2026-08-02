@@ -48,12 +48,14 @@ Rigidbody& PhysicsWorld::GetFreshRigidbody()
 	return rb;
 }
 
+#include <Physics/Collision Detection/CollisionDetection.h>
 void PhysicsWorld::OnIMGUIRender()
 {
 	ImGui::Begin("Physics");
 
 	if (ImGui::CollapsingHeader("Physics Settings"))
 	{
+		ImGui::Checkbox("Use GJK", &CollisionDetection::Use_GJK);
 		ImGui::DragInt("Resolution Type", &m_ResolutionType, 1.0f, 0, 2);
 		ImGui::DragInt("Resolver Iterations", &CollisionResolver::RESOLUTION_ITERATIONS, 1, 1, 100);
 		ImGui::DragFloat("Air Friction", &CollisionResolver::AIR_FRICTION, 0.01f, 0.0f, 1.0f);
@@ -189,12 +191,18 @@ void PhysicsWorld::CollectCollisionPairs()
 			entityA = m_RigidbodyList[x].GetEntity();
 			entityB = m_RigidbodyList[y].GetEntity();
 
+
+			if (entityA->GetCollider() == nullptr || entityB->GetCollider() == nullptr)
+			{
+				continue;
+			}
+
 			assert(entityA != nullptr);
 			assert(entityB != nullptr);
 
 			manifold.Reset();
 
-			bool collision = SeparatingAxisTheorem::CheckCollision(entityA, entityB, &manifold);
+			bool collision = CollisionDetection::CheckCollision(entityA->GetCollider(), entityB->GetCollider(), &manifold);
 
 			if (collision)
 			{

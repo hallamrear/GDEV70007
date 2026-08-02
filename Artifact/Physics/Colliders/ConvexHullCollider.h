@@ -18,5 +18,8 @@ protected:
 public:
 	ConvexHullCollider(const Entity& entity, const ModelRef& modelRef);
 	~ConvexHullCollider();
+
+	Vector3 GetFurthestPointInDirection(const Vector3& direction) const override;
+	void GetPoints(std::vector<Vector3>& points) const override;
 };
 

@@ -70,10 +70,10 @@ bool World::Initialise()
 		TestBoxB->SetModel(suzaane);
 
 		TestBoxA = CreateEntity("Follow Box");
-		TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
 		TestBoxA->SetPosition(Vector3(0.0f, 0.0f, -15.0f));
 		ModelRef barrel = ServiceLocator::Locate<AssetManager>()->GetModel("Barrel.glb");
 		TestBoxA->SetModel(barrel);
+		TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
 
 		for (size_t i = 0; i < _countof(modelList); i++)
 		{
@@ -111,21 +111,39 @@ bool World::Initialise()
 	//c->SetModel(cone);
 	//c->SetPosition(Vector3(-40.0f, 0.0f, 0.0f));
 	
-	TestBoxA = CreateEntity("Box A");
-	TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
-	//TestBoxA->GetCollider()->SetSize(Vector3(10.0f, 10.0f, 10.0f));
+	//TestBoxA = CreateEntity("Box A");
+	////TestBoxA->GetCollider()->SetSize(Vector3(10.0f, 10.0f, 10.0f));
+	//TestBoxA->SetPosition(Vector3(0.0f, 5.0f, 0.0f));
+	////ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("TestCone.glb");
+	//ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("Colliders/BoxCollider.glb");
+	//TestBoxA->SetModel(suzaane);
+	//TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
+
+	TestBoxA = CreateEntity("Follow Box");
 	TestBoxA->SetPosition(Vector3(0.0f, 5.0f, 0.0f));
-	//ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("TestCone.glb");
-	ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("Colliders/BoxCollider.glb");
-	TestBoxA->SetModel(suzaane);
+	ModelRef barrel = ServiceLocator::Locate<AssetManager>()->GetModel("Barrel.glb");
+	TestBoxA->SetModel(barrel);
+	TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
+	TestBoxA->GetRigidbody().IsGravityEnabled = true;
+
+	float r_x = (rand() % 100) / 100.0f;
+	float r_y = (rand() % 100) / 100.0f;
+	float r_z = (rand() % 100) / 100.0f;
+	TestBoxA->Rotate(Vector3(r_x * 360.0f, r_y * 360.0f, r_z * 360.0f));
 
 	TestBoxB = CreateEntity("Box B");
-	//TestBoxB->AddCollider(COLLIDER_TYPE_AABB);
 	//ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("TestConvexHull.glb");
-	ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("Colliders/BoxCollider.glb");
+	ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("Suzanne.glb");
 	TestBoxB->SetModel(test);
 	////TestBoxB->GetCollider()->SetSize(Vector3(7.0f, 3.0f, 5.0f));
 	TestBoxB->SetPosition(Vector3(0.0f, 0.0f, 0.0f));
+	TestBoxB->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
+	TestBoxB->GetRigidbody().SetMass(0.0f);
+
+	r_x = (rand() % 100) / 100.0f;
+	r_y = (rand() % 100) / 100.0f;
+	r_z = (rand() % 100) / 100.0f;
+	TestBoxB->Rotate(Vector3(r_x * 360.0f, r_y * 360.0f, r_z * 360.0f));
 
 	/*Vector3 position = Vector3(0.0f, 0.0f, 0.0f);
 	Entity* entity = nullptr;

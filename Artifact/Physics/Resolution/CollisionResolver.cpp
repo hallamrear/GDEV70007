@@ -184,8 +184,8 @@ void CollisionResolver::ConvertContactManifoldsToConstrainedPoints(const std::ve
 			constrainedContact.InverseContactMasses[0] = rigidbodyA.GetInverseMass() * invContactPointCount;
 			constrainedContact.InverseContactMasses[1] = rigidbodyB.GetInverseMass() * invContactPointCount;
 			
-			constrainedContact.InverseInertiaTensors[0] = glm::inverse(rigidbodyA.InverseInertiaTensor);
-			constrainedContact.InverseInertiaTensors[1] = glm::inverse(rigidbodyB.InverseInertiaTensor);
+			constrainedContact.InverseInertiaTensors[0] = glm::inverse(glm::scale(rigidbodyA.InverseInertiaTensor));
+			constrainedContact.InverseInertiaTensors[1] = glm::inverse(glm::scale(rigidbodyB.InverseInertiaTensor));
 	
 			//todo : potentially clamp the normal and offsets?
 
@@ -484,16 +484,16 @@ void CollisionResolver::SoftResolveCollision(const CollisionManifold& manifold)
 		float ratioA = -1.0f * ((objectA.GetInverseMass() + inertiaA) / totalInvMass);
 		//Convert to relative to CoM.
 		glm::vec3 force = impulse * ratioA;
-		objectA.AddForce(Vector3(force.x, force.y, force.z));
+		objectA.AddForce({ force.x, force.y, force.z });
 		glm::vec3 tor = glm::cross(relativePositionA, force);
-		objectA.AddTorque(Vector3(tor.x, tor.y, tor.z));
+		objectA.AddTorque({ tor.x, tor.y, tor.z	});
 
 
 		float ratioB = +1.0f * ((objectB.GetInverseMass() + inertiaB) / totalInvMass);
 		force = impulse * ratioB;
-		objectB.AddForce(Vector3(force.x, force.y, force.z));
+		objectB.AddForce({ force.x, force.y, force.z });
 		tor = glm::cross(relativePositionB, force);
-		objectB.AddTorque(Vector3(tor.x, tor.y, tor.z));
+		objectB.AddTorque({tor.x, tor.y, tor.z});
 
 		//Apply immediate positional correction.
 		CollisionResolver::PositionalCorrection(objectA, objectB, manifold, manifold.ContactPoints[i]);

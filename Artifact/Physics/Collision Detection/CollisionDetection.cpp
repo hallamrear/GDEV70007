@@ -8,16 +8,18 @@
 #include <Physics/GJK/GJK.h>
 #include <Physics/EPA/EPA.h>
 
+bool CollisionDetection::Use_GJK = true;
+
 CollisionDetection::CollisionFunction CollisionDetection::s_CollisionFunctionArray[COLLIDER_TYPE::COLLIDER_TYPE_COUNT][COLLIDER_TYPE::COLLIDER_TYPE_COUNT] = 
 {
-	/* 0, 0 */										/* 0, 1 */									 /* 0, 2 */											/* 0, 3 */
-	CollisionDetection::SphereSphereCollision,		CollisionDetection::BoxSphereCollision,		  CollisionDetection::ConvexHullSphereCollision,		CollisionDetection::ComplexMeshSphereCollision,
-	/* 1, 0 */										/* 1, 1 */									 /* 1, 2 */											/* 1, 3 */
-	CollisionDetection::BoxSphereCollision,			CollisionDetection::BoxBoxCollision,		 CollisionDetection::ConvexHullBoxCollision,			CollisionDetection::ComplexMeshBoxCollision,
-	/* 2, 0 */										/* 2, 1 */									 /* 2, 2 */											/* 2, 3 */
-	CollisionDetection::ConvexHullSphereCollision,  CollisionDetection::ConvexHullBoxCollision,  CollisionDetection::ConvexHullConvexHullCollision,	CollisionDetection::ComplexMeshConvexHullCollision,
-	/* 3, 0 */										/* 3, 1 */									 /* 3, 2 */											/* 3, 3 */
-	CollisionDetection::ComplexMeshSphereCollision, CollisionDetection::ComplexMeshBoxCollision, CollisionDetection::ComplexMeshConvexHullCollision, CollisionDetection::ComplexMeshComplexMeshCollision
+	  /* 0, 0 */										/* 0, 1 */										/* 0, 2 */											/* 0, 3 */
+	{ CollisionDetection::SphereSphereCollision,		CollisionDetection::BoxSphereCollision,			CollisionDetection::ConvexHullSphereCollision,		CollisionDetection::ComplexMeshSphereCollision } ,
+	  /* 1, 0 */										/* 1, 1 */										/* 1, 2 */											/* 1, 3 */
+	{ CollisionDetection::BoxSphereCollision,			CollisionDetection::BoxBoxCollision,			CollisionDetection::ConvexHullBoxCollision,			CollisionDetection::ComplexMeshBoxCollision },
+	  /* 2, 0 */										/* 2, 1 */										/* 2, 2 */											/* 2, 3 */
+	{ CollisionDetection::ConvexHullSphereCollision,	CollisionDetection::ConvexHullBoxCollision,		CollisionDetection::ConvexHullConvexHullCollision,	CollisionDetection::ComplexMeshConvexHullCollision },
+	  /* 3, 0 */										/* 3, 1 */										/* 3, 2 */											/* 3, 3 */
+	{ CollisionDetection::ComplexMeshSphereCollision,	CollisionDetection::ComplexMeshBoxCollision,	CollisionDetection::ComplexMeshConvexHullCollision,	CollisionDetection::ComplexMeshComplexMeshCollision }
 };
 
 bool CollisionDetection::SeperatingAxisTheorem(const Collider* colliderA, const Collider* colliderB, CollisionManifold* manifold)
@@ -201,6 +203,9 @@ bool CollisionDetection::CheckCollision(const Collider* colliderA, const Collide
 {
 	assert(colliderA);
 	assert(colliderB);
-	assert(s_CollisionFunctionArray[colliderA->GetType()][colliderB->GetType()]);
-	return s_CollisionFunctionArray[colliderA->GetType()][colliderB->GetType()](colliderA, colliderB, manifold);
+	assert(s_CollisionFunctionArray[colliderA->GetType()][colliderB->GetType()] != nullptr);
+
+	return (Use_GJK ? GJK::CheckCollision(*colliderA, *colliderB, manifold) : SeperatingAxisTheorem(colliderA, colliderB, manifold));
+
+	//return s_CollisionFunctionArray[colliderA->GetType()][colliderB->GetType()](colliderA, colliderB, manifold);
 }
