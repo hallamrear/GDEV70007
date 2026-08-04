@@ -4,6 +4,8 @@
 #include <World/Entity.h>
 #include <Physics/EPA/EPA.h>
 #include <System/Maths.h>
+#include <glm/gtc/epsilon.hpp>
+#include <glm/gtx/norm.hpp>
 
 using namespace glm;
 
@@ -189,8 +191,34 @@ bool GJK::UpdateSimplex(Simplex& simplex, int& simplexDimensions, vec3& directio
 
 bool GJK::CheckCollision(const Collider& colliderA, const Collider& colliderB, CollisionManifold* manifold)
 {
+
 	SupportVertex points[4] = {};
 	Simplex simplex = points;
+
+	auto PointAlreadyExistsInSimplex = [=](const Simplex& sim, const SupportVertex& v)
+	{
+		for (size_t i = b; i < d; i++)
+		{
+
+			glm::vec3 diffA = sim[i].SupportVertexA - v.SupportVertexA;
+			glm::vec3 diffB = sim[i].SupportVertexB - v.SupportVertexB;
+
+			float lA = glm::dot(diffA, diffA);
+			float lB = glm::dot(diffB, diffB);
+
+			printf("lA %f - lB %f\n", lA, lB);
+
+			if (isnan(lA) || isnan(lB) ||
+				(lA < (FLT_EPSILON * FLT_EPSILON) && 
+				 lB < (FLT_EPSILON * FLT_EPSILON))
+				)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	};
 
 	vec3 direction = { 0.0f, 0.0f, 0.0f };
 	direction.x = (colliderA.GetAttachedEntity().GetPosition().x - colliderB.GetAttachedEntity().GetPosition().x);
@@ -221,8 +249,7 @@ bool GJK::CheckCollision(const Collider& colliderA, const Collider& colliderB, C
 
 	//returns if the new point is not in front of the search direction
 	//this would exit if the direction finds a vertex that was already the furthest one along it.
-	float z = Maths::Dot(simplex[b].MinkDiff, direction);
-	if (z <= 0)
+	if (glm::dot(simplex[b].MinkDiff, direction) < 0)
 	{
 		return false;
 	}
@@ -250,6 +277,8 @@ bool GJK::CheckCollision(const Collider& colliderA, const Collider& colliderB, C
 	}
 
 	int simplexDimensions = 2;
+	static int hits = 0;
+	hits = 0;
 
 	for (size_t itr = 0; itr < MAX_GJK_ITERATIONS; itr++)
 	{
@@ -257,40 +286,15 @@ bool GJK::CheckCollision(const Collider& colliderA, const Collider& colliderB, C
 
 		//returns if the new point is not in front of the search direction
 		//this would exit if the direction finds a vertex that was already the furthest one along it.
-		z = Maths::Dot(simplex[a].MinkDiff, direction);
-		if (z < 0)
+		if (glm::dot(simplex[a].MinkDiff, direction) < 0)
 		{
 			return false;
 		}
 
 		simplexDimensions++;
 
-		//If detection in simplex, return true.
-		if (UpdateSimplex(simplex, simplexDimensions, direction))
-		{
-			//Origin contained within simplex.
-			if (manifold != nullptr)
-			{
-				//Develop collision details using EPA.
-				EPA::ConstructManifold(colliderA, colliderB, simplex, *manifold);
-
-				printf("1 %f %f %f - %f\n", manifold->Normal.x, manifold->Normal.y, manifold->Normal.z, manifold->ContactPoints[0].Depth);
-
-				std::vector<SupportVertex> s = { simplex[a], simplex[b], simplex[c], simplex[d] };
-
-				EPA::GetCollisionDetails(s, colliderA, colliderB, manifold);
-
-				printf("2 %f %f %f - %f\n", manifold->Normal.x, manifold->Normal.y, manifold->Normal.z, manifold->ContactPoints[0].Depth);
-			}
-
-			return true;
-		}
-
-		//if (simplexDimensions == 3)
-		//{
-		//	Triangle(simplex, simplexDimensions, direction);
-		//}
-		//else if(Tetrahedron(simplex, simplexDimensions, direction))
+		////If detection in simplex, return true.
+		//if (UpdateSimplex(simplex, simplexDimensions, direction))
 		//{
 		//	//Origin contained within simplex.
 		//	if (manifold != nullptr)
@@ -309,6 +313,34 @@ bool GJK::CheckCollision(const Collider& colliderA, const Collider& colliderB, C
 
 		//	return true;
 		//}
+
+		hits++;
+
+		bool exists = PointAlreadyExistsInSimplex(simplex, simplex[a]);
+
+		if (simplexDimensions == 3)
+		{
+			Triangle(simplex, simplexDimensions, direction);
+		}
+		else if(exists || Tetrahedron(simplex, simplexDimensions, direction))
+		{
+			//Origin contained within simplex.
+			if (manifold != nullptr)
+			{
+				//Develop collision details using EPA.
+				EPA::ConstructManifold(colliderA, colliderB, simplex, *manifold);
+
+				printf("1 %f %f %f - %f\n", manifold->Normal.x, manifold->Normal.y, manifold->Normal.z, manifold->ContactPoints[0].Depth);
+
+				std::vector<SupportVertex> s = { simplex[a], simplex[b], simplex[c], simplex[d] };
+
+				EPA::GetCollisionDetails(s, colliderA, colliderB, manifold);
+
+				printf("2 %f %f %f - %f\n", manifold->Normal.x, manifold->Normal.y, manifold->Normal.z, manifold->ContactPoints[0].Depth);
+			}
+
+			return true;
+		}
 	}
 
 	return false;

@@ -17,24 +17,13 @@ ConvexHullCollider::~ConvexHullCollider()
 
 Vector3 ConvexHullCollider::GetFurthestPointInDirection(const Vector3& direction) const
 {
-	Matrix4x4 rotMatrix;
-	GetAttachedEntity().GetRotationMatrix(rotMatrix);
-
-	Matrix4x4 invRotMatrix;
-	GetAttachedEntity().GetInverseRotationMatrix(invRotMatrix);
-
 	Vector3 localDir = direction;
-	DirectX::XMStoreFloat3(&localDir, DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&direction), DirectX::XMLoadFloat4x4(&invRotMatrix)));
-
 	int x = 0;
 	glm::vec3 support = m_ConvexHull->FindSupportVertex({ localDir.x, localDir.y, localDir.z }, x);
 	Vector3 wSupport = { support.x, support.y, support.z };
 
-	DirectX::XMStoreFloat3(&wSupport, DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&wSupport), DirectX::XMLoadFloat4x4(&rotMatrix)));
-	
-	wSupport.x += GetAttachedEntity().GetPosition().x;
-	wSupport.y += GetAttachedEntity().GetPosition().y;
-	wSupport.z += GetAttachedEntity().GetPosition().z;
+	Matrix4x4 matrix = GetTransformMatrix();
+	DirectX::XMStoreFloat3(&wSupport, DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&wSupport), DirectX::XMLoadFloat4x4(&matrix)));
 	
 	return wSupport;
 }

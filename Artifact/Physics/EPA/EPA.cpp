@@ -144,6 +144,11 @@ int EPA::GetFaceNormals(std::vector<glm::vec3>& normals, std::vector<float>& dis
 		glm::vec3 lineAB = glm::vec3(b.x - a.x, b.y - a.y, b.z - a.z);
 		glm::vec3 lineAC = glm::vec3(c.x - a.x, c.y - a.y, c.z - a.z);
 
+		if (glm::length(lineAC) < 0.0001f || glm::length(lineAB) < 0.0001f)
+		{
+			return -1;
+		}
+
 		glm::vec3 cross = glm::cross(lineAB, lineAC);
 		glm::vec3 normal= glm::normalize(cross);
 
@@ -429,7 +434,7 @@ void EPA::ConstructManifold(const Collider& colliderA, const Collider& colliderB
 			glm::vec3 hitPointB = (polytope[nearestFace][0].SupportVertexB * u) + (polytope[nearestFace][1].SupportVertexB * v) + (polytope[nearestFace][2].SupportVertexB * w);
 
 			glm::vec3 MTV = hitPointA - hitPointB;
-			glm::vec3 normal = glm::normalize(MTV);
+			glm::vec3 normal = -glm::normalize(MTV);
 			float depth = glm::length(MTV);
 
 			//Move back into the proper spaces.

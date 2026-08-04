@@ -7,7 +7,7 @@ PhysicsWorld::PhysicsWorld()
 {
 	m_RigidbodyList = new Rigidbody[c_MaxRigidbodyCount];
 	m_ActiveRigidbodyCount = 0;
-	m_ResolutionType = 2;
+	m_ResolutionType = 1;
 }
 
 PhysicsWorld::~PhysicsWorld()
@@ -23,10 +23,10 @@ void PhysicsWorld::FixedUpdate()
 {
 	IntegrateAccelerationAndVelocities();
 	CollectCollisionPairs();
-	//SolveConstaints();
+	SolveConstaints();
 	IntergratePositions();
-	//UpdateSleepers();
-	//CleanupPhysicsObjects();
+	UpdateSleepers();
+	CleanupPhysicsObjects();
 
 	for (size_t i = 0; i < c_MaxRigidbodyCount; i++)
 	{

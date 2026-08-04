@@ -81,26 +81,29 @@ Vector3 AABBCollider::GetMinCornerLocalSpace() const
 
 Vector3 AABBCollider::GetFurthestPointInDirection(const Vector3& direction) const
 {
-	Matrix4x4 rotMatrix;
-	GetAttachedEntity().GetRotationMatrix(rotMatrix);
-	Matrix4x4 invRotMatrix;
-	GetAttachedEntity().GetInverseRotationMatrix(invRotMatrix);
+	Vector3 maxPoint = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
+	Vector3 corner = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
+	Vector3 scaledPoint = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
+	float maxDistance = -FLT_MAX;
+	float distance = -FLT_MAX;
+	Matrix4x4 matrix = GetTransformMatrix();
 
-	Vector3 localDir = direction;
-	DirectX::XMStoreFloat3(&localDir, DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&direction), DirectX::XMLoadFloat4x4(&invRotMatrix)));
+	for (int i = 0; i < 8; i++)
+	{
+		scaledPoint = Vector3(Points[i].x * m_Size.x, Points[i].y * m_Size.y, Points[i].z * m_Size.z);
 
-	Vector3 furthestPoint;
-	furthestPoint.x = (localDir.x > 0) ? m_Size.x : -m_Size.x;
-	furthestPoint.y = (localDir.y > 0) ? m_Size.y : -m_Size.y;
-	furthestPoint.z = (localDir.z > 0) ? m_Size.z : -m_Size.z;
+		DirectX::XMStoreFloat3(&corner, DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&scaledPoint), DirectX::XMLoadFloat4x4(&matrix)));
 
-	DirectX::XMStoreFloat3(&furthestPoint, DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&furthestPoint), DirectX::XMLoadFloat4x4(&rotMatrix)));
-	
-	furthestPoint.x += GetAttachedEntity().GetPosition().x;
-	furthestPoint.y += GetAttachedEntity().GetPosition().y;
-	furthestPoint.z += GetAttachedEntity().GetPosition().z;
+		DirectX::XMStoreFloat(&distance, DirectX::XMVector3Dot(DirectX::XMLoadFloat3(&corner), DirectX::XMLoadFloat3(&direction)));
 
-	return furthestPoint;
+		if (distance >= maxDistance)
+		{
+			maxDistance = distance;
+			maxPoint = corner;
+		}
+	}
+
+	return maxPoint;
 }
 
 void AABBCollider::GetPoints(std::vector<Vector3>& points) const

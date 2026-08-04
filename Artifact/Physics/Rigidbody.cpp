@@ -9,7 +9,7 @@ Rigidbody::Rigidbody() : m_Entity(nullptr)
 	InverseInertiaTensor = glm::vec3();
 	WorldInverseInertiaTensor = glm::mat3x3();
 	Translation = glm::vec3(0.0f, 0.0f, 0.0f);
-	Rotation = glm::quat(0.0f, 0.0f, 0.0f, 1.0f);
+	Rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	LinearVelocity = glm::vec3(0.0f, 0.0f, 0.0f);
 	AngularVelocity = glm::vec3(0.0f, 0.0f, 0.0f);
 	Forces = glm::vec3(0.0f, 0.0f, 0.0f);
