@@ -88,20 +88,30 @@ Vector3 AABBCollider::GetFurthestPointInDirection(const Vector3& direction) cons
 	float distance = -FLT_MAX;
 
 	Matrix4x4 transformMatrix = GetTransformMatrix();
+	Matrix4x4 invTransformMatrix = GetInverseTransformMatrix();
+
+	Vector3 dir;
+	DirectX::XMStoreFloat3(&dir, 
+		DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&direction), DirectX::XMLoadFloat4x4(&invTransformMatrix)));
+
+	printf("dir %f %f %F - %f %f %f\n", direction.x, direction.y, direction.z, dir.x, dir.y, dir.z);
 
 	for (int i = 0; i < 8; i++)
 	{
-		DirectX::XMStoreFloat3(&corner,
-			DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&Points[i]), DirectX::XMLoadFloat4x4(&transformMatrix)));
-
-		distance = Maths::Dot(corner, direction);
+		distance = Maths::Dot(Points[i], dir);
 
 		if (distance >= maxDistance)
 		{
 			maxDistance = distance;
-			maxPoint = corner;
+			maxPoint = Points[i];
 		}
 	}
+
+	DirectX::XMStoreFloat3(&maxPoint, DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&maxPoint), DirectX::XMLoadFloat4x4(&transformMatrix)));
+
+	maxPoint.x += GetAttachedEntity().GetPosition().x;
+	maxPoint.y += GetAttachedEntity().GetPosition().y;
+	maxPoint.z += GetAttachedEntity().GetPosition().z;
 
 	return maxPoint;
 }

@@ -12,13 +12,19 @@ ConvexHullCollider::ConvexHullCollider(const Entity& entity, const ModelRef& mod
 
 ConvexHullCollider::~ConvexHullCollider()
 {
+
 }
 
 Vector3 ConvexHullCollider::GetFurthestPointInDirection(const Vector3& direction) const
 {
 	int x = 0;
 	glm::vec3 support = m_ConvexHull->FindSupportVertex({ direction.x, direction.y, direction.z }, x);
-	return { support.x, support.y, support.z };
+	Vector3 vsupp = { support.x, support.y, support.z };
+
+	Matrix4x4 m = GetTransformMatrix();
+	DirectX::XMStoreFloat3(&vsupp, DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&vsupp), DirectX::XMLoadFloat4x4(&m)));
+	
+	return vsupp;
 }
 
 void ConvexHullCollider::GetPoints(std::vector<Vector3>& points) const

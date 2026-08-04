@@ -351,106 +351,148 @@ EPA_Result EPA::GetCollisionDetails(std::vector<SupportVertex>& simplex, const C
 	return result;
 }
 
-////
-// 
-// PENDING REWRITE
-// PENDING REWRITE
-// 
-////
+#define EPA_CONVERGENCE_TOLERANCE 0.0001f
+#define EPA_MAX_POLYTOPE_FACES 64
+#define EPA_MAX_POLYTOPE_LOOSE_EDGES 32
+#define EPA_MAX_ITERATIONS 64
 
-//EPA_Result EPA::GetCollisionDetails(std::vector<SupportVertex>& simplex, const Collider& colliderA, const Collider& colliderB, CollisionManifold* manifold)
-//{
-//	EPA_Result result = EPA_Result();
-//
-//	if (manifold == nullptr)
-//	{
-//		throw new std::exception("Called EPA::GetCollisionDetails with a nullptr manifold.\n");
-//	}
-//
-//	if (simplex.size() < 4)
-//	{
-//		throw new std::exception("Called EPA::GetCollisionDetails with a simplex containing less than a 3d object.\n");
-//	}
-//
-//	////////////////////////////////////////
-//	//            HOW EPA WORKS           //
-//	////////////////////////////////////////		
-//		
-//		 
-//	// 1) Start with simplex from GJK
-//	//Construct a new polytope (fancy word for 3d simplex) that we can add to without adjusting the original.
-//	Polytope polytope = Polytope();
-//	polytope.push_back(Face(simplex[0].MinkowskiDifference, simplex[1].MinkowskiDifference, simplex[2].MinkowskiDifference));
-//	polytope.push_back(Face(simplex[0].MinkowskiDifference, simplex[3].MinkowskiDifference, simplex[1].MinkowskiDifference));
-//	polytope.push_back(Face(simplex[0].MinkowskiDifference, simplex[2].MinkowskiDifference, simplex[3].MinkowskiDifference));
-//	polytope.push_back(Face(simplex[1].MinkowskiDifference, simplex[3].MinkowskiDifference, simplex[2].MinkowskiDifference));
-//
-//	int iterations = 0;
-//	size_t closestFaceIndex = (size_t)-1;
-//	float closestFaceDistance = FLT_MAX;
-//
-//	constexpr int temp_iteration_cap = 16;
-//	while (iterations < temp_iteration_cap)
-//	//while (true)
-//	{
-//		iterations++;
-//
-//		assert(polytope.size() < 100 || polytope.size() != 0);
-//
-//		// 2) Calculate closest face (F) of polytope to origin
-//		DetermineClosestFaceToOrigin(closestFaceIndex, closestFaceDistance, polytope);
-//		
-//		// 3) Find support point in direction of face F normal (N)
-//		SupportVertex furtherPointInNormal = SupportVertex::GetSupportVertex(colliderA, colliderB, polytope[closestFaceIndex].normal);
-//
-//		float dot;
-//		XMStoreFloat(&dot, DirectX::XMglm::vec3Dot(XMLoadFloat3(&polytope[closestFaceIndex].normal), XMLoadFloat3(&furtherPointInNormal.MinkowskiDifference)));
-//		float distanceToFurthestPointInNormal = dot;
-//
-//		static constexpr float EPA_TOLERANCE = 0.05f;
-//
-//		/* 
-//		* 4) if (distance to P (furthest in Normal) and distance to F are within a small tolerance)
-//		*	 {
-//		*		P projected onto N is the penetration vector.
-//		*	 }
-//		*	 else
-//		*	 {
-//		*		extend polytope to furtherPointInNormal
-//		*		loop to 2
-//		*	 }
-//		*/
-//
-//		//using support function to find furthest point in direction of the normal of closest triangle.
-//		//ONLY EXTEND if the point is further away than the closest triangle we calculated.
-//		//Adding a little tolerance to prevent infinitely small extensions (for spheres and cylinders);
-//		if (distanceToFurthestPointInNormal > closestFaceDistance + EPA_TOLERANCE)
-//		{
-//			ExtendPolytopeWithNewPoint(polytope, furtherPointInNormal);
-//		}
-//		else
-//		{
-//			break;
-//		}
-//	}
-//
-//	//We have closest face
-//	float depth = DistanceFromPointToPlane(glm::vec3(0.0f, 0.0f, 0.0f), polytope[closestFaceIndex].points[0], polytope[closestFaceIndex].normal);
-//	manifold->Depth = depth;
-//
-//	//Return the normal and depth (add a tiny amount to avoid multiple collisions).
-//	manifold->Depth = closestFaceDistance + FLT_EPSILON;
-//
-//	EPA_Result::Triangle triangle;
-//	for (size_t i = 0; i < 3; i++)
-//	{
-//		size_t triFaceIndex = (closestFaceIndex * 3) + i;
-//		triangle.Points[i].MinkowskiDifference = (polytope[triFaceIndex]).points[triFaceIndex];
-//	}
-//
-//	triangle.Normal = Maths::GetNormalOfTriangle(triangle.Points[0].MinkowskiDifference, triangle.Points[1].MinkowskiDifference, triangle.Points[2].MinkowskiDifference);
-//
-//	result.Tri = triangle;
-//
-//	return result;
-//}
+using namespace glm;
+
+glm::vec3 EPA::ConstructManifold(const Collider& colliderA, const Collider& colliderB, const Simplex& simplex, CollisionManifold& manifold)
+{
+	//Cache maximum possible faces (3x points + normal per face);
+	vec3 polytope[EPA_MAX_POLYTOPE_FACES][4];
+
+	//Construct initial polytope from GJK simplex.
+	//ABC
+	polytope[0][0] = simplex[0].MinkowskiDifference;
+	polytope[0][1] = simplex[1].MinkowskiDifference;
+	polytope[0][2] = simplex[2].MinkowskiDifference;
+	polytope[0][3] = normalize(cross(polytope[0][1] - polytope[0][0], polytope[0][2] - polytope[0][0]));
+	//ACD
+	polytope[1][0] = simplex[0].MinkowskiDifference;
+	polytope[1][1] = simplex[2].MinkowskiDifference;
+	polytope[1][2] = simplex[3].MinkowskiDifference;
+	polytope[1][3] = normalize(cross(polytope[1][1] - polytope[1][0], polytope[1][2] - polytope[1][0]));
+	//ADB
+	polytope[2][0] = simplex[0].MinkowskiDifference;
+	polytope[2][1] = simplex[3].MinkowskiDifference;
+	polytope[2][2] = simplex[1].MinkowskiDifference;
+	polytope[2][3] = normalize(cross(polytope[2][1] - polytope[2][0], polytope[2][2] - polytope[2][0]));
+	//BDC
+	polytope[3][0] = simplex[1].MinkowskiDifference;
+	polytope[3][1] = simplex[3].MinkowskiDifference;
+	polytope[3][2] = simplex[2].MinkowskiDifference;
+	polytope[3][3] = normalize(cross(polytope[3][1] - polytope[3][0], polytope[3][2] - polytope[3][0]));
+
+	int faceCount = 4;
+	int nearestFace = -1;
+
+	for (size_t itr = 0; itr < EPA_MAX_ITERATIONS; itr++)
+	{
+		#pragma region Determine Nearest Face
+		//Determine Nearest Face
+		float minDistance = dot(polytope[0][0], polytope[0][3]);
+		nearestFace = 0;
+
+		for (size_t i = 1; i < faceCount; i++)
+		{
+			float d = dot(polytope[i][0], polytope[i][3]);
+
+			if (d < minDistance)
+			{
+				nearestFace = (int)i;
+				minDistance = d;
+			}
+		}
+		#pragma endregion
+
+		vec3 direction = normalize(polytope[nearestFace][3]);
+		SupportVertex sv = SupportVertex::GetSupportVertex(colliderA, colliderB, direction);
+
+		if (dot(sv.MinkowskiDifference, direction) - minDistance < EPA_CONVERGENCE_TOLERANCE)
+		{
+			//Convergence on the origin!
+			glm::vec3 MTV = polytope[nearestFace][3] * dot(sv.MinkowskiDifference, direction);
+			manifold.Normal = { MTV.x, MTV.y, MTV.z };
+			return MTV;
+		}
+
+		vec3 looseEdges[EPA_MAX_POLYTOPE_LOOSE_EDGES][2];
+		int looseEdgeCount = 0;
+
+		for (size_t i = 0; i < faceCount; i++)
+		{
+			//if face triangle faces the support point, remove it to expand polytope.
+			if (Maths::SameDirection(polytope[i][3], sv.MinkowskiDifference - polytope[i][0]))
+			{
+				//Add old triangle edges to edge list.
+
+				for (size_t t = 0; t < 3; t++)
+				{
+					vec3 edges[2] = { polytope[i][t], polytope[i][(t + 1) % 3] };
+
+					bool duplicateEdge = false;
+
+					for (size_t e = 0; e < looseEdgeCount; e++)
+					{
+						if(looseEdges[e][1] == edges[0] && looseEdges[e][0] == edges[1])
+						{
+							//If its an already hanging edge we gotta clean it up as it can onnly be shared by 2 tris.
+							looseEdges[e][0] = looseEdges[looseEdgeCount - 1][0];
+							looseEdges[e][1] = looseEdges[looseEdgeCount - 1][1];
+							looseEdgeCount--;
+							duplicateEdge = true;
+							e = looseEdgeCount;
+						}
+					}
+
+					if (duplicateEdge == false)
+					{
+						assert(looseEdgeCount < EPA_MAX_POLYTOPE_LOOSE_EDGES);
+
+						looseEdges[looseEdgeCount][0] = edges[0];
+						looseEdges[looseEdgeCount][1] = edges[1];
+						looseEdgeCount++;
+					}
+				}
+
+				//Cut out the triangle.
+				polytope[i][0] = polytope[faceCount - 1][0];
+				polytope[i][1] = polytope[faceCount - 1][1];
+				polytope[i][2] = polytope[faceCount - 1][2];
+				polytope[i][3] = polytope[faceCount - 1][3];
+				faceCount--;
+			}
+		}
+
+		//Rebuild new polytope using new support vertex
+
+		for (size_t i = 0; i < looseEdgeCount; i++)
+		{
+			assert(faceCount < EPA_MAX_POLYTOPE_FACES);
+
+			polytope[faceCount][0] = looseEdges[i][0];
+			polytope[faceCount][1] = looseEdges[i][1];
+			polytope[faceCount][2] = sv.MinkowskiDifference;
+			polytope[faceCount][3] = normalize(cross(looseEdges[i][0] - looseEdges[i][1], looseEdges[i][0] - sv.MinkowskiDifference));
+
+			const float offset = 0.0000001f;
+			//Make sure its facing the right direction.
+			if (dot(polytope[faceCount][0], polytope[faceCount][3]) + offset < 0)
+			{
+				//Flip winding order
+				vec3 holder = polytope[faceCount][0];
+				polytope[faceCount][0] = polytope[faceCount][1];
+				polytope[faceCount][1] = holder;
+				polytope[faceCount][3] = -polytope[faceCount][3];
+			}
+
+			faceCount++;
+
+		}
+	}
+
+	printf("Expanding Polytrope Algorithm failed to converge on a encompassing polytope. Dropping out due to iteration count. Returning most recent nearest point.");	
+	return polytope[nearestFace][3] * dot(polytope[nearestFace][0], polytope[nearestFace][3]);
+}

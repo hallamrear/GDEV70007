@@ -120,11 +120,12 @@ bool World::Initialise()
 	//TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
 
 	TestBoxA = CreateEntity("Follow Box");
-	TestBoxA->SetPosition(Vector3(0.0f, 5.0f, 0.0f));
+	TestBoxA->SetPosition(Vector3(0.0f, 2.0f, 0.0f));
 	ModelRef barrel = ServiceLocator::Locate<AssetManager>()->GetModel("Barrel.glb");
 	TestBoxA->SetModel(barrel);
 	TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
-	TestBoxA->GetRigidbody().IsGravityEnabled = true;
+	//TestBoxA->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_AABB);
+	//TestBoxA->GetRigidbody().IsGravityEnabled = true;
 
 	float r_x = (rand() % 100) / 100.0f;
 	float r_y = (rand() % 100) / 100.0f;
@@ -138,6 +139,7 @@ bool World::Initialise()
 	////TestBoxB->GetCollider()->SetSize(Vector3(7.0f, 3.0f, 5.0f));
 	TestBoxB->SetPosition(Vector3(0.0f, 0.0f, 0.0f));
 	TestBoxB->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
+	//TestBoxB->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_AABB);
 	TestBoxB->GetRigidbody().SetMass(0.0f);
 
 	r_x = (rand() % 100) / 100.0f;

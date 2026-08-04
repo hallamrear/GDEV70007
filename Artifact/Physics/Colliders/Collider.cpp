@@ -12,6 +12,14 @@ Collider::Collider(const COLLIDER_TYPE& colliderType, const Entity& entity) : m_
 	m_ChildCollider = nullptr;
 }
 
+Matrix4x4 Collider::GetInverseTransformMatrix() const
+{
+	Matrix4x4 m = GetTransformMatrix();
+	Matrix4x4 inv;
+	DirectX::XMStoreFloat4x4(&inv, DirectX::XMMatrixInverse(nullptr, DirectX::XMLoadFloat4x4(&m)));
+	return inv;
+}
+
 Collider::~Collider()
 {
 	m_OffsetMatrix = Matrix4x4();

@@ -34,7 +34,7 @@ protected:
 typedef std::vector<glm::vec3> PointCloud;
 typedef std::vector<ConvexHullVertex*> ConflictList;
 
-struct Simplex
+struct ConvexHullSimplex
 {
 private:
 	int m_Size;
@@ -238,8 +238,8 @@ private:
 	static void FixInternalPointInvariance(ConvexHull& convexHull, ConvexHullFace*& conflictFace, ConvexHullHalfEdge*& edgeA, ConvexHullHalfEdge*& edgeB);
 	static void UpdateExistingFaces(std::vector<ConvexHullFace*>& newFaces, std::vector<ConvexHullFace*>& visibleFaces, ConvexHull& convexHull, ConvexHullFace*& conflictFace);
 	static void ResolveOrphanPoints(ConvexHull& convexHull, std::vector<ConvexHullFace*>& newFaces, ConvexHullFace*& conflictFace);
-	static const Simplex BuildInitialSimplex(const PointCloud& pointCloud, Vector4& searchDirection);
-	static void ConstructInitialHullFromSimplex(ConvexHull& convexHull, PointCloud& pointCloud, const Simplex& simplex, const Vector4& constructionDirection);
+	static const ConvexHullSimplex BuildInitialSimplex(const PointCloud& pointCloud, Vector4& searchDirection);
+	static void ConstructInitialHullFromSimplex(ConvexHull& convexHull, PointCloud& pointCloud, const ConvexHullSimplex& simplex, const Vector4& constructionDirection);
 	static ConvexHullFace* CreateHullFace(ConvexHull& convexHull, ConvexHullVertex*& vertexA, ConvexHullVertex*& vertexB, ConvexHullVertex*& vertexC);
 	static ConvexHullHalfEdge* FindTwinEdge(const ConvexHull& convexHull, const ConvexHullHalfEdge* edge);
 	static ConvexHullHalfEdge* FindTwinEdgeOfEyeVertex(const std::vector<ConvexHullHalfEdge*>& edgeList, ConvexHullHalfEdge*& edge, ConvexHullVertex*& eyeVertex);

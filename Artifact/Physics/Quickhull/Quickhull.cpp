@@ -79,7 +79,7 @@ ConvexHull* Quickhull::GenerateConvexHull(std::vector<Vector3>& pointCloudIn)
 
 	float epsilon = Calculate3DEpsilonFromExtents(pointCloud);
 	Vector4 searchDirection = Vector4();
-	Simplex simplex = BuildInitialSimplex(pointCloud, searchDirection);
+	ConvexHullSimplex simplex = BuildInitialSimplex(pointCloud, searchDirection);
 
 	ConstructInitialHullFromSimplex(*convexHull, pointCloud, simplex, searchDirection);
 
@@ -665,11 +665,11 @@ const float Quickhull::Calculate3DEpsilonFromExtents(const PointCloud& pointClou
 	return 3 * (furthestPoint.x + furthestPoint.y + furthestPoint.z) * FLT_EPSILON;
 }
 
-const Simplex Quickhull::BuildInitialSimplex(const PointCloud& pointCloud, Vector4& searchDirection)
+const ConvexHullSimplex Quickhull::BuildInitialSimplex(const PointCloud& pointCloud, Vector4& searchDirection)
 {
 	size_t pointCount = pointCloud.size();
 
-	Simplex initialSimplex = Simplex();
+	ConvexHullSimplex initialSimplex = ConvexHullSimplex();
 
 	const auto cloudsize{ pointCloud.size() };
 	Vector2* pairIndices = new Vector2[cloudsize * cloudsize];
@@ -795,7 +795,7 @@ const Simplex Quickhull::BuildInitialSimplex(const PointCloud& pointCloud, Vecto
 	return initialSimplex;
 }
 
-void Quickhull::ConstructInitialHullFromSimplex(ConvexHull& convexHull, PointCloud& pointCloud, const Simplex& simplex, const Vector4& constructionDirection)
+void Quickhull::ConstructInitialHullFromSimplex(ConvexHull& convexHull, PointCloud& pointCloud, const ConvexHullSimplex& simplex, const Vector4& constructionDirection)
 {
 	static EqualPredicate equal;
 	static LessThanPredicate lessThan;

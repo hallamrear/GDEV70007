@@ -3,6 +3,8 @@
 #include <Physics/Colliders/Collider.h>
 #include <glm/glm.hpp>
 
+typedef struct SupportVertex* Simplex;
+
 struct Contact
 {
 	Vector3 HitPoint = Vector3(0.0f, 0.0f, 0.0f);
@@ -35,12 +37,15 @@ struct SupportVertex
 	inline static SupportVertex GetSupportVertex(const Collider& colliderA, const Collider& colliderB, const glm::vec3& direction)
 	{
 		glm::vec3 dirNorm = glm::normalize(direction);
-		glm::vec3 invDirNorm = dirNorm * -1.0f;
+		glm::vec3 invDirNorm = -dirNorm;
 
-		Vector3 v3CollAFar = colliderA.GetFurthestPointInDirection({ dirNorm.x, dirNorm.y, dirNorm.z });
-		Vector3 v3CollBFar = colliderB.GetFurthestPointInDirection({ invDirNorm.x, invDirNorm.y, invDirNorm.z });
+		Vector3 v3CollFar[2] =
+		{
+			colliderA.GetFurthestPointInDirection({ dirNorm.x, dirNorm.y, dirNorm.z}),
+			colliderB.GetFurthestPointInDirection({ invDirNorm.x, invDirNorm.y, invDirNorm.z })
+		};
 
-		return SupportVertex(v3CollAFar, v3CollBFar);
+		return SupportVertex(v3CollFar[0], v3CollFar[1]);
 	};
 
 	glm::vec3 SupportVertexA;
@@ -57,18 +62,24 @@ struct SupportVertex
 		SupportVertexB.y = supportB.y;
 		SupportVertexB.z = supportB.z;
 
-		MinkowskiDifference.x = (SupportVertexA.x - SupportVertexB.x);
-		MinkowskiDifference.y = (SupportVertexA.y - SupportVertexB.y);
-		MinkowskiDifference.z = (SupportVertexA.z - SupportVertexB.z);
+		MinkowskiDifference.x = (SupportVertexB.x - SupportVertexA.x);
+		MinkowskiDifference.y = (SupportVertexB.y - SupportVertexA.y);
+		MinkowskiDifference.z = (SupportVertexB.z - SupportVertexA.z);
+
+		//printf("%f %f %f - %f %f %f | %f %f %f\n",
+		//	SupportVertexA.x, SupportVertexA.y, SupportVertexA.z,
+		//	SupportVertexB.x, SupportVertexB.y, SupportVertexB.z,
+		//	MinkowskiDifference.x, MinkowskiDifference.y, MinkowskiDifference.z);
 	}
 	
 	SupportVertex(const glm::vec3& supportA, const glm::vec3& supportB)
 	{
 		SupportVertexA = supportA;
 		SupportVertexB = supportB;
-		MinkowskiDifference.x = (SupportVertexA.x - SupportVertexB.x);
-		MinkowskiDifference.y = (SupportVertexA.y - SupportVertexB.y);
-		MinkowskiDifference.z = (SupportVertexA.z - SupportVertexB.z);
+
+		MinkowskiDifference.x = (SupportVertexB.x - SupportVertexA.x);
+		MinkowskiDifference.y = (SupportVertexB.y - SupportVertexA.y);
+		MinkowskiDifference.z = (SupportVertexB.z - SupportVertexA.z);
 	}
 
 	SupportVertex(const SupportVertex& supportVertex) : 

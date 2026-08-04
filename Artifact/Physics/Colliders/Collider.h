@@ -43,7 +43,7 @@ protected:
 	Collider(const COLLIDER_TYPE& colliderType, const Entity& entity);
 	Vector3 m_Size;
 	virtual Matrix4x4 GetTransformMatrix() const = 0;
-
+	Matrix4x4 GetInverseTransformMatrix() const;
 
 public:
 	virtual ~Collider() = 0;

@@ -23,10 +23,10 @@ void PhysicsWorld::FixedUpdate()
 {
 	IntegrateAccelerationAndVelocities();
 	CollectCollisionPairs();
-	SolveConstaints();
+	//SolveConstaints();
 	IntergratePositions();
-	UpdateSleepers();
-	CleanupPhysicsObjects();
+	//UpdateSleepers();
+	//CleanupPhysicsObjects();
 
 	for (size_t i = 0; i < c_MaxRigidbodyCount; i++)
 	{
