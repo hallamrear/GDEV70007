@@ -55,9 +55,9 @@ bool GJK::Triangle(Simplex& simplex, int& simplexDimensions, vec3& direction)
 	//Can early reject a few though as it wouldve been implicitly rejected in the line function as we wouldve tested that direction already.
 	//This removes B, C and edge BC.
 
-	const vec3& A = simplex[a].MinkowskiDifference;
-	const vec3& B = simplex[b].MinkowskiDifference;
-	const vec3& C = simplex[c].MinkowskiDifference;
+	const vec3& A = simplex[a].MinkDiff;
+	const vec3& B = simplex[b].MinkDiff;
+	const vec3& C = simplex[c].MinkDiff;
 
 	//triangles normal
 	vec3 normal = cross(B - A, C - A);
@@ -90,6 +90,7 @@ bool GJK::Triangle(Simplex& simplex, int& simplexDimensions, vec3& direction)
 		simplex[b] = simplex[a];
 		direction = normal;
 		simplexDimensions = 3;
+		return false;
 	}
 
 	//else below triangle
@@ -126,10 +127,10 @@ bool GJK::Tetrahedron(Simplex& simplex, int& simplexDimensions, vec3& direction)
 											[C]
 		*/
 
-	const vec3& A = simplex[a].MinkowskiDifference;
-	const vec3& B = simplex[b].MinkowskiDifference;
-	const vec3& C = simplex[c].MinkowskiDifference;
-	const vec3& D = simplex[d].MinkowskiDifference;
+	const vec3& A = simplex[a].MinkDiff;
+	const vec3& B = simplex[b].MinkDiff;
+	const vec3& C = simplex[c].MinkDiff;
+	const vec3& D = simplex[d].MinkDiff;
 		 
 	//Construct new edges for top point of tetrahedron
 	vec3 e_abc = cross(B-A, C-A);
@@ -191,11 +192,10 @@ bool GJK::CheckCollision(const Collider& colliderA, const Collider& colliderB, C
 	SupportVertex points[4] = {};
 	Simplex simplex = points;
 
-	vec3 ab = { 0.0f, 0.0f, 0.0f };
-	ab.x = (colliderA.GetAttachedEntity().GetPosition().x - colliderB.GetAttachedEntity().GetPosition().x);
-	ab.y = (colliderA.GetAttachedEntity().GetPosition().y - colliderB.GetAttachedEntity().GetPosition().y);
-	ab.z = (colliderA.GetAttachedEntity().GetPosition().z - colliderB.GetAttachedEntity().GetPosition().z);
-	ab = normalize(ab);
+	vec3 direction = { 0.0f, 0.0f, 0.0f };
+	direction.x = (colliderA.GetAttachedEntity().GetPosition().x - colliderB.GetAttachedEntity().GetPosition().x);
+	direction.y = (colliderA.GetAttachedEntity().GetPosition().y - colliderB.GetAttachedEntity().GetPosition().y);
+	direction.z = (colliderA.GetAttachedEntity().GetPosition().z - colliderB.GetAttachedEntity().GetPosition().z);
 
 	//	far	B  /
 	//		  /		
@@ -212,17 +212,16 @@ bool GJK::CheckCollision(const Collider& colliderA, const Collider& colliderB, C
 	//means that going past B from A is going further from the origin.
 
 	//Get support vertex in initial direction.
-	vec3 direction = normalize(ab);
 	simplex[c] = SupportVertex::GetSupportVertex(colliderA, colliderB, direction);
 
-	direction = glm::normalize(-simplex[c].MinkowskiDifference);
+	direction = -simplex[c].MinkDiff;
 
 	//Get a new direction in the opposite direction for the first loop.
 	simplex[b] = SupportVertex::GetSupportVertex(colliderA, colliderB, direction);
 
 	//returns if the new point is not in front of the search direction
 	//this would exit if the direction finds a vertex that was already the furthest one along it.
-	float z = dot(simplex[b].MinkowskiDifference, direction);
+	float z = Maths::Dot(simplex[b].MinkDiff, direction);
 	if (z <= 0)
 	{
 		return false;
@@ -230,8 +229,8 @@ bool GJK::CheckCollision(const Collider& colliderA, const Collider& colliderB, C
 
 	//Determine perpendicular direction to the line segment with triple cross
 	direction = cross(cross(
-		simplex[c].MinkowskiDifference - simplex[b].MinkowskiDifference, -simplex[b].MinkowskiDifference),
-		simplex[c].MinkowskiDifference - simplex[b].MinkowskiDifference);
+		simplex[c].MinkDiff - simplex[b].MinkDiff, -simplex[b].MinkDiff),
+		simplex[c].MinkDiff - simplex[b].MinkDiff);
 
 	//If origin exists on the segment
 	if (fabsf(direction.x) < FLT_EPSILON &&
@@ -239,14 +238,14 @@ bool GJK::CheckCollision(const Collider& colliderA, const Collider& colliderB, C
 		fabsf(direction.z) < FLT_EPSILON)
 	{
 		//Check again against a basis axis
-		direction = cross(simplex[c].MinkowskiDifference - simplex[b].MinkowskiDifference, vec3(1.0f, 0.0f, 0.0f));
+		direction = cross(simplex[c].MinkDiff - simplex[b].MinkDiff, vec3(1.0f, 0.0f, 0.0f));
 
 		//Check again against another basis axis
 		if (fabsf(direction.x) < FLT_EPSILON &&
 			fabsf(direction.y) < FLT_EPSILON &&
 			fabsf(direction.z) < FLT_EPSILON)
 		{
-			direction = cross(simplex[c].MinkowskiDifference - simplex[b].MinkowskiDifference, vec3(0.0f, 0.0f, -1.0f));
+			direction = cross(simplex[c].MinkDiff - simplex[b].MinkDiff, vec3(0.0f, 0.0f, -1.0f));
 		}
 	}
 
@@ -254,13 +253,11 @@ bool GJK::CheckCollision(const Collider& colliderA, const Collider& colliderB, C
 
 	for (size_t itr = 0; itr < MAX_GJK_ITERATIONS; itr++)
 	{
-		direction = normalize(direction);
-
 		simplex[a] = SupportVertex::GetSupportVertex(colliderA, colliderB, direction);
 
 		//returns if the new point is not in front of the search direction
 		//this would exit if the direction finds a vertex that was already the furthest one along it.
-		z = dot(simplex[a].MinkowskiDifference, direction);
+		z = Maths::Dot(simplex[a].MinkDiff, direction);
 		if (z < 0)
 		{
 			return false;
@@ -275,11 +272,43 @@ bool GJK::CheckCollision(const Collider& colliderA, const Collider& colliderB, C
 			if (manifold != nullptr)
 			{
 				//Develop collision details using EPA.
-				glm::vec3 MTV = EPA::ConstructManifold(colliderA, colliderB, simplex, *manifold);
+				EPA::ConstructManifold(colliderA, colliderB, simplex, *manifold);
+
+				printf("1 %f %f %f - %f\n", manifold->Normal.x, manifold->Normal.y, manifold->Normal.z, manifold->ContactPoints[0].Depth);
+
+				std::vector<SupportVertex> s = { simplex[a], simplex[b], simplex[c], simplex[d] };
+
+				EPA::GetCollisionDetails(s, colliderA, colliderB, manifold);
+
+				printf("2 %f %f %f - %f\n", manifold->Normal.x, manifold->Normal.y, manifold->Normal.z, manifold->ContactPoints[0].Depth);
 			}
-				
+
 			return true;
 		}
+
+		//if (simplexDimensions == 3)
+		//{
+		//	Triangle(simplex, simplexDimensions, direction);
+		//}
+		//else if(Tetrahedron(simplex, simplexDimensions, direction))
+		//{
+		//	//Origin contained within simplex.
+		//	if (manifold != nullptr)
+		//	{
+		//		//Develop collision details using EPA.
+		//		EPA::ConstructManifold(colliderA, colliderB, simplex, *manifold);
+
+		//		printf("1 %f %f %f - %f\n", manifold->Normal.x, manifold->Normal.y, manifold->Normal.z, manifold->ContactPoints[0].Depth);
+
+		//		std::vector<SupportVertex> s = { simplex[a], simplex[b], simplex[c], simplex[d] };
+
+		//		EPA::GetCollisionDetails(s, colliderA, colliderB, manifold);
+
+		//		printf("2 %f %f %f - %f\n", manifold->Normal.x, manifold->Normal.y, manifold->Normal.z, manifold->ContactPoints[0].Depth);
+		//	}
+
+		//	return true;
+		//}
 	}
 
 	return false;

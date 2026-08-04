@@ -197,6 +197,16 @@ const Matrix4x4& Entity::GetWorldMatrix() const
 	return m_WorldMatrix;
 }
 
+const void Entity::GetRotationMatrix(Matrix4x4& matrix) const
+{
+	matrix = m_RotationMatrix;
+}
+
+const void Entity::GetInverseRotationMatrix(Matrix4x4& matrix) const
+{
+	DirectX::XMStoreFloat4x4(&matrix, DirectX::XMMatrixInverse(nullptr, DirectX::XMLoadFloat4x4(&m_RotationMatrix)));
+}
+
 void Entity::UpdateWorldMatrix()
 {
 	DirectX::XMFLOAT4 rotation = { m_Rigidbody->Rotation.x, m_Rigidbody->Rotation.y, m_Rigidbody->Rotation.z, m_Rigidbody->Rotation.w };

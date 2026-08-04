@@ -642,7 +642,7 @@ Plane Quickhull::GetNormalisedSurfacePlaneFromHullFace(const ConvexHullFace& fac
 		triangle.Vertices[2].y = face.Edge->Prev->Tail->Vertex.y;
 		triangle.Vertices[2].z = face.Edge->Prev->Tail->Vertex.z;
 
-		result = GetPlaneFromTriangle(triangle);
+		result = CreatePlaneFromTriangle(triangle);
 	}
 
 	result = Normalised(result);

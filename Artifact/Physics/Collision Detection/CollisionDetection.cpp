@@ -7,6 +7,7 @@
 
 #include <Physics/GJK/GJK.h>
 #include <Physics/EPA/EPA.h>
+#include <Physics/SAT/SeparatingAxisTheorem.h>
 
 bool CollisionDetection::Use_GJK = true;
 
@@ -36,7 +37,7 @@ bool CollisionDetection::SeperatingAxisTheorem(const Collider* colliderA, const 
 		printf("Collision manifold is valid but not being constructed.\n");
 	}
 
-	return false;
+	return SeparatingAxisTheorem::CheckCollision(*colliderA, *colliderB, manifold);
 }
 
 bool CollisionDetection::SphereSphereCollision(const Collider* sphereColliderA, const Collider* sphereColliderB, CollisionManifold* manifold)

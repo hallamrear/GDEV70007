@@ -97,8 +97,7 @@ Vector3 OBBCollider::GetFurthestPointInDirection(const Vector3& direction) const
 	{
 		scaledPoint = Vector3(Points[i].x * m_Size.x, Points[i].y * m_Size.y, Points[i].z * m_Size.z);
 
-		DirectX::XMStoreFloat3(&corner,
-			DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&scaledPoint), DirectX::XMLoadFloat4x4(&m_AttachedEntity.GetWorldMatrix())));
+		DirectX::XMStoreFloat3(&corner, DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&scaledPoint), DirectX::XMLoadFloat4x4(&m_AttachedEntity.GetWorldMatrix())));
 
 		DirectX::XMStoreFloat(&distance, DirectX::XMVector3Dot(DirectX::XMLoadFloat3(&corner), DirectX::XMLoadFloat3(&direction)));
 

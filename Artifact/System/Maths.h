@@ -108,7 +108,12 @@ namespace Maths
 		DirectX::XMStoreFloat(&d, DirectX::XMVector3Dot(XMLoadFloat3(&A), XMLoadFloat3(&B)));
 		return d;
 	}
-	
+
+	inline static float Dot(const glm::vec3& A, const glm::vec3& B)
+	{
+		return (A.x * B.x) + (A.y * B.y) + (A.z * B.z);
+	}
+
 	inline static bool SameDirection(const Vector3& A, const Vector3& B)
 	{
 		return Dot(A, B) > 0;
@@ -116,7 +121,7 @@ namespace Maths
 
 	inline static bool SameDirection(const glm::vec3& A, const glm::vec3& B)
 	{
-		return glm::dot(A, B) > 0;
+		return Dot(A, B) > 0;
 	}
 
 	inline static void Normalise(Vector3& vec)
@@ -208,12 +213,14 @@ namespace Maths
 		return uvw;
 	}
 
+	//Compute barycentric coordinates for pointOnTri with respect to triangle (a, b, c)
+	//Calculation implementation taken from 'Real Time Collision Detection' by Christer Ericson.
 	inline static glm::vec3 CalculateBarycentricPositionOnTriangle(const glm::vec3& pointOnTri, const glm::vec3& triA, const glm::vec3& triB, const glm::vec3& triC)
 	{
 		glm::vec3 uvw = glm::vec3(0.0f, 0.0f, 0.0f);
-		glm::vec3 v0 = glm::vec3(triB.x - triA.x, triB.y - triA.y, triB.z - triA.z);
-		glm::vec3 v1 = glm::vec3(triC.x - triA.x, triC.y - triA.y, triC.z - triA.z);
-		glm::vec3 v2 = glm::vec3(pointOnTri.x - triA.x, pointOnTri.y - triA.y, pointOnTri.z - triA.z);
+		glm::vec3 v0 = triB - triA;
+		glm::vec3 v1 = triC - triA;
+		glm::vec3 v2 = pointOnTri - triA;
 
 		float d00 = glm::dot(v0, v0);
 		float d01 = glm::dot(v0, v1);

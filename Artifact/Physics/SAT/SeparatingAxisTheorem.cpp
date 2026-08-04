@@ -235,32 +235,35 @@ EdgeQuery SeparatingAxisTheorem::QueryEdge(const ConvexHull& hullA, const glm::m
 	return edgeQuery;
 }
 
-bool SeparatingAxisTheorem::CheckCollision(Entity* entityA, Entity* entityB, CollisionManifold* manifold)
+bool SeparatingAxisTheorem::CheckCollision(const Collider& colliderA, const Collider& colliderB, CollisionManifold* manifold)
 {
 	SAT_Result result;
 
-	Matrix4x4 mA = entityA->GetWorldMatrix();
+	const Entity& entityA = colliderA.GetAttachedEntity();
+	const Entity& entityB = colliderB.GetAttachedEntity();
+
+	Matrix4x4 mA = entityA.GetWorldMatrix();
 	glm::mat4x4 hullAMatrix = glm::mat4x4(
 		mA._11, mA._12, mA._13, mA._14,
 		mA._21, mA._22, mA._23, mA._24,
 		mA._31, mA._32, mA._33, mA._34,
 		mA._41, mA._42, mA._43, mA._44);
 
-	Matrix4x4 mB = entityB->GetWorldMatrix();
+	Matrix4x4 mB = entityB.GetWorldMatrix();
 	glm::mat4x4 hullBMatrix = glm::mat4x4(
 		mB._11, mB._12, mB._13, mB._14,
 		mB._21, mB._22, mB._23, mB._24,
 		mB._31, mB._32, mB._33, mB._34,
 		mB._41, mB._42, mB._43, mB._44);
 
-	if (entityA->HasModel() == false ||
-		entityB->HasModel() == false)
+	if (colliderA.GetAttachedEntity().HasModel() == false ||
+		colliderB.GetAttachedEntity().HasModel() == false)
 	{
 		return false;
 	}
 
-	const ConvexHull* hullA = entityA->GetModel()->GetMeshes()[0]->GetConvexHull();
-	const ConvexHull* hullB = entityB->GetModel()->GetMeshes()[0]->GetConvexHull();
+	const ConvexHull* hullA = entityA.GetModel()->GetMeshes()[0]->GetConvexHull();
+	const ConvexHull* hullB = entityB.GetModel()->GetMeshes()[0]->GetConvexHull();
 
 	if (hullA == nullptr || hullB == nullptr)
 	{
@@ -293,8 +296,6 @@ bool SeparatingAxisTheorem::CheckCollision(Entity* entityA, Entity* entityB, Col
 	{
 		ConstructContactManifold(*manifold, result, *hullA, hullAMatrix, *hullB, hullBMatrix);
 		manifold->Normal = Normalised(manifold->Normal);
-		manifold->CollisionPair.first = entityA;
-		manifold->CollisionPair.second = entityB;
 	}
 
 	return true;

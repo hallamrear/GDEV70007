@@ -52,6 +52,9 @@ public:
 	void SetWorldMatrix(const Matrix4x4& worldMatrix);
 	const Matrix4x4& GetWorldMatrix() const;
 
+	const void GetRotationMatrix(Matrix4x4& matrix) const;
+	const void GetInverseRotationMatrix(Matrix4x4& matrix) const;
+
 	void SetModel(ModelRef& model);
 	const bool HasModel() const;
 	const ModelRef& GetModel() const;

@@ -113,7 +113,7 @@ namespace Maths
 		return f.x * p.x + f.y * p.y + f.z * p.z + f.w;//*1.0f;
 	}
 
-	inline static Plane GetPlaneFromTriangle(const Triangle& triangle)
+	inline static Plane CreatePlaneFromTriangle(const Triangle& triangle)
 	{
 		//halved in the example?
 		Vector3 normal = GetNormalOfTriangle(triangle);
@@ -127,5 +127,28 @@ namespace Maths
 
 		Plane plane = Plane(normal, offset);
 		return plane;
+	}
+
+	inline static Plane CreatePlaneFromTriangle(const glm::vec3& A, const glm::vec3& B, const glm::vec3& C)
+	{
+		glm::vec3 AB = B - A;
+		glm::vec3 AC = C - A;
+
+		glm::vec3 normal = glm::normalize(glm::cross(AB, AC));
+		float distance = -glm::dot(A, normal);
+
+		Plane plane({ normal.x, normal.y, normal.z }, distance);
+		return plane;
+	}
+
+	inline static float DistanceFromPlane(const Plane& plane, const glm::vec3& point)
+	{
+		return glm::dot(point, {plane.x, plane.y, plane.z}) + plane.w;
+	}
+
+	inline static glm::vec3 ProjectPointOntoPlane(const Plane& plane, const glm::vec3& point)
+	{
+		float distanceFromPlane = DistanceFromPlane(plane, point);
+		return point - (glm::vec3(plane.x, plane.y, plane.z) * distanceFromPlane);
 	}
 }

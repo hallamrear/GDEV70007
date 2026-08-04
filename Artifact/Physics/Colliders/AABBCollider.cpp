@@ -81,39 +81,26 @@ Vector3 AABBCollider::GetMinCornerLocalSpace() const
 
 Vector3 AABBCollider::GetFurthestPointInDirection(const Vector3& direction) const
 {
-	Vector3 maxPoint = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
-	Vector3 corner = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
-	Vector3 scaledPoint = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
-	float maxDistance = -FLT_MAX;
-	float distance = -FLT_MAX;
+	Matrix4x4 rotMatrix;
+	GetAttachedEntity().GetRotationMatrix(rotMatrix);
+	Matrix4x4 invRotMatrix;
+	GetAttachedEntity().GetInverseRotationMatrix(invRotMatrix);
 
-	Matrix4x4 transformMatrix = GetTransformMatrix();
-	Matrix4x4 invTransformMatrix = GetInverseTransformMatrix();
+	Vector3 localDir = direction;
+	DirectX::XMStoreFloat3(&localDir, DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&direction), DirectX::XMLoadFloat4x4(&invRotMatrix)));
 
-	Vector3 dir;
-	DirectX::XMStoreFloat3(&dir, 
-		DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&direction), DirectX::XMLoadFloat4x4(&invTransformMatrix)));
+	Vector3 furthestPoint;
+	furthestPoint.x = (localDir.x > 0) ? m_Size.x : -m_Size.x;
+	furthestPoint.y = (localDir.y > 0) ? m_Size.y : -m_Size.y;
+	furthestPoint.z = (localDir.z > 0) ? m_Size.z : -m_Size.z;
 
-	printf("dir %f %f %F - %f %f %f\n", direction.x, direction.y, direction.z, dir.x, dir.y, dir.z);
+	DirectX::XMStoreFloat3(&furthestPoint, DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&furthestPoint), DirectX::XMLoadFloat4x4(&rotMatrix)));
+	
+	furthestPoint.x += GetAttachedEntity().GetPosition().x;
+	furthestPoint.y += GetAttachedEntity().GetPosition().y;
+	furthestPoint.z += GetAttachedEntity().GetPosition().z;
 
-	for (int i = 0; i < 8; i++)
-	{
-		distance = Maths::Dot(Points[i], dir);
-
-		if (distance >= maxDistance)
-		{
-			maxDistance = distance;
-			maxPoint = Points[i];
-		}
-	}
-
-	DirectX::XMStoreFloat3(&maxPoint, DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&maxPoint), DirectX::XMLoadFloat4x4(&transformMatrix)));
-
-	maxPoint.x += GetAttachedEntity().GetPosition().x;
-	maxPoint.y += GetAttachedEntity().GetPosition().y;
-	maxPoint.z += GetAttachedEntity().GetPosition().z;
-
-	return maxPoint;
+	return furthestPoint;
 }
 
 void AABBCollider::GetPoints(std::vector<Vector3>& points) const

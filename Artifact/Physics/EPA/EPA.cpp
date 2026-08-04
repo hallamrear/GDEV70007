@@ -1,6 +1,7 @@
 #include <pch.h>
 #include <Physics/EPA/EPA.h>
-#include <System/Maths.h>
+#include <System/Maths/Plane.h>
+#include <World/Entity.h>
 
 EPA::Edge::Edge()
 {
@@ -83,9 +84,9 @@ void EPA::ExtendPolytopeWithNewPoint(Polytope& polytope, const SupportVertex& ne
 
 		//Detemine if face is visible
 		glm::vec3 triToNew = glm::vec3(
-			newVertex.MinkowskiDifference.x - face.centre.x, 
-			newVertex.MinkowskiDifference.y - face.centre.y,
-			newVertex.MinkowskiDifference.z - face.centre.z);
+			newVertex.MinkDiff.x - face.centre.x, 
+			newVertex.MinkDiff.y - face.centre.y,
+			newVertex.MinkDiff.z - face.centre.z);
 		triToNew = glm::normalize(triToNew);
 
 		float dot = glm::dot(face.normal, triToNew);
@@ -124,7 +125,7 @@ void EPA::ExtendPolytopeWithNewPoint(Polytope& polytope, const SupportVertex& ne
 	//for (size_t i = 0; i < edgeCount; i++)
 	//{
 	//	Edge edge = uniqueEdgeList[i];
-	//	Face newFace = Face(edge.start, edge.end, newVertex.MinkowskiDifference);
+	//	Face newFace = Face(edge.start, edge.end, newVertex.MinkDiff);
 	//	polytope.push_back(newFace);
 	//}
 }
@@ -136,9 +137,9 @@ int EPA::GetFaceNormals(std::vector<glm::vec3>& normals, std::vector<float>& dis
 
 	for (int i = 0; i < faces.size(); i += 3)
 	{
-		glm::vec3 a = simplex[faces[i + 0]].MinkowskiDifference;
-		glm::vec3 b = simplex[faces[i + 1]].MinkowskiDifference;
-		glm::vec3 c = simplex[faces[i + 2]].MinkowskiDifference;
+		glm::vec3 a = simplex[faces[i + 0]].MinkDiff;
+		glm::vec3 b = simplex[faces[i + 1]].MinkDiff;
+		glm::vec3 c = simplex[faces[i + 2]].MinkDiff;
 
 		glm::vec3 lineAB = glm::vec3(b.x - a.x, b.y - a.y, b.z - a.z);
 		glm::vec3 lineAC = glm::vec3(c.x - a.x, c.y - a.y, c.z - a.z);
@@ -248,7 +249,7 @@ EPA_Result EPA::GetCollisionDetails(std::vector<SupportVertex>& simplex, const C
 		SupportVertex supportVertex = SupportVertex::GetSupportVertex(colliderA, colliderB, minNormal);
 		//if this point is further out in the direction, we insert this vertex into the simplex and test again.
 
-		float supportDistance = glm::dot(minNormal, supportVertex.MinkowskiDifference);
+		float supportDistance = glm::dot(minNormal, supportVertex.MinkDiff);
 
 		if (abs(supportDistance - minDistance) > 0.001f)
 		{
@@ -263,7 +264,7 @@ EPA_Result EPA::GetCollisionDetails(std::vector<SupportVertex>& simplex, const C
 			for (size_t i = 0; i < faceNormals.size(); i++)
 			{
 				//Not just removing current face, but also every face pointing in that direciton.
-				if (Maths::SameDirection(faceNormals[i], supportVertex.MinkowskiDifference))
+				if (Maths::SameDirection(faceNormals[i], supportVertex.MinkDiff))
 				{
 					size_t faceIndex = i * 3;
 
@@ -342,7 +343,7 @@ EPA_Result EPA::GetCollisionDetails(std::vector<SupportVertex>& simplex, const C
 		triangle.Points[i] = (polytope[polytopeFaces[triFaceIndex]]);
 	}
 
-	glm::vec3 triNormal = Maths::GetNormalOfTriangle(triangle.Points[0].MinkowskiDifference, triangle.Points[1].MinkowskiDifference, triangle.Points[2].MinkowskiDifference);
+	glm::vec3 triNormal = Maths::GetNormalOfTriangle(triangle.Points[0].MinkDiff, triangle.Points[1].MinkDiff, triangle.Points[2].MinkDiff);
 	triangle.Normal = { triNormal.x, triNormal.y, triNormal.z };
 
 	result.Tri = triangle;
@@ -358,32 +359,32 @@ EPA_Result EPA::GetCollisionDetails(std::vector<SupportVertex>& simplex, const C
 
 using namespace glm;
 
-glm::vec3 EPA::ConstructManifold(const Collider& colliderA, const Collider& colliderB, const Simplex& simplex, CollisionManifold& manifold)
+void EPA::ConstructManifold(const Collider& colliderA, const Collider& colliderB, const Simplex& simplex, CollisionManifold& manifold)
 {
 	//Cache maximum possible faces (3x points + normal per face);
-	vec3 polytope[EPA_MAX_POLYTOPE_FACES][4];
+	SupportVertex polytope[EPA_MAX_POLYTOPE_FACES][4];
 
 	//Construct initial polytope from GJK simplex.
 	//ABC
-	polytope[0][0] = simplex[0].MinkowskiDifference;
-	polytope[0][1] = simplex[1].MinkowskiDifference;
-	polytope[0][2] = simplex[2].MinkowskiDifference;
-	polytope[0][3] = normalize(cross(polytope[0][1] - polytope[0][0], polytope[0][2] - polytope[0][0]));
+	polytope[0][0] = simplex[0];
+	polytope[0][1] = simplex[1];
+	polytope[0][2] = simplex[2];
+	polytope[0][3].MinkDiff = normalize(cross(polytope[0][1].MinkDiff - polytope[0][0].MinkDiff, polytope[0][2].MinkDiff - polytope[0][0].MinkDiff));
 	//ACD
-	polytope[1][0] = simplex[0].MinkowskiDifference;
-	polytope[1][1] = simplex[2].MinkowskiDifference;
-	polytope[1][2] = simplex[3].MinkowskiDifference;
-	polytope[1][3] = normalize(cross(polytope[1][1] - polytope[1][0], polytope[1][2] - polytope[1][0]));
+	polytope[1][0] = simplex[0];
+	polytope[1][1] = simplex[2];
+	polytope[1][2] = simplex[3];
+	polytope[1][3].MinkDiff = normalize(cross(polytope[1][1].MinkDiff - polytope[1][0].MinkDiff, polytope[1][2].MinkDiff - polytope[1][0].MinkDiff));
 	//ADB
-	polytope[2][0] = simplex[0].MinkowskiDifference;
-	polytope[2][1] = simplex[3].MinkowskiDifference;
-	polytope[2][2] = simplex[1].MinkowskiDifference;
-	polytope[2][3] = normalize(cross(polytope[2][1] - polytope[2][0], polytope[2][2] - polytope[2][0]));
+	polytope[2][0] = simplex[0];
+	polytope[2][1] = simplex[3];
+	polytope[2][2] = simplex[1];
+	polytope[2][3].MinkDiff = normalize(cross(polytope[2][1].MinkDiff - polytope[2][0].MinkDiff, polytope[2][2].MinkDiff - polytope[2][0].MinkDiff));
 	//BDC
-	polytope[3][0] = simplex[1].MinkowskiDifference;
-	polytope[3][1] = simplex[3].MinkowskiDifference;
-	polytope[3][2] = simplex[2].MinkowskiDifference;
-	polytope[3][3] = normalize(cross(polytope[3][1] - polytope[3][0], polytope[3][2] - polytope[3][0]));
+	polytope[3][0] = simplex[1];
+	polytope[3][1] = simplex[3];
+	polytope[3][2] = simplex[2];
+	polytope[3][3].MinkDiff = normalize(cross(polytope[3][1].MinkDiff - polytope[3][0].MinkDiff, polytope[3][2].MinkDiff - polytope[3][0].MinkDiff));
 
 	int faceCount = 4;
 	int nearestFace = -1;
@@ -392,12 +393,12 @@ glm::vec3 EPA::ConstructManifold(const Collider& colliderA, const Collider& coll
 	{
 		#pragma region Determine Nearest Face
 		//Determine Nearest Face
-		float minDistance = dot(polytope[0][0], polytope[0][3]);
+		float minDistance = dot(polytope[0][0].MinkDiff, polytope[0][3].MinkDiff);
 		nearestFace = 0;
 
 		for (size_t i = 1; i < faceCount; i++)
 		{
-			float d = dot(polytope[i][0], polytope[i][3]);
+			float d = dot(polytope[i][0].MinkDiff, polytope[i][3].MinkDiff);
 
 			if (d < minDistance)
 			{
@@ -407,36 +408,70 @@ glm::vec3 EPA::ConstructManifold(const Collider& colliderA, const Collider& coll
 		}
 		#pragma endregion
 
-		vec3 direction = normalize(polytope[nearestFace][3]);
+		vec3 direction = normalize(polytope[nearestFace][3].MinkDiff);
 		SupportVertex sv = SupportVertex::GetSupportVertex(colliderA, colliderB, direction);
 
-		if (dot(sv.MinkowskiDifference, direction) - minDistance < EPA_CONVERGENCE_TOLERANCE)
+		if (dot(sv.MinkDiff, direction) - minDistance < EPA_CONVERGENCE_TOLERANCE)
 		{
 			//Convergence on the origin!
-			glm::vec3 MTV = polytope[nearestFace][3] * dot(sv.MinkowskiDifference, direction);
-			manifold.Normal = { MTV.x, MTV.y, MTV.z };
-			return MTV;
+
+			//Create plane from nearest tri.
+			const glm::vec3 origin = { 0.0f, 0.0f, 0.0f };
+			Plane closestTri = Maths::CreatePlaneFromTriangle(polytope[nearestFace][0].MinkDiff, polytope[nearestFace][1].MinkDiff, polytope[nearestFace][2].MinkDiff);
+			glm::vec3 projectedOrigin = Maths::ProjectPointOntoPlane(closestTri, origin);
+
+			glm::vec3 uvw = Maths::CalculateBarycentricPositionOnTriangle(projectedOrigin, polytope[nearestFace][0].MinkDiff, polytope[nearestFace][1].MinkDiff, polytope[nearestFace][2].MinkDiff);
+			float u = uvw.x;
+			float v = uvw.y;
+			float w = uvw.z;
+
+			glm::vec3 hitPointA = (polytope[nearestFace][0].SupportVertexA * u) + (polytope[nearestFace][1].SupportVertexA * v) + (polytope[nearestFace][2].SupportVertexA * w);
+			glm::vec3 hitPointB = (polytope[nearestFace][0].SupportVertexB * u) + (polytope[nearestFace][1].SupportVertexB * v) + (polytope[nearestFace][2].SupportVertexB * w);
+
+			glm::vec3 MTV = hitPointA - hitPointB;
+			glm::vec3 normal = glm::normalize(MTV);
+			float depth = glm::length(MTV);
+
+			//Move back into the proper spaces.
+			Vector3 collAPos = colliderA.GetAttachedEntity().GetPosition();
+			hitPointA -= glm::vec3( collAPos.x, collAPos.y, collAPos.z );
+			
+			Vector3 collBPos = colliderB.GetAttachedEntity().GetPosition();
+			hitPointB -= glm::vec3(collBPos.x, collBPos.y, collBPos.z);
+
+			Contact contactA;
+			contactA.HitPoint = { hitPointA.x, hitPointA.y, hitPointA.z };
+			contactA.Depth = depth;
+
+			Contact contactB;
+			contactB.HitPoint = { hitPointB.x, hitPointB.y, hitPointB.z };
+			contactB.Depth = depth;
+
+			manifold.Normal = { normal.x, normal.y, normal.z };
+			manifold.ContactPoints.push_back(contactA);
+			manifold.ContactPoints.push_back(contactB);
+			return;
 		}
 
-		vec3 looseEdges[EPA_MAX_POLYTOPE_LOOSE_EDGES][2];
+		SupportVertex looseEdges[EPA_MAX_POLYTOPE_LOOSE_EDGES][2];
 		int looseEdgeCount = 0;
 
 		for (size_t i = 0; i < faceCount; i++)
 		{
 			//if face triangle faces the support point, remove it to expand polytope.
-			if (Maths::SameDirection(polytope[i][3], sv.MinkowskiDifference - polytope[i][0]))
+			if (glm::dot(polytope[i][3].MinkDiff, sv.MinkDiff - polytope[i][0].MinkDiff) > 0.0f)
 			{
 				//Add old triangle edges to edge list.
 
 				for (size_t t = 0; t < 3; t++)
 				{
-					vec3 edges[2] = { polytope[i][t], polytope[i][(t + 1) % 3] };
+					SupportVertex edges[2] = { polytope[i][t], polytope[i][(t + 1) % 3] };
 
 					bool duplicateEdge = false;
 
 					for (size_t e = 0; e < looseEdgeCount; e++)
 					{
-						if(looseEdges[e][1] == edges[0] && looseEdges[e][0] == edges[1])
+						if(looseEdges[e][1].MinkDiff == edges[0].MinkDiff && looseEdges[e][0].MinkDiff == edges[1].MinkDiff)
 						{
 							//If its an already hanging edge we gotta clean it up as it can onnly be shared by 2 tris.
 							looseEdges[e][0] = looseEdges[looseEdgeCount - 1][0];
@@ -449,7 +484,12 @@ glm::vec3 EPA::ConstructManifold(const Collider& colliderA, const Collider& coll
 
 					if (duplicateEdge == false)
 					{
-						assert(looseEdgeCount < EPA_MAX_POLYTOPE_LOOSE_EDGES);
+						//assert(looseEdgeCount < EPA_MAX_POLYTOPE_LOOSE_EDGES);
+						if (looseEdgeCount >= EPA_MAX_POLYTOPE_LOOSE_EDGES)
+						{
+							itr = EPA_MAX_ITERATIONS;
+							break;
+						}
 
 						looseEdges[looseEdgeCount][0] = edges[0];
 						looseEdges[looseEdgeCount][1] = edges[1];
@@ -467,25 +507,29 @@ glm::vec3 EPA::ConstructManifold(const Collider& colliderA, const Collider& coll
 		}
 
 		//Rebuild new polytope using new support vertex
-
 		for (size_t i = 0; i < looseEdgeCount; i++)
 		{
-			assert(faceCount < EPA_MAX_POLYTOPE_FACES);
+			//assert(faceCount < EPA_MAX_POLYTOPE_FACES);
+			if (faceCount >= EPA_MAX_POLYTOPE_FACES)
+			{
+				itr = EPA_MAX_ITERATIONS;
+				break;
+			}
 
 			polytope[faceCount][0] = looseEdges[i][0];
 			polytope[faceCount][1] = looseEdges[i][1];
-			polytope[faceCount][2] = sv.MinkowskiDifference;
-			polytope[faceCount][3] = normalize(cross(looseEdges[i][0] - looseEdges[i][1], looseEdges[i][0] - sv.MinkowskiDifference));
+			polytope[faceCount][2] = sv;
+			polytope[faceCount][3].MinkDiff = normalize(cross(looseEdges[i][0].MinkDiff - looseEdges[i][1].MinkDiff, looseEdges[i][0].MinkDiff - sv.MinkDiff));
 
 			const float offset = 0.0000001f;
 			//Make sure its facing the right direction.
-			if (dot(polytope[faceCount][0], polytope[faceCount][3]) + offset < 0)
+			if (dot(polytope[faceCount][0].MinkDiff, polytope[faceCount][3].MinkDiff) + offset < 0)
 			{
 				//Flip winding order
-				vec3 holder = polytope[faceCount][0];
+				SupportVertex holder = polytope[faceCount][0];
 				polytope[faceCount][0] = polytope[faceCount][1];
 				polytope[faceCount][1] = holder;
-				polytope[faceCount][3] = -polytope[faceCount][3];
+				polytope[faceCount][3].MinkDiff = -polytope[faceCount][3].MinkDiff;
 			}
 
 			faceCount++;
@@ -494,5 +538,40 @@ glm::vec3 EPA::ConstructManifold(const Collider& colliderA, const Collider& coll
 	}
 
 	printf("Expanding Polytrope Algorithm failed to converge on a encompassing polytope. Dropping out due to iteration count. Returning most recent nearest point.");	
-	return polytope[nearestFace][3] * dot(polytope[nearestFace][0], polytope[nearestFace][3]);
+
+	//Create plane from nearest tri.
+	const glm::vec3 origin = { 0.0f, 0.0f, 0.0f };
+	Plane closestTri = Maths::CreatePlaneFromTriangle(polytope[nearestFace][0].MinkDiff, polytope[nearestFace][1].MinkDiff, polytope[nearestFace][2].MinkDiff);
+	glm::vec3 projectedOrigin = Maths::ProjectPointOntoPlane(closestTri, origin);
+
+	glm::vec3 uvw = Maths::CalculateBarycentricPositionOnTriangle(projectedOrigin, polytope[nearestFace][0].MinkDiff, polytope[nearestFace][1].MinkDiff, polytope[nearestFace][2].MinkDiff);
+	float u = uvw.x;
+	float v = uvw.y;
+	float w = uvw.z;
+
+	glm::vec3 hitPointA = (polytope[nearestFace][0].SupportVertexA * u) + (polytope[nearestFace][1].SupportVertexA * v) + (polytope[nearestFace][2].SupportVertexA * w);
+	glm::vec3 hitPointB = (polytope[nearestFace][0].SupportVertexB * u) + (polytope[nearestFace][1].SupportVertexB * v) + (polytope[nearestFace][2].SupportVertexB * w);
+
+	glm::vec3 MTV = hitPointA - hitPointB;
+	glm::vec3 normal = glm::normalize(MTV);
+	float depth = glm::length(MTV);
+
+	//Move back into the proper spaces.
+	Vector3 collAPos = colliderA.GetAttachedEntity().GetPosition();
+	hitPointA -= glm::vec3(collAPos.x, collAPos.y, collAPos.z);
+
+	Vector3 collBPos = colliderB.GetAttachedEntity().GetPosition();
+	hitPointB -= glm::vec3(collBPos.x, collBPos.y, collBPos.z);
+
+	Contact contactA;
+	contactA.HitPoint = { hitPointA.x, hitPointA.y, hitPointA.z };
+	contactA.Depth = depth;
+
+	Contact contactB;
+	contactB.HitPoint = { hitPointB.x, hitPointB.y, hitPointB.z };
+	contactB.Depth = depth;
+
+	manifold.Normal = { normal.x, normal.y, normal.z };
+	manifold.ContactPoints.push_back(contactA);
+	manifold.ContactPoints.push_back(contactB);
 }

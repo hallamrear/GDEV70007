@@ -9,6 +9,7 @@ struct Contact
 {
 	Vector3 HitPoint = Vector3(0.0f, 0.0f, 0.0f);
 	float Depth = 0.0f;
+	Vector3 Normal;
 };
 
 struct CollisionManifold
@@ -36,21 +37,17 @@ struct SupportVertex
 
 	inline static SupportVertex GetSupportVertex(const Collider& colliderA, const Collider& colliderB, const glm::vec3& direction)
 	{
-		glm::vec3 dirNorm = glm::normalize(direction);
-		glm::vec3 invDirNorm = -dirNorm;
+		glm::vec3 invDirNorm = -direction;
 
-		Vector3 v3CollFar[2] =
-		{
-			colliderA.GetFurthestPointInDirection({ dirNorm.x, dirNorm.y, dirNorm.z}),
-			colliderB.GetFurthestPointInDirection({ invDirNorm.x, invDirNorm.y, invDirNorm.z })
-		};
+		Vector3 supportA = colliderA.GetFurthestPointInDirection({ direction.x, direction.y, direction.z }); 
+		Vector3 supportB = colliderB.GetFurthestPointInDirection({ invDirNorm.x, invDirNorm.y, invDirNorm.z });
 
-		return SupportVertex(v3CollFar[0], v3CollFar[1]);
+		return SupportVertex(supportA, supportB);
 	};
 
 	glm::vec3 SupportVertexA;
 	glm::vec3 SupportVertexB;
-	glm::vec3 MinkowskiDifference;
+	glm::vec3 MinkDiff;
 
 	SupportVertex(const Vector3& supportA, const Vector3& supportB)
 	{
@@ -62,14 +59,14 @@ struct SupportVertex
 		SupportVertexB.y = supportB.y;
 		SupportVertexB.z = supportB.z;
 
-		MinkowskiDifference.x = (SupportVertexB.x - SupportVertexA.x);
-		MinkowskiDifference.y = (SupportVertexB.y - SupportVertexA.y);
-		MinkowskiDifference.z = (SupportVertexB.z - SupportVertexA.z);
+		MinkDiff.x = (SupportVertexA.x - SupportVertexB.x);
+		MinkDiff.y = (SupportVertexA.y - SupportVertexB.y);
+		MinkDiff.z = (SupportVertexA.z - SupportVertexB.z);
 
 		//printf("%f %f %f - %f %f %f | %f %f %f\n",
 		//	SupportVertexA.x, SupportVertexA.y, SupportVertexA.z,
 		//	SupportVertexB.x, SupportVertexB.y, SupportVertexB.z,
-		//	MinkowskiDifference.x, MinkowskiDifference.y, MinkowskiDifference.z);
+		//	MinkDiff.x, MinkDiff.y, MinkDiff.z);
 	}
 	
 	SupportVertex(const glm::vec3& supportA, const glm::vec3& supportB)
@@ -77,15 +74,15 @@ struct SupportVertex
 		SupportVertexA = supportA;
 		SupportVertexB = supportB;
 
-		MinkowskiDifference.x = (SupportVertexB.x - SupportVertexA.x);
-		MinkowskiDifference.y = (SupportVertexB.y - SupportVertexA.y);
-		MinkowskiDifference.z = (SupportVertexB.z - SupportVertexA.z);
+		MinkDiff.x = (SupportVertexB.x - SupportVertexA.x);
+		MinkDiff.y = (SupportVertexB.y - SupportVertexA.y);
+		MinkDiff.z = (SupportVertexB.z - SupportVertexA.z);
 	}
 
 	SupportVertex(const SupportVertex& supportVertex) : 
 		SupportVertexA(supportVertex.SupportVertexA), 
 		SupportVertexB(supportVertex.SupportVertexB), 
-		MinkowskiDifference(supportVertex.MinkowskiDifference)
+		MinkDiff(supportVertex.MinkDiff)
 	{
 
 	}
@@ -94,7 +91,7 @@ struct SupportVertex
 	{
 		SupportVertexA = { 0.0f, 0.0f, 0.0f };
 		SupportVertexB = { 0.0f, 0.0f, 0.0f };
-		MinkowskiDifference = { 0.0f, 0.0f, 0.0f };
+		MinkDiff = { 0.0f, 0.0f, 0.0f };
 	}
 };
 

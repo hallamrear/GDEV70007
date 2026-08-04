@@ -78,6 +78,6 @@ private:
 	static EdgeQuery QueryEdge(const ConvexHull& hullA, const glm::mat4x4& hullAMatrix, const ConvexHull& hullB, const glm::mat4x4& hullBMatrix);
 
 public:
-	static bool CheckCollision(Entity* entityA, Entity* entityB, CollisionManifold* manifold = nullptr);
+	static bool CheckCollision(const Collider& colliderA, const Collider& colliderB, CollisionManifold* manifold = nullptr);
 };
 
