@@ -195,6 +195,9 @@
     <ClInclude Include="Physics\Resolution\Constraint.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Physics\Colliders\CylinderCollider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Artifact.cpp">
@@ -350,6 +353,9 @@
     <ClCompile Include="Physics\Resolution\Constraint.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Physics\Colliders\CylinderCollider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Artifact.rc">
@@ -400,5 +406,6 @@
     <None Include="Content\Pyramid.glb" />
     <None Include="Content\Icosphere.glb" />
     <None Include="Content\Axe.glb" />
+    <None Include="Content\Colliders\CylinderCollider.glb" />
   </ItemGroup>
 </Project>

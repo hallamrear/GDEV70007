@@ -15,7 +15,43 @@ using namespace glm;
 #define c 2
 #define d 3
 
-bool GJK::Triangle(Simplex& simplex, int& simplexDimensions, vec3& direction)
+bool GJK::Line(Simplex& simplex, vec3& direction)
+{
+
+	//	far	B  /
+	//		  /		
+	//		B/
+	//		 \  between AB
+	//		  \
+	//		   \	/
+	//			\  /	far A
+	//			 A/
+	//
+
+	//For a line, does the origin fall the far side of A or B or somewhere in AB
+	//However, it cant be in the direction of AB (far side of B), as adding A (B->A is already in the direction of the origin)
+	//means that going past B from A is going further from the origin.
+
+	glm::vec3 A = simplex[a].Diff;
+	glm::vec3 B = simplex[b].Diff;
+
+	glm::vec3 AB = B - A;
+	glm::vec3 AO = -A;
+
+	if (Maths::SameDirection(AB, AO))
+	{
+		direction = cross(cross(AB, AO), AB);
+	}
+	else
+	{
+		simplex = { simplex[a] };
+		direction = AO;
+	}
+
+	return false;
+}
+
+bool GJK::Triangle(Simplex& simplex, vec3& direction)
 {
 	/*
 	////////////////////////////////////////////////@@#####################
@@ -57,53 +93,57 @@ bool GJK::Triangle(Simplex& simplex, int& simplexDimensions, vec3& direction)
 	//Can early reject a few though as it wouldve been implicitly rejected in the line function as we wouldve tested that direction already.
 	//This removes B, C and edge BC.
 
-	const vec3& A = simplex[a].MinkDiff;
-	const vec3& B = simplex[b].MinkDiff;
-	const vec3& C = simplex[c].MinkDiff;
+	vec3 A = simplex[a].Diff;
+	vec3 B = simplex[b].Diff;
+	vec3 C = simplex[c].Diff;
 
-	//triangles normal
-	vec3 normal = cross(B - A, C - A);
-	//to origin
-	vec3 ao = -A;
+	vec3 AB = B - A;
+	vec3 AC = C - A;
+	vec3 AO = -A;
 
-	//Closest to edge AB
-	if (Maths::SameDirection(cross(B - A, normal), ao))
+	vec3 ABC = cross(AB, AC);
+
+	if (Maths::SameDirection(cross(ABC, AC), AO))
 	{
-		simplex[c] = simplex[a];
-		direction = cross(cross(B - A, ao), B - A);
-		simplexDimensions = 2;
-		return false;
+		if (Maths::SameDirection(AC, AO))
+		{
+			simplex = { simplex[a], simplex[c] };
+			direction = cross(cross(AC, AO), AC);
+		}
+		else
+		{
+			
+			simplex = { simplex[a], simplex[b] };
+			return Line(simplex, direction);
+		}
+	}
+	else
+	{
+		if (Maths::SameDirection(cross(AB, ABC), AO))
+		{
+			
+			simplex = { simplex[a], simplex[b] };
+			return Line(simplex, direction);
+		}
+		else
+		{
+			if (Maths::SameDirection(ABC, AO))
+			{
+				direction = ABC;
+			}
+			else
+			{
+				
+				simplex = { simplex[a], simplex[c], simplex[b] };
+				direction = -ABC;
+			}
+		}
 	}
 
-	//Closest to edge AC
-	if (Maths::SameDirection(cross(normal, C - A), ao))
-	{
-		simplex[b] = simplex[a];
-		direction = cross(cross(C - A, ao), C - A);
-		simplexDimensions = 2;
-		return false;
-	}
-
-	//Check above triangle
-	if (Maths::SameDirection(normal, ao))
-	{
-		simplex[d] = simplex[c];
-		simplex[c] = simplex[b];
-		simplex[b] = simplex[a];
-		direction = normal;
-		simplexDimensions = 3;
-		return false;
-	}
-
-	//else below triangle
-	simplexDimensions = 3;
-	simplex[d] = simplex[b];
-	simplex[b] = simplex[a];
-	direction = -normal;
 	return false;
 };
 
-bool GJK::Tetrahedron(Simplex& simplex, int& simplexDimensions, vec3& direction)
+bool GJK::Tetrahedron(Simplex& simplex, vec3& direction)
 {
 	/*
 									[A]
@@ -129,43 +169,39 @@ bool GJK::Tetrahedron(Simplex& simplex, int& simplexDimensions, vec3& direction)
 											[C]
 		*/
 
-	const vec3& A = simplex[a].MinkDiff;
-	const vec3& B = simplex[b].MinkDiff;
-	const vec3& C = simplex[c].MinkDiff;
-	const vec3& D = simplex[d].MinkDiff;
-		 
-	//Construct new edges for top point of tetrahedron
-	vec3 e_abc = cross(B-A, C-A);
-	vec3 e_acd = cross(C-A, D-A);
-	vec3 e_adb = cross(D-A, B-A);
-	vec3 ao = -A;
+	vec3 A = simplex[0].Diff;
+	vec3 B = simplex[1].Diff;
+	vec3 C = simplex[2].Diff;
+	vec3 D = simplex[3].Diff;
 
-	simplexDimensions = 3;
+	vec3 AB = B - A;
+	vec3 AC = C - A;
+	vec3 AD = D - A;
+	vec3 AO = -A;
 
-	//Check each triangle.
-	if (Maths::SameDirection(e_abc, ao)) //In front of face ABC
+	vec3 ABC = cross(AB, AC);
+	vec3 ACD = cross(AC, AD);
+	vec3 ADB = cross(AD, AB);
+
+	if (Maths::SameDirection(ABC, AO))
 	{
-		simplex[d] = simplex[c];
-		simplex[c] = simplex[b];
-		simplex[b] = simplex[a];
-		direction = e_abc;
-		return false;
+		
+		simplex = { simplex[a], simplex[b], simplex[c] };
+		return Triangle(simplex, direction);
 	}
 
-	if (Maths::SameDirection(e_acd, ao)) //In front of face ACD
+	if (Maths::SameDirection(ACD, AO))
 	{
-		simplex[b] = simplex[a];
-		direction = e_acd;
-		return false;
+		
+		simplex = { simplex[a], simplex[c], simplex[d] };
+		return Triangle(simplex, direction);
 	}
 
-	if (Maths::SameDirection(e_adb, ao)) //In front of face ADB
+	if (Maths::SameDirection(ADB, AO))
 	{
-		simplex[c] = simplex[d];
-		simplex[d] = simplex[b];
-		simplex[b] = simplex[a];
-		direction = e_adb;
-		return false;
+		
+		simplex = { simplex[a], simplex[d], simplex[b] };
+		return Triangle(simplex, direction);
 	}
 
 	return true;
@@ -173,175 +209,76 @@ bool GJK::Tetrahedron(Simplex& simplex, int& simplexDimensions, vec3& direction)
 
 //Determines for a simplex, which part is closest to the origin.
 //Similar to determining which voronoi region of each feature is nearest the origin.
-bool GJK::UpdateSimplex(Simplex& simplex, int& simplexDimensions, vec3& direction)
+bool GJK::UpdateSimplex(Simplex& simplex, vec3& direction)
 {
-	switch (simplexDimensions)
+	switch (simplex.size())
 	{
+	case 2: { return Line(simplex, direction); } break;
 	//Simplex& is triangle ABC
-	case 3: { return Triangle(simplex, simplexDimensions, direction); } break;
+	case 3: { return Triangle(simplex, direction); } break;
 
 	//Simplex& is formed of 3 triangles, ABC, ABD, ACD, BCD
-	case 4: { return Tetrahedron(simplex, simplexDimensions, direction); } break;
+	case 4: { return Tetrahedron(simplex, direction); } break;
 
 	default:
-		throw new std::exception("GJK Simplex& updating should not have reached here.\n");
+		printf("GJK Simplex& updating should not have reached here.\n");
 		break;
 	}
+
+	return false;
+}
+
+SupportVertex GJK::GetSupportVertex(const Collider& colliderA, const Collider& colliderB, const glm::vec3& direction)
+{
+	SupportVertex support;
+	support.SupportVertexA = colliderA.GetSupportPoint(direction);
+	support.SupportVertexB = colliderB.GetSupportPoint(-direction);
+	support.Diff = support.SupportVertexA - support.SupportVertexB;
+	return support;
 }
 
 bool GJK::CheckCollision(const Collider& colliderA, const Collider& colliderB, CollisionManifold* manifold)
 {
+	SupportVertex support = GetSupportVertex(colliderA, colliderB, vec3(1.0f, 0.0f, 0.0f));
 
-	SupportVertex points[4] = {};
-	Simplex simplex = points;
+	Simplex simplex = { support };	
 
-	auto PointAlreadyExistsInSimplex = [=](const Simplex& sim, const SupportVertex& v)
+	vec3 direction = -support.Diff;
+
+	for (size_t i = 0; i < MAX_GJK_ITERATIONS; i++)
 	{
-		for (size_t i = b; i < d; i++)
-		{
+		support = GetSupportVertex(colliderA, colliderB, direction);
 
-			glm::vec3 diffA = sim[i].SupportVertexA - v.SupportVertexA;
-			glm::vec3 diffB = sim[i].SupportVertexB - v.SupportVertexB;
-
-			float lA = glm::dot(diffA, diffA);
-			float lB = glm::dot(diffB, diffB);
-
-			printf("lA %f - lB %f\n", lA, lB);
-
-			if (isnan(lA) || isnan(lB) ||
-				(lA < (FLT_EPSILON * FLT_EPSILON) && 
-				 lB < (FLT_EPSILON * FLT_EPSILON))
-				)
-			{
-				return true;
-			}
-		}
-
-		return false;
-	};
-
-	vec3 direction = { 0.0f, 0.0f, 0.0f };
-	direction.x = (colliderA.GetAttachedEntity().GetPosition().x - colliderB.GetAttachedEntity().GetPosition().x);
-	direction.y = (colliderA.GetAttachedEntity().GetPosition().y - colliderB.GetAttachedEntity().GetPosition().y);
-	direction.z = (colliderA.GetAttachedEntity().GetPosition().z - colliderB.GetAttachedEntity().GetPosition().z);
-
-	//	far	B  /
-	//		  /		
-	//		B/
-	//		 \  between AB
-	//		  \
-	//		   \	/
-	//			\  /	far A
-	//			 A/
-	//
-
-	//For a line, does the origin fall the far side of A or B or somewhere in AB
-	//However, it cant be in the direction of AB (far side of B), as adding A (B->A is already in the direction of the origin)
-	//means that going past B from A is going further from the origin.
-
-	//Get support vertex in initial direction.
-	simplex[c] = SupportVertex::GetSupportVertex(colliderA, colliderB, direction);
-
-	direction = -simplex[c].MinkDiff;
-
-	//Get a new direction in the opposite direction for the first loop.
-	simplex[b] = SupportVertex::GetSupportVertex(colliderA, colliderB, direction);
-
-	//returns if the new point is not in front of the search direction
-	//this would exit if the direction finds a vertex that was already the furthest one along it.
-	if (glm::dot(simplex[b].MinkDiff, direction) < 0)
-	{
-		return false;
-	}
-
-	//Determine perpendicular direction to the line segment with triple cross
-	direction = cross(cross(
-		simplex[c].MinkDiff - simplex[b].MinkDiff, -simplex[b].MinkDiff),
-		simplex[c].MinkDiff - simplex[b].MinkDiff);
-
-	//If origin exists on the segment
-	if (fabsf(direction.x) < FLT_EPSILON &&
-		fabsf(direction.y) < FLT_EPSILON &&
-		fabsf(direction.z) < FLT_EPSILON)
-	{
-		//Check again against a basis axis
-		direction = cross(simplex[c].MinkDiff - simplex[b].MinkDiff, vec3(1.0f, 0.0f, 0.0f));
-
-		//Check again against another basis axis
-		if (fabsf(direction.x) < FLT_EPSILON &&
-			fabsf(direction.y) < FLT_EPSILON &&
-			fabsf(direction.z) < FLT_EPSILON)
-		{
-			direction = cross(simplex[c].MinkDiff - simplex[b].MinkDiff, vec3(0.0f, 0.0f, -1.0f));
-		}
-	}
-
-	int simplexDimensions = 2;
-	static int hits = 0;
-	hits = 0;
-
-	for (size_t itr = 0; itr < MAX_GJK_ITERATIONS; itr++)
-	{
-		simplex[a] = SupportVertex::GetSupportVertex(colliderA, colliderB, direction);
-
-		//returns if the new point is not in front of the search direction
-		//this would exit if the direction finds a vertex that was already the furthest one along it.
-		if (glm::dot(simplex[a].MinkDiff, direction) < 0)
+		if (dot(support.Diff, direction) <= 0.0f)
 		{
 			return false;
 		}
 
-		simplexDimensions++;
+		simplex.push_front(support);
 
-		////If detection in simplex, return true.
-		//if (UpdateSimplex(simplex, simplexDimensions, direction))
-		//{
-		//	//Origin contained within simplex.
-		//	if (manifold != nullptr)
-		//	{
-		//		//Develop collision details using EPA.
-		//		EPA::ConstructManifold(colliderA, colliderB, simplex, *manifold);
 
-		//		printf("1 %f %f %f - %f\n", manifold->Normal.x, manifold->Normal.y, manifold->Normal.z, manifold->ContactPoints[0].Depth);
-
-		//		std::vector<SupportVertex> s = { simplex[a], simplex[b], simplex[c], simplex[d] };
-
-		//		EPA::GetCollisionDetails(s, colliderA, colliderB, manifold);
-
-		//		printf("2 %f %f %f - %f\n", manifold->Normal.x, manifold->Normal.y, manifold->Normal.z, manifold->ContactPoints[0].Depth);
-		//	}
-
-		//	return true;
-		//}
-
-		hits++;
-
-		bool exists = PointAlreadyExistsInSimplex(simplex, simplex[a]);
-
-		if (simplexDimensions == 3)
-		{
-			Triangle(simplex, simplexDimensions, direction);
-		}
-		else if(exists || Tetrahedron(simplex, simplexDimensions, direction))
+		if (UpdateSimplex(simplex, direction))
 		{
 			//Origin contained within simplex.
 			if (manifold != nullptr)
 			{
 				//Develop collision details using EPA.
 				EPA::ConstructManifold(colliderA, colliderB, simplex, *manifold);
-
 				printf("1 %f %f %f - %f\n", manifold->Normal.x, manifold->Normal.y, manifold->Normal.z, manifold->ContactPoints[0].Depth);
 
-				std::vector<SupportVertex> s = { simplex[a], simplex[b], simplex[c], simplex[d] };
+				//std::vector<SupportVertex> s = { simplex[0], simplex[1], simplex[2], simplex[3] };
+				
+				manifold->Reset();
 
-				EPA::GetCollisionDetails(s, colliderA, colliderB, manifold);
-
+				EPA_Result result = EPA::GetCollisionDetails(simplex, colliderA, colliderB, manifold);
 				printf("2 %f %f %f - %f\n", manifold->Normal.x, manifold->Normal.y, manifold->Normal.z, manifold->ContactPoints[0].Depth);
 			}
 
 			return true;
 		}
+
 	}
 
+	printf("Max GJK iterations reached. Exitting with no collision.\n");
 	return false;
 }

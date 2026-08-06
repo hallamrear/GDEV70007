@@ -85,7 +85,7 @@ void OBBCollider::GetPoints(std::vector<Vector3>& points) const
 	}
 }
 
-Vector3 OBBCollider::GetFurthestPointInDirection(const Vector3& direction) const
+Vector3 OBBCollider::GetSupportPoint(const Vector3& direction) const
 {
 	Vector3 maxPoint = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
 	Vector3 corner = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);

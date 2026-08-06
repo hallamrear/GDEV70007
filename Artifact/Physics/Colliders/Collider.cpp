@@ -61,6 +61,8 @@ void Collider::SetColliderModel(const COLLIDER_TYPE& colliderType)
 
 	case COLLIDER_TYPE_CONVEX_HULL: m_ColliderModel = m_AttachedEntity.GetModel(); break;
 
+	case COLLIDER_TYPE_CAPSULE: m_ColliderModel = assetManager->GetModel("Colliders\\CylinderCollider.glb"); break;
+
 	default:
 		throw std::exception("Invalid collider type.\n");
 		break;
@@ -118,11 +120,17 @@ Collider* Collider::GetChildCollider()
 	return m_ChildCollider;
 }
 
-Vector3 Collider::GetFurthestPointInDirection(const Vector3& direction) const
+Vector3 Collider::GetSupportPoint(const Vector3& direction) const
 {
 	UNREFERENCED_PARAMETER(direction);
 	assert(true);
-	return Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
+	return { FLT_MAX, FLT_MAX, FLT_MAX };
+}
+
+glm::vec3 Collider::GetSupportPoint(const glm::vec3& direction) const
+{
+	Vector3 furthest = GetSupportPoint(Vector3(direction.x, direction.y, direction.z));
+	return { furthest.x, furthest.y, furthest.z };
 }
 
 void Collider::Render(Renderer& renderer)

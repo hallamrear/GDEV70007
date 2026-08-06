@@ -416,6 +416,13 @@ void CollisionResolver::SoftResolveCollision(const CollisionManifold& manifold)
 {
 	for (size_t i = 0; i < manifold.ContactPoints.size(); i++)
 	{
+		CollisionResolver::PositionalCorrection(manifold.CollisionPair.first->GetRigidbody(), manifold.CollisionPair.second->GetRigidbody(), manifold, manifold.ContactPoints[i]);
+	}
+	return; 
+
+	/*
+	for (size_t i = 0; i < manifold.ContactPoints.size(); i++)
+	{
 		Rigidbody& objectA = manifold.CollisionPair.first->GetRigidbody();
 		Rigidbody& objectB = manifold.CollisionPair.second->GetRigidbody();
 
@@ -498,13 +505,14 @@ void CollisionResolver::SoftResolveCollision(const CollisionManifold& manifold)
 		//Apply immediate positional correction.
 		CollisionResolver::PositionalCorrection(objectA, objectB, manifold, manifold.ContactPoints[i]);
 	}
+	*/
 }
 
 //Position correction - Dividing inv mass of object by total mass to properly scale each way.
 //A heavier object will move less than a lighter object.
 void CollisionResolver::PositionalCorrection(Rigidbody& objectA, Rigidbody& objectB, const CollisionManifold& manifold, const Contact& contact)
 {
-	constexpr float CORRECTION_PERCENTAGE = 0.2f;
+	constexpr float CORRECTION_PERCENTAGE = 0.02f;
 	constexpr float PENETRATION_SLOP = 0.02f;
 
 	glm::vec3 normal = { manifold.Normal.x, manifold.Normal.y, manifold.Normal.z };

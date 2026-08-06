@@ -141,6 +141,11 @@ namespace Maths
 		return plane;
 	}
 
+	inline static Plane CreatePlaneFromTriangle(const Vector3& A, const Vector3& B, const Vector3& C)
+	{
+		return CreatePlaneFromTriangle(glm::vec3(A.x, A.y, A.z), glm::vec3(B.x, B.y, B.z), glm::vec3(C.x, C.y, C.z));
+	}
+
 	inline static float DistanceFromPlane(const Plane& plane, const glm::vec3& point)
 	{
 		return glm::dot(point, {plane.x, plane.y, plane.z}) + plane.w;

@@ -79,7 +79,7 @@ Vector3 AABBCollider::GetMinCornerLocalSpace() const
 	return Vector3(m_Size.x * -1.0f, m_Size.y * -1.0f, m_Size.z * -1.0f);
 }
 
-Vector3 AABBCollider::GetFurthestPointInDirection(const Vector3& direction) const
+Vector3 AABBCollider::GetSupportPoint(const Vector3& direction) const
 {
 	Vector3 maxPoint = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
 	Vector3 corner = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);

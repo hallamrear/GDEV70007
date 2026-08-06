@@ -2,6 +2,7 @@
 #include <Rendering/Geometry/Model.h>
 #include <System/ServiceLocator.h>
 #include <Rendering/Renderer.h>
+#include <glm/glm.hpp>
 
 class Entity;
 
@@ -10,8 +11,8 @@ enum COLLIDER_TYPE : int
 	COLLIDER_TYPE_SPHERE = 0,
 	COLLIDER_TYPE_AABB = 1,
 	COLLIDER_TYPE_OBB = 2,
-	COLLIDER_TYPE_CONVEX_HULL = 3,
-	COLLIDER_TYPE_MESH = 4,
+	COLLIDER_TYPE_CAPSULE = 3,
+	COLLIDER_TYPE_CONVEX_HULL = 4,
 	COLLIDER_TYPE_COUNT = 5
 };
 
@@ -20,8 +21,8 @@ static const std::string c_ColliderTypeNames[COLLIDER_TYPE::COLLIDER_TYPE_COUNT]
 	"Sphere Collider",
 	"Axis Aligned Bounding Box",
 	"Oriented Bounding Box",
-	"Convex Hull Collider",
-	"Mesh Collider",
+	"Cylinder Collider",
+	"Convex Hull Collider"
 };
 
 class Collider
@@ -59,7 +60,8 @@ public:
 	Collider* GetBottomCollider();
 	Collider* GetChildCollider();
 
-	virtual Vector3 GetFurthestPointInDirection(const Vector3& direction) const = 0;
+	virtual Vector3 GetSupportPoint(const Vector3& direction) const = 0;
+	virtual glm::vec3 GetSupportPoint(const glm::vec3& direction) const;
 	virtual void GetPoints(std::vector<Vector3>& points) const = 0;
 
 	virtual void Render(Renderer& renderer);

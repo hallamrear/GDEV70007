@@ -188,6 +188,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Artifact.h" />
+    <ClInclude Include="Physics\Colliders\CylinderCollider.h" />
     <ClInclude Include="Physics\Resolution\Constraint.h" />
     <ClInclude Include="Physics\Resolution\CollisionResolver.h" />
     <ClInclude Include="Physics\Resolution\ContraintContact.h" />
@@ -256,6 +257,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Artifact.cpp" />
+    <ClCompile Include="Physics\Colliders\CylinderCollider.cpp" />
     <ClCompile Include="Physics\Resolution\Constraint.cpp" />
     <ClCompile Include="Physics\Resolution\CollisionResolver.cpp" />
     <ClCompile Include="Physics\Resolution\ContraintContact.cpp" />
@@ -376,6 +378,9 @@
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Content\Colliders\BoxCollider.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="Content\Colliders\CylinderCollider.glb">
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Content\Colliders\SphereCollider.glb">

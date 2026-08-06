@@ -4,6 +4,7 @@
 #include <Physics/Colliders/SphereCollider.h>
 #include <Physics/Colliders/AABBCollider.h>
 #include <Physics/Colliders/OBBCollider.h>
+#include <Physics/Colliders/CylinderCollider.h>
 #include <Physics/Colliders/ConvexHullCollider.h>
 #include <Rendering/Geometry/Mesh.h>
 #include <Physics/Rigidbody.h>
@@ -109,6 +110,9 @@ void Entity::AddCollider(const COLLIDER_TYPE& colliderType)
 		break;
 	case COLLIDER_TYPE_OBB:
 		m_Collider = new OBBCollider(*this, size);
+		break;
+	case COLLIDER_TYPE_CAPSULE:
+		m_Collider = new CylinderCollider(*this, 0.5f, 2.0f);
 		break;
 	case COLLIDER_TYPE_CONVEX_HULL:
 	{

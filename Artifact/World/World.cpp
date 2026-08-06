@@ -119,13 +119,14 @@ bool World::Initialise()
 	//TestBoxA->SetModel(suzaane);
 	//TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
 
-	TestBoxA = CreateEntity("Follow Box");
+	TestBoxA = CreateEntity("Barrel");
 	//TestBoxA->SetPosition(Vector3(0.0f, 2.0f, 0.0f));
 	ModelRef barrel = ServiceLocator::Locate<AssetManager>()->GetModel("Barrel.glb");
-	TestBoxA->SetModel(barrel);
-	TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
+	//TestBoxA->SetModel(barrel);
+	//TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
 	//TestBoxA->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_AABB);
 	//TestBoxA->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_OBB);
+	TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CAPSULE);
 	//TestBoxA->GetRigidbody().IsGravityEnabled = true;
 
 	float r_x = (rand() % 100) / 100.0f;
@@ -133,16 +134,17 @@ bool World::Initialise()
 	float r_z = (rand() % 100) / 100.0f;
 	//TestBoxA->Rotate(Vector3(r_x * 360.0f, r_y * 360.0f, r_z * 360.0f));
 
-	TestBoxB = CreateEntity("Box B");
-	//ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("TestConvexHull.glb");
+	TestBoxB = CreateEntity("Monkey");
+	TestBoxB->SetPosition({ 0.0f, 3.0f, 0.0f });
+	////ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("TestConvexHull.glb");
 	ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("Suzanne.glb");
 	TestBoxB->SetModel(test);
-	////TestBoxB->GetCollider()->SetSize(Vector3(7.0f, 3.0f, 5.0f));
-	//TestBoxB->SetPosition(Vector3(0.0f, 0.0f, 0.0f));
-	//TestBoxB->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
-	//TestBoxB->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_AABB);
-	TestBoxB->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_OBB);
-	TestBoxB->GetRigidbody().SetMass(0.0f);
+	//////TestBoxB->GetCollider()->SetSize(Vector3(7.0f, 3.0f, 5.0f));
+	////TestBoxB->SetPosition(Vector3(0.0f, 0.0f, 0.0f));
+	////TestBoxB->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
+	////TestBoxB->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_AABB);
+	TestBoxB->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_AABB);
+	//TestBoxB->GetRigidbody().SetMass(0.0f);
 
 	r_x = (rand() % 100) / 100.0f;
 	r_y = (rand() % 100) / 100.0f;
@@ -482,12 +484,28 @@ void World::RenderEntityDetails(Entity& entity)
 			}
 			break;
 
+			case COLLIDER_TYPE_OBB:
 			case COLLIDER_TYPE::COLLIDER_TYPE_AABB:
 			{
 				float boxSize[3] = { collider.GetSize().x, collider.GetSize().y, collider.GetSize().z };
 				if (ImGui::DragFloat3("Box Collider (half-size)", &boxSize[0], 1.0f, 0.1f, 10.0f, "%.1f", ImGuiSliderFlags_::ImGuiSliderFlags_AlwaysClamp))
 				{
 					collider.SetSize({ boxSize[0], boxSize[1], boxSize[2] });
+				}
+			}
+			break;
+
+			case COLLIDER_TYPE_CAPSULE:
+			{
+				float capsuleSize[3] = { collider.GetSize().x, collider.GetSize().y, collider.GetSize().z };
+				if (ImGui::DragFloat("Cylinder Radius", &capsuleSize[0], 1.0f, 0.1f, 10.0f, "%.1f", ImGuiSliderFlags_::ImGuiSliderFlags_AlwaysClamp))
+				{
+					collider.SetSize({ capsuleSize[0], capsuleSize[1], capsuleSize[2] });
+				}
+
+				if (ImGui::DragFloat("Cylinder Height", &capsuleSize[1], 1.0f, 0.1f, 10.0f, "%.1f", ImGuiSliderFlags_::ImGuiSliderFlags_AlwaysClamp))
+				{
+					collider.SetSize({ capsuleSize[0], capsuleSize[1], capsuleSize[2] });
 				}
 			}
 			break;

@@ -7,10 +7,11 @@
 class GJK
 {
 private:
-	static bool Line(Simplex& simplex, int& simplexDimensions, glm::vec3& direction);
-	static bool Triangle(Simplex& simplex, int& simplexDimensions, glm::vec3& direction);
-	static bool Tetrahedron(Simplex& simplex, int& simplexDimensions, glm::vec3& direction);
-	static bool UpdateSimplex(Simplex& simplex, int& simplexDimensions, glm::vec3& direction);
+	static bool Line(Simplex& simplex, glm::vec3& direction);
+	static bool Triangle(Simplex& simplex, glm::vec3& direction);
+	static bool Tetrahedron(Simplex& simplex, glm::vec3& direction);
+	static bool UpdateSimplex(Simplex& simplex, glm::vec3& direction);
+	static SupportVertex GetSupportVertex(const Collider& colliderA, const Collider& colliderB, const glm::vec3& direction);
 
 public:
 	static bool CheckCollision(const Collider& colliderA, const Collider& colliderB, CollisionManifold* manifold = nullptr);

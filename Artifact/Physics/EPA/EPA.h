@@ -65,7 +65,7 @@ private:
 
 
 public:
-	static EPA_Result GetCollisionDetails(std::vector<SupportVertex>& simplex, const Collider& colliderA, const Collider& colliderB, CollisionManifold* manifold = nullptr);
+	static EPA_Result GetCollisionDetails(const Simplex& simplex, const Collider& colliderA, const Collider& colliderB, CollisionManifold* manifold = nullptr);
 
 	//Returns MTV of collision.
 	static void ConstructManifold(const Collider& colliderA, const Collider& colliderB, const Simplex& simplex, CollisionManifold& manifold);

@@ -3,7 +3,8 @@
 #include <Physics/Colliders/Collider.h>
 #include <glm/glm.hpp>
 
-typedef struct SupportVertex* Simplex;
+#include <deque>
+typedef std::deque<struct SupportVertex> Simplex;
 
 struct Contact
 {
@@ -32,22 +33,22 @@ struct SupportVertex
 		Vector3 dirNorm;
 		XMStoreFloat3(&dirNorm, DirectX::XMVector3Normalize(XMLoadFloat3(&direction)));
 		Vector3 invDirNorm = Vector3(-dirNorm.x, -dirNorm.y, -dirNorm.z);
-		return SupportVertex(colliderA.GetFurthestPointInDirection(dirNorm), colliderB.GetFurthestPointInDirection(invDirNorm));
+		return SupportVertex(colliderA.GetSupportPoint(dirNorm), colliderB.GetSupportPoint(invDirNorm));
 	};
 
 	inline static SupportVertex GetSupportVertex(const Collider& colliderA, const Collider& colliderB, const glm::vec3& direction)
 	{
 		glm::vec3 invDirNorm = -direction;
 
-		Vector3 supportA = colliderA.GetFurthestPointInDirection({ direction.x, direction.y, direction.z }); 
-		Vector3 supportB = colliderB.GetFurthestPointInDirection({ invDirNorm.x, invDirNorm.y, invDirNorm.z });
+		Vector3 supportA = colliderA.GetSupportPoint(Vector3(direction.x, direction.y, direction.z));
+		Vector3 supportB = colliderB.GetSupportPoint(Vector3(invDirNorm.x, invDirNorm.y, invDirNorm.z));
 
 		return SupportVertex(supportA, supportB);
 	};
 
 	glm::vec3 SupportVertexA;
 	glm::vec3 SupportVertexB;
-	glm::vec3 MinkDiff;
+	glm::vec3 Diff;
 
 	SupportVertex(const Vector3& supportA, const Vector3& supportB)
 	{
@@ -59,9 +60,9 @@ struct SupportVertex
 		SupportVertexB.y = supportB.y;
 		SupportVertexB.z = supportB.z;
 
-		MinkDiff.x = (SupportVertexA.x - SupportVertexB.x);
-		MinkDiff.y = (SupportVertexA.y - SupportVertexB.y);
-		MinkDiff.z = (SupportVertexA.z - SupportVertexB.z);
+		Diff.x = (SupportVertexA.x - SupportVertexB.x);
+		Diff.y = (SupportVertexA.y - SupportVertexB.y);
+		Diff.z = (SupportVertexA.z - SupportVertexB.z);
 
 		//printf("%f %f %f - %f %f %f | %f %f %f\n",
 		//	SupportVertexA.x, SupportVertexA.y, SupportVertexA.z,
@@ -74,15 +75,15 @@ struct SupportVertex
 		SupportVertexA = supportA;
 		SupportVertexB = supportB;
 
-		MinkDiff.x = (SupportVertexB.x - SupportVertexA.x);
-		MinkDiff.y = (SupportVertexB.y - SupportVertexA.y);
-		MinkDiff.z = (SupportVertexB.z - SupportVertexA.z);
+		Diff.x = (SupportVertexB.x - SupportVertexA.x);
+		Diff.y = (SupportVertexB.y - SupportVertexA.y);
+		Diff.z = (SupportVertexB.z - SupportVertexA.z);
 	}
 
 	SupportVertex(const SupportVertex& supportVertex) : 
 		SupportVertexA(supportVertex.SupportVertexA), 
 		SupportVertexB(supportVertex.SupportVertexB), 
-		MinkDiff(supportVertex.MinkDiff)
+		Diff(supportVertex.Diff)
 	{
 
 	}
@@ -91,7 +92,7 @@ struct SupportVertex
 	{
 		SupportVertexA = { 0.0f, 0.0f, 0.0f };
 		SupportVertexB = { 0.0f, 0.0f, 0.0f };
-		MinkDiff = { 0.0f, 0.0f, 0.0f };
+		Diff = { 0.0f, 0.0f, 0.0f };
 	}
 };
 

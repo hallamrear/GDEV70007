@@ -15,7 +15,7 @@ ConvexHullCollider::~ConvexHullCollider()
 
 }
 
-Vector3 ConvexHullCollider::GetFurthestPointInDirection(const Vector3& direction) const
+Vector3 ConvexHullCollider::GetSupportPoint(const Vector3& direction) const
 {
 	Vector3 localDir = direction;
 	int x = 0;
