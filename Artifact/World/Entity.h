@@ -24,6 +24,9 @@ private:
 	Vector3 m_UpVector;
 	Vector3 m_RightVector;
 
+	//TODO : REMOVE
+	Vector3 m_RotationDir;
+
 	void UpdateWorldMatrix();
 
 public:

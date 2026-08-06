@@ -407,5 +407,6 @@
     <None Include="Content\Icosphere.glb" />
     <None Include="Content\Axe.glb" />
     <None Include="Content\Colliders\CylinderCollider.glb" />
+    <None Include="Content\TestCar.glb" />
   </ItemGroup>
 </Project>

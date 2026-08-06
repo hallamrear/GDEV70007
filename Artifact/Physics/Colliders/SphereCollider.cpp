@@ -4,7 +4,13 @@
 
 Matrix4x4 SphereCollider::GetTransformMatrix() const
 {
-	return IdentityMatrix;
+	Matrix4x4 matrix;
+	DirectX::XMStoreFloat4x4(&matrix,
+		DirectX::XMMatrixScaling(m_Size.x, m_Size.y, m_Size.z) *
+		DirectX::XMMatrixTranslation(m_AttachedEntity.GetPosition().x, m_AttachedEntity.GetPosition().y, m_AttachedEntity.GetPosition().z) *
+		DirectX::XMLoadFloat4x4(&m_OffsetMatrix));
+
+	return matrix;
 }
 
 SphereCollider::SphereCollider(const Entity& entity, const float& radius) : Collider(COLLIDER_TYPE::COLLIDER_TYPE_SPHERE, entity)

@@ -414,6 +414,9 @@
       <FileType>Document</FileType>
       <DeploymentContent>true</DeploymentContent>
     </None>
+    <None Include="Content\TestCar.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="Content\TestCone.glb">
       <DeploymentContent>true</DeploymentContent>
     </None>

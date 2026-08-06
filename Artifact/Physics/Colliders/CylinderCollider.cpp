@@ -3,16 +3,6 @@
 #include <World/Entity.h>
 #include <System/AssetManagement.h>
 
-Matrix4x4 CylinderCollider::GetTransformMatrix() const
-{
-	Matrix4x4 transformMatrix = IdentityMatrix;
-	DirectX::XMStoreFloat4x4(&transformMatrix,
-		DirectX::XMMatrixScaling(m_Size.x, m_Size.y, m_Size.z) *
-		DirectX::XMMatrixTranslation(m_AttachedEntity.GetPosition().x, m_AttachedEntity.GetPosition().y, m_AttachedEntity.GetPosition().z) *
-		DirectX::XMLoadFloat4x4(&m_OffsetMatrix));
-	return transformMatrix;
-}
-
 CylinderCollider::CylinderCollider(const Entity& entity, const float& radius, const float& height) : Collider(COLLIDER_TYPE::COLLIDER_TYPE_CAPSULE, entity)
 {
 	SetSize(Vector3(radius, height, radius));
@@ -21,6 +11,17 @@ CylinderCollider::CylinderCollider(const Entity& entity, const float& radius, co
 CylinderCollider::~CylinderCollider()
 {
 	SetSize(Vector3(0.0f, 0.0f, 0.0f));
+}
+
+Matrix4x4 CylinderCollider::GetTransformMatrix() const
+{
+	Matrix4x4 transformMatrix = IdentityMatrix;
+	DirectX::XMStoreFloat4x4(&transformMatrix,
+		DirectX::XMMatrixScaling(m_Size.x, m_Size.y, m_Size.z) *
+		//DirectX::XMMatrixTranslation(m_AttachedEntity.GetPosition().x, m_AttachedEntity.GetPosition().y, m_AttachedEntity.GetPosition().z) *
+		DirectX::XMLoadFloat4x4(&m_AttachedEntity.GetWorldMatrix()) *
+		DirectX::XMLoadFloat4x4(&m_OffsetMatrix));
+	return transformMatrix;
 }
 
 void CylinderCollider::SetSize(const Vector3& radius_height_radius)
@@ -33,8 +34,8 @@ void CylinderCollider::SetSize(const Vector3& radius_height_radius)
 Vector3 CylinderCollider::GetSupportPoint(const Vector3& direction) const
 {
 	glm::vec3 dir = { direction.x, direction.y, direction.z };
-	glm::vec3 result = { 0.0f, 0.0f, 0.0f };
-
+	
+	//glm::vec3 result = { 0.0f, 0.0f, 0.0f };
 	//glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 	//float udotd = glm::dot(up, dir);
 	//glm::vec3 w = dir - (udotd * up);
@@ -54,16 +55,18 @@ Vector3 CylinderCollider::GetSupportPoint(const Vector3& direction) const
 
 
 
+	Vector3 result = { 0.0f, 0.0f, 0.0f };
+	glm::vec3 dir_xz = glm::normalize(glm::vec3(dir.x, 0, dir.z)) * m_Size.x;
+	result = { dir_xz.x, 0.0f, dir_xz.z };
 
-	glm::vec3 dir_xz = glm::vec3(dir.x, 0, dir.z);
-	result = glm::normalize(dir_xz) * m_Size.x;
-
-	float height = m_Size.y;
+	float height = m_Size.y / 2.0f;
 	result.y = (dir.y > 0) ? height : -height;
 
-	result.x += m_AttachedEntity.GetPosition().x;
-	result.y += m_AttachedEntity.GetPosition().y;
-	result.z += m_AttachedEntity.GetPosition().z;
+	//result.x += m_AttachedEntity.GetPosition().x;
+	//result.y += m_AttachedEntity.GetPosition().y;
+	//result.z += m_AttachedEntity.GetPosition().z;
+
+	DirectX::XMStoreFloat3(&result, DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&result), DirectX::XMLoadFloat4x4(&m_AttachedEntity.GetWorldMatrix())));
 
 	return Vector3(result.x, result.y, result.z);
 }

@@ -119,52 +119,56 @@ bool World::Initialise()
 	//TestBoxA->SetModel(suzaane);
 	//TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
 
-	TestBoxA = CreateEntity("Barrel");
-	//TestBoxA->SetPosition(Vector3(0.0f, 2.0f, 0.0f));
-	ModelRef barrel = ServiceLocator::Locate<AssetManager>()->GetModel("Barrel.glb");
-	//TestBoxA->SetModel(barrel);
-	//TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
-	//TestBoxA->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_AABB);
-	//TestBoxA->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_OBB);
-	TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CAPSULE);
-	//TestBoxA->GetRigidbody().IsGravityEnabled = true;
+	//TestBoxA = CreateEntity("Barrel");
+	////TestBoxA->SetPosition(Vector3(0.0f, 2.0f, 0.0f));
+	//ModelRef barrel = ServiceLocator::Locate<AssetManager>()->GetModel("Barrel.glb");
+	////TestBoxA->SetModel(barrel);
+	////TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
+	////TestBoxA->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_AABB);
+	////TestBoxA->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_OBB);
+	//TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CAPSULE);
+	////TestBoxA->GetRigidbody().IsGravityEnabled = true;
+	//
+	//float r_x = (rand() % 100) / 100.0f;
+	//float r_y = (rand() % 100) / 100.0f;
+	//float r_z = (rand() % 100) / 100.0f;
+	////TestBoxA->Rotate(Vector3(r_x * 360.0f, r_y * 360.0f, r_z * 360.0f));
+	//
+	//TestBoxB = CreateEntity("Monkey");
+	//TestBoxB->SetPosition({ 0.0f, 3.0f, 0.0f });
+	//////ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("TestConvexHull.glb");
+	//ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("Suzanne.glb");
+	//TestBoxB->SetModel(test);
+	////////TestBoxB->GetCollider()->SetSize(Vector3(7.0f, 3.0f, 5.0f));
+	//////TestBoxB->SetPosition(Vector3(0.0f, 0.0f, 0.0f));
+	//////TestBoxB->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
+	//////TestBoxB->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_AABB);
+	//TestBoxB->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_AABB);
+	////TestBoxB->GetRigidbody().SetMass(0.0f);
 
-	float r_x = (rand() % 100) / 100.0f;
-	float r_y = (rand() % 100) / 100.0f;
-	float r_z = (rand() % 100) / 100.0f;
-	//TestBoxA->Rotate(Vector3(r_x * 360.0f, r_y * 360.0f, r_z * 360.0f));
-
-	TestBoxB = CreateEntity("Monkey");
-	TestBoxB->SetPosition({ 0.0f, 3.0f, 0.0f });
-	////ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("TestConvexHull.glb");
-	ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("Suzanne.glb");
-	TestBoxB->SetModel(test);
-	//////TestBoxB->GetCollider()->SetSize(Vector3(7.0f, 3.0f, 5.0f));
-	////TestBoxB->SetPosition(Vector3(0.0f, 0.0f, 0.0f));
-	////TestBoxB->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
-	////TestBoxB->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_AABB);
-	TestBoxB->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_AABB);
-	//TestBoxB->GetRigidbody().SetMass(0.0f);
-
-	r_x = (rand() % 100) / 100.0f;
-	r_y = (rand() % 100) / 100.0f;
-	r_z = (rand() % 100) / 100.0f;
+	//r_x = (rand() % 100) / 100.0f;
+	//r_y = (rand() % 100) / 100.0f;
+	//r_z = (rand() % 100) / 100.0f;
 	//TestBoxB->Rotate(Vector3(r_x * 360.0f, r_y * 360.0f, r_z * 360.0f));
 
-	/*Vector3 position = Vector3(0.0f, 0.0f, 0.0f);
+	float gap = 7.0f;
+	position = Vector3(-gap * trunc((float)COLLIDER_TYPE::COLLIDER_TYPE_COUNT / 2.0f), -3.0f, 0.0f);
+
 	Entity* entity = nullptr;
-	for (size_t i = 0; i < 10000; i++)
+	for (size_t i = 0; i < COLLIDER_TYPE::COLLIDER_TYPE_COUNT; i++)
 	{
-		entity = CreateEntity("Test Room");
-		ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("Suzanne.glb");
+		std::string str = "Collider Type : " + c_ColliderTypeNames[i];
+		entity = CreateEntity(str);
+		//ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("Colliders\\BoxCollider.glb");
+		ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("TestCar!!.glb");
 		entity->SetModel(suzaane);
 
-		position.x = (float)((rand() % 2000) - 1000);
-		position.y = (float)((rand() % 2000) - 1000);
-		position.z = (float)((rand() % 2000) - 1000);
+		entity->AddColliderFromModel((COLLIDER_TYPE)i);
 
+		position.x += gap;
+		
 		entity->SetPosition(position);
-	}*/
+	}
 
 	m_IsInitialised = true;
 	return true;

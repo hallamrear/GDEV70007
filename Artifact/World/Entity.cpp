@@ -22,6 +22,11 @@ Entity::Entity() : m_Rigidbody(nullptr)
 	m_IsAlive = true;
 	m_Collider = nullptr;
 	m_IsPendingDestroy = false;
+
+	m_RotationDir = Vector3(
+		(float)(rand() % 100) / 100.0f,
+		(float)(rand() % 100) / 100.0f, 
+		(float)(rand() % 100) / 100.0f);
 }
 
 Entity::~Entity()
@@ -141,11 +146,41 @@ void Entity::AddColliderFromModel(const COLLIDER_TYPE& colliderType)
 
 	if (GetCollider() != nullptr)
 	{
-		Vector3 newSize = Vector3(
-			std::max(GetModel()->GetMeshes()[0]->GetMaxVertexLocalSpace().x, std::abs(GetModel()->GetMeshes()[0]->GetMinVertexLocalSpace().x)) * 2.0f,
-			std::max(GetModel()->GetMeshes()[0]->GetMaxVertexLocalSpace().y, std::abs(GetModel()->GetMeshes()[0]->GetMinVertexLocalSpace().y)) * 2.0f,
-			std::max(GetModel()->GetMeshes()[0]->GetMaxVertexLocalSpace().z, std::abs(GetModel()->GetMeshes()[0]->GetMinVertexLocalSpace().z)) * 2.0f
-		);
+		Vector3 newSize = { 0.0f, 0.0f, 0.0f };
+
+		switch (colliderType)
+		{
+		case COLLIDER_TYPE_SPHERE:
+		case COLLIDER_TYPE_AABB:
+		case COLLIDER_TYPE_OBB:
+		{
+			newSize = Vector3(
+				std::max(GetModel()->GetMeshes()[0]->GetMaxVertexLocalSpace().x, std::abs(GetModel()->GetMeshes()[0]->GetMinVertexLocalSpace().x)) * 2.0f,
+				std::max(GetModel()->GetMeshes()[0]->GetMaxVertexLocalSpace().y, std::abs(GetModel()->GetMeshes()[0]->GetMinVertexLocalSpace().y)) * 2.0f,
+				std::max(GetModel()->GetMeshes()[0]->GetMaxVertexLocalSpace().z, std::abs(GetModel()->GetMeshes()[0]->GetMinVertexLocalSpace().z)) * 2.0f
+			);
+		}
+			break;
+
+		case COLLIDER_TYPE_CAPSULE:
+		{
+			glm::vec3 size;
+			size.x = fabsf(GetModel()->GetMeshes()[0]->GetMaxVertexLocalSpace().x - GetModel()->GetMeshes()[0]->GetMinVertexLocalSpace().x);
+			size.y = fabsf(GetModel()->GetMeshes()[0]->GetMaxVertexLocalSpace().y - GetModel()->GetMeshes()[0]->GetMinVertexLocalSpace().y);
+			size.z = fabsf(GetModel()->GetMeshes()[0]->GetMaxVertexLocalSpace().z - GetModel()->GetMeshes()[0]->GetMinVertexLocalSpace().z);
+
+			float r = std::max(size.x, size.z);
+			float h = size.y * 2.0f;
+			newSize = { r, h, r };			
+		}
+			break;
+
+		case COLLIDER_TYPE_CONVEX_HULL:
+		case COLLIDER_TYPE_COUNT:
+		default:
+			return;
+			break;
+		}
 
 		GetCollider()->SetSize(newSize);
 	}
@@ -260,8 +295,8 @@ void Entity::Update(const float& deltaTime)
 		return;
 	}
 
-	//Rotate({ deltaTime * (rand() % 30), deltaTime * (rand() % 30), deltaTime * (rand() % 30) });
-	//Rotate({ 0.0f, deltaTime * (rand() % 30), 0.0f });
+	static float rotSpeed = 5.0f;
+	Rotate({ deltaTime * m_RotationDir.x * rotSpeed, deltaTime * m_RotationDir.y * rotSpeed, deltaTime * m_RotationDir.z * rotSpeed });
 }
 
 void Entity::FixedUpdate()

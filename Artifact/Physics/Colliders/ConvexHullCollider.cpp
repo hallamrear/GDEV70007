@@ -8,11 +8,12 @@ ConvexHullCollider::ConvexHullCollider(const Entity& entity, const ModelRef& mod
 {
 	assert(modelRef);
 	m_ConvexHull = modelRef->GetMeshes()[0]->GetConvexHull();
+	m_ColliderModel = modelRef;
 }
 
 ConvexHullCollider::~ConvexHullCollider()
 {
-
+	m_ColliderModel = nullptr;
 }
 
 Vector3 ConvexHullCollider::GetSupportPoint(const Vector3& direction) const

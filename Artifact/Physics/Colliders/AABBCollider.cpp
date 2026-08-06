@@ -92,7 +92,9 @@ Vector3 AABBCollider::GetSupportPoint(const Vector3& direction) const
 	{
 		scaledPoint = Vector3(Points[i].x * m_Size.x, Points[i].y * m_Size.y, Points[i].z * m_Size.z);
 
-		DirectX::XMStoreFloat3(&corner, DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&scaledPoint), DirectX::XMLoadFloat4x4(&matrix)));
+		corner.x = scaledPoint.x + m_AttachedEntity.GetPosition().x;
+		corner.y = scaledPoint.y + m_AttachedEntity.GetPosition().y;
+		corner.z = scaledPoint.z + m_AttachedEntity.GetPosition().z;
 
 		DirectX::XMStoreFloat(&distance, DirectX::XMVector3Dot(DirectX::XMLoadFloat3(&corner), DirectX::XMLoadFloat3(&direction)));
 
