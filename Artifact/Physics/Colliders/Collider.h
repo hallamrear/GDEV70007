@@ -16,6 +16,14 @@ enum COLLIDER_TYPE : int
 	COLLIDER_TYPE_COUNT = 5
 };
 
+enum COLLIDER_DRAW_LEVEL : int
+{
+	COLLIDER_DRAW_NONE = 0,
+	COLLIDER_DRAW_CONVEX_ONLY = 1,
+	COLLIDER_DRAW_ALL = 2,
+	COLLIDER_DRAW_LEVEL_COUNT = 3
+};
+
 static const std::string c_ColliderTypeNames[COLLIDER_TYPE::COLLIDER_TYPE_COUNT] =
 {
 	"Sphere Collider",
@@ -27,7 +35,11 @@ static const std::string c_ColliderTypeNames[COLLIDER_TYPE::COLLIDER_TYPE_COUNT]
 
 class Collider
 {
-public:
+private:
+	COLLIDER_TYPE m_BoundingVolumeType;
+	ModelRef m_BoundingVolumeCollider;
+	Vector3 m_BoundingVolumeHalfExtents;
+	void RenderBroadBoundingVolume(Renderer& renderer);
 
 protected:
 	COLLIDER_TYPE m_Type;
@@ -38,32 +50,29 @@ protected:
 
 	void SetColliderModel(const COLLIDER_TYPE& colliderType);
 
-	Collider* m_ChildCollider;
-
 protected:
 	Collider(const COLLIDER_TYPE& colliderType, const Entity& entity);
 	Vector3 m_Size;
 	virtual Matrix4x4 GetTransformMatrix() const = 0;
 	Matrix4x4 GetInverseTransformMatrix() const;
-
+	virtual void RenderCollisionModel(Renderer& renderer);
+	
 public:
+	static COLLIDER_DRAW_LEVEL g_DrawColliders;
 	virtual ~Collider() = 0;
 
 	const Entity& GetAttachedEntity() const;
-
+	void UpdateBoundingVolume();
 	virtual void SetSize(const Vector3& size) = 0;
 	const Vector3& GetSize() const;
 
 	const COLLIDER_TYPE& GetType() const;
-
-	void AddChildCollider(Collider* collider);
-	Collider* GetBottomCollider();
-	Collider* GetChildCollider();
+	const Vector3& GetBoundingVolumeExtents() const;
 
 	virtual Vector3 GetSupportPoint(const Vector3& direction) const = 0;
 	virtual glm::vec3 GetSupportPoint(const glm::vec3& direction) const;
 	virtual void GetPoints(std::vector<Vector3>& points) const = 0;
 
-	virtual void Render(Renderer& renderer);
+	void Render(Renderer& renderer);
 };
 

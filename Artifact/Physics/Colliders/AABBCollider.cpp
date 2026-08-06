@@ -35,16 +35,12 @@ AABBCollider::~AABBCollider()
 void AABBCollider::SetSize(const Vector3& halfWidth)
 {
 	m_Size = halfWidth;
+	UpdateBoundingVolume();
 }
 
 Vector3 AABBCollider::GetMaxCornerWorldSpace() const
 {
-	Matrix4x4 entityMatrix = IdentityMatrix;
-	DirectX::XMStoreFloat4x4(&entityMatrix,
-		DirectX::XMMatrixTranslation(m_AttachedEntity.GetPosition().x, m_AttachedEntity.GetPosition().y, m_AttachedEntity.GetPosition().z));
-
-	Vector3 max = m_Size;
-	XMStoreFloat3(&max, DirectX::XMVector3TransformCoord(DirectX::XMLoadFloat3(&max), DirectX::XMLoadFloat4x4(&entityMatrix)));
+	Vector3 max = { m_AttachedEntity.GetPosition().x + m_Size.x, m_AttachedEntity.GetPosition().y + m_Size.y, m_AttachedEntity.GetPosition().z + m_Size.z};
 	return max;
 }
 
@@ -60,12 +56,7 @@ Matrix4x4 AABBCollider::GetTransformMatrix() const
 
 Vector3 AABBCollider::GetMinCornerWorldSpace() const
 {
-	Matrix4x4 entityMatrix = IdentityMatrix;
-	DirectX::XMStoreFloat4x4(&entityMatrix,
-		DirectX::XMMatrixTranslation(m_AttachedEntity.GetPosition().x, m_AttachedEntity.GetPosition().y, m_AttachedEntity.GetPosition().z));
-
-	Vector3 min = GetMinCornerLocalSpace();
-	XMStoreFloat3(&min, DirectX::XMVector3TransformCoord(DirectX::XMLoadFloat3(&min), DirectX::XMLoadFloat4x4(&entityMatrix)));
+	Vector3 min = { m_AttachedEntity.GetPosition().x - m_Size.x, m_AttachedEntity.GetPosition().y - m_Size.y, m_AttachedEntity.GetPosition().z - m_Size.z };
 	return min;
 }
 
@@ -120,9 +111,45 @@ void AABBCollider::GetPoints(std::vector<Vector3>& points) const
 	}
 }
 
-Vector3 AABBCollider::ClosestPoint()
+glm::vec3 AABBCollider::ClosestPointOnColliderToPoint(const glm::vec3& point) const
 {
+	UNREFERENCED_PARAMETER(point);
 	//https://www.youtube.com/watch?v=VmtNPguCTjQ
 	//17:40
-	return Vector3();
+
+	Vector3 temp_max = GetMaxCornerWorldSpace();
+	Vector3 temp_min = GetMinCornerWorldSpace();
+	glm::vec3 max = { temp_max.x, temp_max.y, temp_max.z };
+	glm::vec3 min = { temp_min.x, temp_min.y, temp_min.z };
+
+	glm::vec3 closest;
+	// For each coordinate axis, if the point coordinate value is
+	// outside box, clamp it to the box, else keep it as is
+	for (int i = 0; i < 3; i++) {
+		float v = closest[i];
+		if (v < min[i]) v = min[i]; // v = max( v, b.min[i] )
+		if (v > max[i]) v = max[i]; // v = min( v, b.max[i] )
+		closest[i] = v;
+	}
+
+	return closest;
+}
+
+float AABBCollider::SqrDistanceToAABB(const glm::vec3& point) const
+{
+	Vector3 temp_max = GetMaxCornerWorldSpace();
+	Vector3 temp_min = GetMinCornerWorldSpace();
+	glm::vec3 max = { temp_max.x, temp_max.y, temp_max.z };
+	glm::vec3 min = { temp_min.x, temp_min.y, temp_min.z };
+
+	float sqDist = 0.0f;
+	
+	for (int i = 0; i < 3; i++) {
+		// for each axis count any excess distance outside box extents
+		float v = point[i];
+		if (v < min[i]) sqDist += (min[i] - v) * (min[i] - v);
+		if (v > max[i]) sqDist += (v - max[i]) * (v - max[i]);
+	}
+
+	return sqDist;
 }

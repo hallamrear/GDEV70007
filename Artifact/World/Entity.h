@@ -56,6 +56,7 @@ public:
 	const Matrix4x4& GetWorldMatrix() const;
 
 	const void GetRotationMatrix(Matrix4x4& matrix) const;
+	const void GetRotationMatrix(Matrix3x3& matrix) const;
 	const void GetInverseRotationMatrix(Matrix4x4& matrix) const;
 
 	void SetModel(ModelRef& model);

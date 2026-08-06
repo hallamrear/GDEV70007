@@ -6,6 +6,7 @@
 #include <Rendering/IndexBuffer.h>
 #include <Rendering/VertexBuffer.h>
 #include <Rendering/IMGUIRenderable.h>
+#include <Physics/Quickhull/Quickhull.h>
 #include <System/Maths.h>
 #include <functional>
 #include "Geometry/Model.h"
@@ -667,36 +668,59 @@ void DX12Renderer::Render(const ModelRef& model, const Matrix4x4& worldMatrix)
         {
             GetCommandList()->DrawInstanced(mesh->GetVertexBuffer().GetElementCount(), 1, 0, 0);
         }
-
-        static Vector4 colours[4] =
-        {
-            { 1.0f, 0.0f, 0.0f, 1.0f},
-            { 1.0f, 1.0f, 0.0f, 1.0f},
-            { 1.0f, 0.0f, 1.0f, 1.0f},
-            { 1.0f, 1.0f, 1.0f, 1.0f},
-        };
-
-        //if (mesh->GetConvexHull() != nullptr)
-        //{
-        //    const ConvexHull* hull = mesh->GetConvexHull();
-        //
-        //    //int index = (model->GetDisplayName() == "BoxCollider.glb") ? 0 : 1;
-        //    int index = 0;
-        //
-        //    //SetLineDrawMode();
-        //    SetDebugDrawMode();
-        //    m_PushConstants->Padding.m[0][0] = colours[index].x;
-        //    m_PushConstants->Padding.m[0][1] = colours[index].y;
-        //    m_PushConstants->Padding.m[0][2] = colours[index].z;
-        //    m_PushConstants->Padding.m[0][3] = colours[index].w;
-        //
-        //    GetCommandList()->IASetVertexBuffers(0, 1, &hull->GetDrawVertexBuffer().GetBufferView());
-        //    GetCommandList()->DrawInstanced(hull->GetDrawVertexBuffer().GetElementCount(), 1, 0, 0);
-        //    SetDefaultDrawMode();
-        //
-        //    index = index + 1 % 4;
-        //}
     }
+}
+
+void DX12Renderer::Render(const ConvexHull& hull, const TextureRef& texture, const Matrix4x4& worldMatrix)
+{
+    if (hull.FaceCount <= 0)
+    {
+        printf("Trying to draw a convex hull that is invalid or not created.\n");
+        return;
+    }
+
+    m_CommandList->SetGraphicsRootSignature(m_RootSignature);
+
+    ID3D12DescriptorHeap* heaps[] = { m_MainStorageSRVHeap };
+    m_CommandList->SetDescriptorHeaps(_countof(heaps), heaps);
+
+    m_ConstantBuffer.Projection = m_ProjectionMatrix;
+    m_ConstantBuffer.View = m_Camera.GetViewMatrix();
+    m_ConstantBuffer.CameraDirection = Vector4(m_Camera.GetForwardVector().x, m_Camera.GetForwardVector().y, m_Camera.GetForwardVector().z, 0.0f);
+    m_ConstantBuffer.CameraPosition = Vector4(m_Camera.GetPosition().x, m_Camera.GetPosition().y, m_Camera.GetPosition().z, 1.0f);
+
+    UpdateConstantBuffer();
+    UpdateLightingBuffer();
+
+    Matrix4x4 finalWorld{};
+    DirectX::XMStoreFloat4x4(&finalWorld, DirectX::XMLoadFloat4x4(&worldMatrix));
+    DirectX::XMStoreFloat4x4(&m_PushConstants->World, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&finalWorld)));
+    UploadPushConstants();
+
+    if(texture->IsLoaded())
+    {
+        AssignTextureToTextureSlot(TEXTURE_TYPE_DIFFUSE, texture);
+    }
+
+    static Vector4 colours[4] =
+    {
+        { 1.0f, 0.0f, 0.0f, 1.0f},
+        { 1.0f, 1.0f, 0.0f, 1.0f},
+        { 1.0f, 0.0f, 1.0f, 1.0f},
+        { 1.0f, 1.0f, 1.0f, 1.0f},
+    };
+
+    int index = 0;
+    SetDebugDrawMode();
+    m_PushConstants->Padding.m[0][0] = colours[index].x;
+    m_PushConstants->Padding.m[0][1] = colours[index].y;
+    m_PushConstants->Padding.m[0][2] = colours[index].z;
+    m_PushConstants->Padding.m[0][3] = colours[index].w;
+
+    GetCommandList()->IASetVertexBuffers(0, 1, &hull.GetDrawVertexBuffer().GetBufferView());
+    GetCommandList()->DrawInstanced(hull.GetDrawVertexBuffer().GetElementCount(), 1, 0, 0);
+
+    index = index + 1 % 4;
 }
 
 void DX12Renderer::RenderIMGUIFrame()

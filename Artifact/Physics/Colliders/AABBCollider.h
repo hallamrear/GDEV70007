@@ -28,5 +28,8 @@ public:
 	Vector3 GetSupportPoint(const Vector3& direction) const override;
 	void GetPoints(std::vector<Vector3>& points) const override;
 
-	Vector3 ClosestPoint();
+	glm::vec3 ClosestPointOnColliderToPoint(const glm::vec3& point) const;
+	
+	// Returns the squared distance between a point p and an AABB b
+	float SqrDistanceToAABB(const glm::vec3& point) const;
 };

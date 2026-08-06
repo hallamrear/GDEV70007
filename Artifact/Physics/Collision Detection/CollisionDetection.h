@@ -38,6 +38,8 @@ private:
 	/* Hull    vs OBB	  */ static bool ConvexHullOBBCollision(const Collider* convexHullCollider, const Collider* obbCollider, CollisionManifold* manifold = nullptr);
 	/* Hull    vs Cylinder */ static bool ConvexHullCylinderCollision(const Collider* convexHullCollider, const Collider* capsuleCollider, CollisionManifold* manifold = nullptr);
 	/* Hull    vs Hull	  */ static bool ConvexHullConvexHullCollision(const Collider* convexHullColliderA, const Collider* convexHullColliderB, CollisionManifold* manifold = nullptr);
+
+	static bool BroadPhaseCollision(const Collider* colliderA, const Collider* colliderB);
 	
 public:
 

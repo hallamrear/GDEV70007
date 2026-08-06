@@ -29,31 +29,12 @@ void CylinderCollider::SetSize(const Vector3& radius_height_radius)
 	m_Size.x = radius_height_radius.x;
 	m_Size.y = radius_height_radius.y / 2.0f;
 	m_Size.z = radius_height_radius.z;
+	UpdateBoundingVolume();
 }
 
 Vector3 CylinderCollider::GetSupportPoint(const Vector3& direction) const
 {
 	glm::vec3 dir = { direction.x, direction.y, direction.z };
-	
-	//glm::vec3 result = { 0.0f, 0.0f, 0.0f };
-	//glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-	//float udotd = glm::dot(up, dir);
-	//glm::vec3 w = dir - (udotd * up);
-	//
-	//float sign = (signbit(udotd) ? 1.0f : -1.0f);
-	//glm::vec3 centre = glm::vec3(0.0f, 0.0f, 0.0f);
-	//
-	//if (w.y < FLT_EPSILON)
-	//{
-	//	result = centre + (sign * m_Size.y * up);
-	//}
-	//else
-	//{
-	//	glm::vec3 norm = glm::normalize(w);
-	//	result = centre + (sign * m_Size.y * up) + (m_Size.x * (w / glm::length(w)));
-	//}
-
-
 
 	Vector3 result = { 0.0f, 0.0f, 0.0f };
 	glm::vec3 dir_xz = glm::normalize(glm::vec3(dir.x, 0, dir.z)) * m_Size.x;
@@ -61,10 +42,6 @@ Vector3 CylinderCollider::GetSupportPoint(const Vector3& direction) const
 
 	float height = m_Size.y / 2.0f;
 	result.y = (dir.y > 0) ? height : -height;
-
-	//result.x += m_AttachedEntity.GetPosition().x;
-	//result.y += m_AttachedEntity.GetPosition().y;
-	//result.z += m_AttachedEntity.GetPosition().z;
 
 	DirectX::XMStoreFloat3(&result, DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&result), DirectX::XMLoadFloat4x4(&m_AttachedEntity.GetWorldMatrix())));
 

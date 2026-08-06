@@ -53,15 +53,18 @@ void PhysicsWorld::OnIMGUIRender()
 {
 	ImGui::Begin("Physics");
 
-	if (ImGui::CollapsingHeader("Physics Settings"))
+	ImGui::Checkbox("Use Dispatch Table", &CollisionDetection::Use_Dispatch_Table);
+
+	if(CollisionDetection::Use_Dispatch_Table == false)
 	{
 		ImGui::Checkbox("Use GJK", &CollisionDetection::Use_GJK);
-		ImGui::DragInt("Resolution Type", &m_ResolutionType, 1.0f, 0, 2);
-		ImGui::DragInt("Resolver Iterations", &CollisionResolver::RESOLUTION_ITERATIONS, 1, 1, 100);
-		ImGui::DragFloat("Air Friction", &CollisionResolver::AIR_FRICTION, 0.01f, 0.0f, 1.0f);
-		ImGui::DragFloat("Baumgarte", &CollisionResolver::BAUMGARTE_STABILISATION_VALUE, 0.01f, 0.0f, 1.0f);
-		ImGui::DragFloat("Intersection allowance", &CollisionResolver::ALLOWED_INTERSECTION, 0.01f, 0.0f, 1.0f);
 	}
+
+	ImGui::DragInt("Resolution Type", &m_ResolutionType, 1.0f, 0, 2);
+	ImGui::DragInt("Resolver Iterations", &CollisionResolver::RESOLUTION_ITERATIONS, 1, 1, 100);
+	ImGui::DragFloat("Air Friction", &CollisionResolver::AIR_FRICTION, 0.01f, 0.0f, 1.0f);
+	ImGui::DragFloat("Baumgarte", &CollisionResolver::BAUMGARTE_STABILISATION_VALUE, 0.01f, 0.0f, 1.0f);
+	ImGui::DragFloat("Intersection allowance", &CollisionResolver::ALLOWED_INTERSECTION, 0.01f, 0.0f, 1.0f);
 
 	if (ImGui::CollapsingHeader("Data"))
 	{
@@ -71,6 +74,8 @@ void PhysicsWorld::OnIMGUIRender()
 		{
 			for (size_t f = 0; f < m_FrameCollisionManifolds.size(); f++)
 			{
+				ImGui::Text("Body A: %s\n", m_FrameCollisionManifolds[f].CollisionPair.first->GetDisplayName().c_str());
+				ImGui::Text("Body B: %s\n", m_FrameCollisionManifolds[f].CollisionPair.second->GetDisplayName().c_str());
 				ImGui::Text("Normal: %f %f %f", m_FrameCollisionManifolds[f].Normal.x, m_FrameCollisionManifolds[f].Normal.y, m_FrameCollisionManifolds[f].Normal.z);
 
 				if (ImGui::BeginTable("Hit Points", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))

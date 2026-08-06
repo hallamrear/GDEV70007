@@ -239,7 +239,14 @@ SupportVertex GJK::GetSupportVertex(const Collider& colliderA, const Collider& c
 
 bool GJK::CheckCollision(const Collider& colliderA, const Collider& colliderB, CollisionManifold* manifold)
 {
-	SupportVertex support = GetSupportVertex(colliderA, colliderB, vec3(1.0f, 0.0f, 0.0f));
+	glm::vec3 AB = 
+	{
+		colliderB.GetAttachedEntity().GetPosition().x - colliderA.GetAttachedEntity().GetPosition().x,
+		colliderB.GetAttachedEntity().GetPosition().y - colliderA.GetAttachedEntity().GetPosition().y,
+		colliderB.GetAttachedEntity().GetPosition().z - colliderA.GetAttachedEntity().GetPosition().z
+	};
+
+	SupportVertex support = GetSupportVertex(colliderA, colliderB, AB);
 
 	Simplex simplex = { support };	
 
@@ -255,7 +262,6 @@ bool GJK::CheckCollision(const Collider& colliderA, const Collider& colliderB, C
 		}
 
 		simplex.push_front(support);
-
 
 		if (UpdateSimplex(simplex, direction))
 		{

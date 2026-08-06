@@ -35,6 +35,7 @@ void SphereCollider::SetSize(const Vector3& size)
 	m_Size.x = r;
 	m_Size.y = r;
 	m_Size.z = r;
+	UpdateBoundingVolume();
 }
 
 /// <summary>

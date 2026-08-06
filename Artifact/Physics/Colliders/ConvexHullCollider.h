@@ -14,6 +14,7 @@ private:
 protected:
 	Matrix4x4 GetTransformMatrix() const override;
 	const ConvexHull* m_ConvexHull;
+	void RenderCollisionModel(Renderer& renderer) override;
 
 public:
 	ConvexHullCollider(const Entity& entity, const ModelRef& modelRef);

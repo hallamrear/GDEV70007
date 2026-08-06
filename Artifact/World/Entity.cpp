@@ -19,6 +19,7 @@ Entity::Entity() : m_Rigidbody(nullptr)
 	m_IDString = std::string(reinterpret_cast<char*>(str));
 	m_DisplayName = "Unnamed";
 	m_WorldMatrix = IdentityMatrix;
+	m_RotationMatrix = IdentityMatrix;
 	m_IsAlive = true;
 	m_Collider = nullptr;
 	m_IsPendingDestroy = false;
@@ -27,6 +28,10 @@ Entity::Entity() : m_Rigidbody(nullptr)
 		(float)(rand() % 100) / 100.0f,
 		(float)(rand() % 100) / 100.0f, 
 		(float)(rand() % 100) / 100.0f);
+
+	m_ForwardVector = Vector3(0.0f, 0.0f, 0.0f);
+	m_RightVector = Vector3(0.0f, 0.0f, 0.0f);
+	m_UpVector = Vector3(0.0f, 0.0f, 0.0f);
 }
 
 Entity::~Entity()
@@ -126,6 +131,7 @@ void Entity::AddCollider(const COLLIDER_TYPE& colliderType)
 			m_Collider = new ConvexHullCollider(*this, m_Model);
 		}
 	}
+	break;
 
 	case COLLIDER_TYPE_COUNT:
 	default:
@@ -151,6 +157,18 @@ void Entity::AddColliderFromModel(const COLLIDER_TYPE& colliderType)
 		switch (colliderType)
 		{
 		case COLLIDER_TYPE_SPHERE:
+		{
+			glm::vec3 max = { GetModel()->GetMeshes()[0]->GetMaxVertexLocalSpace().x ,GetModel()->GetMeshes()[0]->GetMaxVertexLocalSpace().y, GetModel()->GetMeshes()[0]->GetMaxVertexLocalSpace().z };
+			glm::vec3 min = { GetModel()->GetMeshes()[0]->GetMinVertexLocalSpace().x, GetModel()->GetMeshes()[0]->GetMinVertexLocalSpace().y, GetModel()->GetMeshes()[0]->GetMinVertexLocalSpace().z };
+
+			glm::vec3 furthest = (glm::length2(max) > glm::length2(min)) ? max : min;
+
+			float radius = glm::dot(furthest, furthest);
+			radius = sqrtf(radius);
+			newSize = { radius, radius, radius };
+		}
+		break;
+
 		case COLLIDER_TYPE_AABB:
 		case COLLIDER_TYPE_OBB:
 		{
@@ -181,7 +199,7 @@ void Entity::AddColliderFromModel(const COLLIDER_TYPE& colliderType)
 			return;
 			break;
 		}
-
+	
 		GetCollider()->SetSize(newSize);
 	}
 }
@@ -245,6 +263,11 @@ const void Entity::GetRotationMatrix(Matrix4x4& matrix) const
 	matrix = m_RotationMatrix;
 }
 
+const void Entity::GetRotationMatrix(Matrix3x3& matrix) const
+{
+	DirectX::XMStoreFloat3x3(&matrix, DirectX::XMLoadFloat4x4(&m_RotationMatrix));
+}
+
 const void Entity::GetInverseRotationMatrix(Matrix4x4& matrix) const
 {
 	DirectX::XMStoreFloat4x4(&matrix, DirectX::XMMatrixInverse(nullptr, DirectX::XMLoadFloat4x4(&m_RotationMatrix)));
@@ -264,6 +287,11 @@ void Entity::UpdateWorldMatrix()
 	DirectX::XMStoreFloat3(&m_RightVector, DirectX::XMVector3Normalize(DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&BASIS_RIGHT_VECTOR), DirectX::XMLoadFloat4x4(&m_RotationMatrix))));
 	DirectX::XMStoreFloat3(&m_UpVector, DirectX::XMVector3Normalize(DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&BASIS_UP_VECTOR), DirectX::XMLoadFloat4x4(&m_RotationMatrix))));
 	DirectX::XMStoreFloat3(&m_ForwardVector, DirectX::XMVector3Normalize(DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&BASIS_FORWARD_VECTOR), DirectX::XMLoadFloat4x4(&m_RotationMatrix))));
+
+	if(m_Collider != nullptr)
+	{
+		m_Collider->UpdateBoundingVolume();
+	}
 }
 
 void Entity::SetModel(ModelRef& model)
@@ -295,7 +323,7 @@ void Entity::Update(const float& deltaTime)
 		return;
 	}
 
-	static float rotSpeed = 5.0f;
+	static float rotSpeed = 1.0f;
 	Rotate({ deltaTime * m_RotationDir.x * rotSpeed, deltaTime * m_RotationDir.y * rotSpeed, deltaTime * m_RotationDir.z * rotSpeed });
 }
 

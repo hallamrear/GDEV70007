@@ -44,6 +44,7 @@ OBBCollider::~OBBCollider()
 void OBBCollider::SetSize(const Vector3& halfWidth)
 {
 	m_Size = halfWidth;
+	UpdateBoundingVolume();
 }
 
 Vector3 OBBCollider::GetMaxCornerWorldSpace() const

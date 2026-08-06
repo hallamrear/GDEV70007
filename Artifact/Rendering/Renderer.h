@@ -8,6 +8,7 @@ class Model;
 class GenericBuffer;
 class VertexBuffer;
 class IndexBuffer;
+class ConvexHull;
 struct GraphicsDevice;
 
 class Renderer
@@ -81,6 +82,7 @@ public:
 	virtual void ClearFrame() = 0;
 	virtual void PresentFrame() = 0;
 	virtual void Render(const ModelRef& model, const Matrix4x4& worldMatrix) = 0;
+	virtual void Render(const ConvexHull& hull, const TextureRef& texture, const Matrix4x4& worldMatrix) = 0;
 	virtual void RenderIMGUIFrame() = 0;
 
 	virtual bool SetDebugDrawMode() = 0;

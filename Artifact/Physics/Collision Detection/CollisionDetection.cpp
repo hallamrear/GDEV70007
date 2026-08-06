@@ -51,17 +51,28 @@ bool CollisionDetection::SphereSphereCollision(const Collider* colliderA, const 
 		float depth = (sqrtf(r2 - distance));
 		glm::vec3 normal = glm::normalize(direction);
 
-		Vector3 hitPoint;
-		hitPoint.x = colliderA->GetAttachedEntity().GetPosition().x + (normal.x * depth);
-		hitPoint.y = colliderA->GetAttachedEntity().GetPosition().y + (normal.y * depth);
-		hitPoint.z = colliderA->GetAttachedEntity().GetPosition().z + (normal.z * depth);
+		Vector3 hitPointA;
+		hitPointA.x = colliderA->GetAttachedEntity().GetPosition().x + (normal.x * colliderA->GetSize().x);
+		hitPointA.y = colliderA->GetAttachedEntity().GetPosition().y + (normal.y * colliderA->GetSize().x);
+		hitPointA.z = colliderA->GetAttachedEntity().GetPosition().z + (normal.z * colliderA->GetSize().x);
 
-		Contact contact;
-		contact.Depth = depth; 
-		contact.Normal = { normal.x, normal.y, normal.z };
-		contact.HitPoint = hitPoint;
-		
-		manifold->ContactPoints.push_back(contact);
+		Vector3 hitPointB;
+		hitPointB.x = colliderB->GetAttachedEntity().GetPosition().x + (normal.x * colliderB->GetSize().x);
+		hitPointB.y = colliderB->GetAttachedEntity().GetPosition().y + (normal.y * colliderB->GetSize().x);
+		hitPointB.z = colliderB->GetAttachedEntity().GetPosition().z + (normal.z * colliderB->GetSize().x);
+
+		Contact contactA;
+		contactA.Depth = depth;
+		contactA.Normal = { normal.x, normal.y, normal.z };
+		contactA.HitPoint = hitPointA;
+
+		Contact contactB;
+		contactB.Depth = depth;
+		contactB.Normal = { normal.x, normal.y, normal.z };
+		contactB.HitPoint = hitPointB;
+
+		manifold->ContactPoints.push_back(contactA);
+		manifold->ContactPoints.push_back(contactB);
 	}
 
 	return distance < r2;
@@ -69,15 +80,72 @@ bool CollisionDetection::SphereSphereCollision(const Collider* colliderA, const 
 
 bool CollisionDetection::AABBSphereCollision(const Collider* boxCollider, const Collider* sphereCollider, CollisionManifold* manifold)
 {
-	UNREFERENCED_PARAMETER(boxCollider);
-	UNREFERENCED_PARAMETER(sphereCollider);
+	glm::vec3 spherePos = { sphereCollider->GetAttachedEntity().GetPosition().x, sphereCollider->GetAttachedEntity().GetPosition().y, sphereCollider->GetAttachedEntity().GetPosition().z };
+	glm::vec3 boxPos = { boxCollider->GetAttachedEntity().GetPosition().x, boxCollider->GetAttachedEntity().GetPosition().y, boxCollider->GetAttachedEntity().GetPosition().z };
 
-	if (manifold != nullptr)
+	glm::vec3 delta = boxPos - spherePos;
+
+	glm::vec3 closestPointOnBox = { 
+		std::clamp(delta.x, -boxCollider->GetSize().x, boxCollider->GetSize().x),
+		std::clamp(delta.y, -boxCollider->GetSize().y, boxCollider->GetSize().y),
+		std::clamp(delta.z, -boxCollider->GetSize().z, boxCollider->GetSize().z)
+	};
+
+	glm::vec3 localPoint = delta - closestPointOnBox;
+	float distance = glm::length(localPoint);
+	float radius = sphereCollider->GetSize().x;
+
+	if (distance < radius)
 	{
-		printf("Collision manifold is valid but not being constructed.\n");
+		glm::vec3 normal = glm::normalize(localPoint);
+		float depth = radius - distance;
+
+		glm::vec3 hitPointA = boxPos + (-normal * radius);
+		glm::vec3 hitPointB = spherePos;
+
+		Contact contactA;
+		contactA.Normal = { normal.x, normal.y, normal.z };
+		contactA.Depth = depth;
+		contactA.HitPoint = { hitPointA.x, hitPointA.y, hitPointA.z };
+
+		Contact contactB;
+		contactB.Normal = { normal.x, normal.y, normal.z };
+		contactB.Depth = depth;
+		contactB.HitPoint = { hitPointB.x, hitPointB.y, hitPointB.z };
+
+		manifold->ContactPoints.push_back(contactA);
+		manifold->ContactPoints.push_back(contactB);
+
+		return true;
 	}
 
 	return false;
+
+	//const AABBCollider* aabb = dynamic_cast<const AABBCollider*>(boxCollider);
+	//
+	//assert(aabb);
+	//
+	//glm::vec3 spherePos = { sphereCollider->GetAttachedEntity().GetPosition().x, sphereCollider->GetAttachedEntity().GetPosition().y, sphereCollider->GetAttachedEntity().GetPosition().z };
+	//
+	//float sqrDist = aabb->SqrDistanceToAABB(spherePos);
+	//float sqrRadius = sphereCollider->GetSize().x * sphereCollider->GetSize().x;
+	//
+	//bool collision = (sqrDist <= sqrRadius);
+	//
+	//if (collision && manifold != nullptr)
+	//{
+	//	//TODO : Make contact points.
+	//	printf("AABBSphere manifold generation not finished.\n");
+	//
+	//	Contact contact;
+	//	contact.Depth = (sqrRadius - sqrDist);
+	//	glm::vec3 closest = aabb->ClosestPointOnColliderToPoint(spherePos);
+	//	contact.HitPoint = { closest.x, closest.y, closest.z };
+	//
+	//	manifold->ContactPoints.push_back(contact);
+	//}
+	//
+	//return collision;
 }
 
 bool CollisionDetection::AABBAABBCollision(const Collider* boxColliderA, const Collider* boxColliderB, CollisionManifold* manifold)
@@ -225,11 +293,38 @@ bool CollisionDetection::ConvexHullConvexHullCollision(const Collider* convexHul
 	return DispatchGilbertJohnsonKeethri(convexHullColliderA, convexHullColliderB, manifold);
 }
 
+bool CollisionDetection::BroadPhaseCollision(const Collider* colliderA, const Collider* colliderB)
+{
+	Vector3 colliderAPos = colliderA->GetAttachedEntity().GetPosition();
+	Vector3 colliderAExtents = colliderA->GetBoundingVolumeExtents();
+	Vector3 colliderBPos = colliderB->GetAttachedEntity().GetPosition();
+	Vector3 colliderBExtents = colliderB->GetBoundingVolumeExtents();
+
+	glm::vec3 max_a = { colliderAPos.x + colliderAExtents.x, colliderAPos.y + colliderAExtents.y, colliderAPos.z + colliderAExtents.z };
+	glm::vec3 min_a = { colliderAPos.x - colliderAExtents.x, colliderAPos.y - colliderAExtents.y, colliderAPos.z - colliderAExtents.z };
+
+	glm::vec3 max_b = { colliderBPos.x + colliderBExtents.x, colliderBPos.y + colliderBExtents.y, colliderBPos.z + colliderBExtents.z };
+	glm::vec3 min_b = { colliderBPos.x - colliderBExtents.x, colliderBPos.y - colliderBExtents.y, colliderBPos.z - colliderBExtents.z };
+
+	// Exit with no intersection if separated along an axis
+	if (max_a[0] < min_b[0] || min_a[0] > max_b[0]) return false;
+	if (max_a[1] < min_b[1] || min_a[1] > max_b[1]) return false;
+	if (max_a[2] < min_b[2] || min_a[2] > max_b[2]) return false;
+	
+	// Overlapping on all axes means AABBs are intersecting
+	return true;
+}
+
 bool CollisionDetection::CheckCollision(const Collider* colliderA, const Collider* colliderB, CollisionManifold* manifold)
 {
 	assert(colliderA);
 	assert(colliderB);
 	assert(s_CollisionFunctionArray[colliderA->GetType()][colliderB->GetType()] != nullptr);
+
+	if (BroadPhaseCollision(colliderA, colliderB) == false)
+	{
+		return false;
+	}
 
 	if (Use_Dispatch_Table)
 	{

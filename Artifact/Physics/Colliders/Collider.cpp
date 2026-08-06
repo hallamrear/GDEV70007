@@ -2,14 +2,21 @@
 #include "Collider.h"
 #include <World/Entity.h>
 #include <System/AssetManagement.h>
+#include <Rendering/Geometry/Mesh.h>
 
 TextureRef Collider::m_ColliderTexture = nullptr;
+
+#ifdef _DEBUG
+COLLIDER_DRAW_LEVEL Collider::g_DrawColliders = COLLIDER_DRAW_LEVEL::COLLIDER_DRAW_ALL;
+#else
+COLLIDER_DRAW_LEVEL Collider::g_DrawColliders = COLLIDER_DRAW_LEVEL::COLLIDER_DRAW_NONE;
+#endif
 
 Collider::Collider(const COLLIDER_TYPE& colliderType, const Entity& entity) : m_AttachedEntity(entity), m_Type(colliderType)
 {
 	m_OffsetMatrix = IdentityMatrix;
+	m_BoundingVolumeType = COLLIDER_TYPE_AABB;
 	SetColliderModel(colliderType);
-	m_ChildCollider = nullptr;
 }
 
 Matrix4x4 Collider::GetInverseTransformMatrix() const
@@ -50,6 +57,8 @@ void Collider::SetColliderModel(const COLLIDER_TYPE& colliderType)
 		m_ColliderTexture = assetManager->GetTexture("ColliderTexture.png");
 	}
 
+	m_BoundingVolumeCollider = assetManager->GetModel("Colliders\\BoxCollider.glb");
+
 	switch (colliderType)
 	{
 	case COLLIDER_TYPE_OBB:
@@ -88,36 +97,9 @@ const COLLIDER_TYPE& Collider::GetType() const
 	return m_Type;
 }
 
-void Collider::AddChildCollider(Collider* collider)
+const Vector3& Collider::GetBoundingVolumeExtents() const
 {
-	if (collider == nullptr)
-	{
-		return;
-	}
-
-	if (m_ChildCollider != nullptr)
-	{
-		m_ChildCollider->AddChildCollider(collider);
-	}
-	else
-	{
-		m_ChildCollider = collider;
-	}
-}
-
-Collider* Collider::GetBottomCollider()
-{
-	if (m_ChildCollider != nullptr)
-	{
-		return m_ChildCollider->GetBottomCollider();
-	}
-
-	return this;
-}
-
-Collider* Collider::GetChildCollider()
-{
-	return m_ChildCollider;
+	return m_BoundingVolumeHalfExtents;
 }
 
 Vector3 Collider::GetSupportPoint(const Vector3& direction) const
@@ -135,6 +117,29 @@ glm::vec3 Collider::GetSupportPoint(const glm::vec3& direction) const
 
 void Collider::Render(Renderer& renderer)
 {
+	switch (g_DrawColliders)
+	{
+
+	case COLLIDER_DRAW_ALL:
+	{
+		RenderBroadBoundingVolume(renderer);
+		__fallthrough;
+	}
+	case COLLIDER_DRAW_CONVEX_ONLY:
+	{
+		RenderCollisionModel(renderer);
+	}
+		break;
+
+	case COLLIDER_DRAW_NONE:
+	case COLLIDER_DRAW_LEVEL_COUNT:
+	default:
+		break;	
+	}
+}
+
+void Collider::RenderCollisionModel(Renderer& renderer)
+{
 	if (m_ColliderModel == nullptr)
 	{
 		printf("Trying to draw a collider that doesn't have a model.\n");
@@ -143,5 +148,91 @@ void Collider::Render(Renderer& renderer)
 
 	renderer.SetDebugDrawMode();
 	renderer.Render(m_ColliderModel, GetTransformMatrix());
+	renderer.SetDefaultDrawMode();
+}
+
+void Collider::UpdateBoundingVolume()
+{
+	switch (m_Type)
+	{
+
+	case COLLIDER_TYPE_SPHERE:
+	{
+		m_BoundingVolumeHalfExtents.x = m_Size.x * 2.0f;
+		m_BoundingVolumeHalfExtents.y = m_Size.y * 2.0f;
+		m_BoundingVolumeHalfExtents.z = m_Size.z * 2.0f;
+	}
+		break;
+
+	case COLLIDER_TYPE_AABB:
+	{
+		m_BoundingVolumeHalfExtents = m_Size;
+	}
+		break;
+
+	case COLLIDER_TYPE_OBB:
+	{
+		Matrix3x3 rotMatrix;
+		m_AttachedEntity.GetRotationMatrix(rotMatrix);
+
+		for (size_t i = 0; i < 9; i++)
+		{
+			rotMatrix.m[i % 3][i / 3] = fabsf(rotMatrix.m[i % 3][i / 3]);
+		}
+
+		m_BoundingVolumeHalfExtents.x = rotMatrix.m[0][0] * m_Size.x + rotMatrix.m[0][1] * m_Size.y + rotMatrix.m[0][2] * m_Size.z;
+		m_BoundingVolumeHalfExtents.y = rotMatrix.m[1][0] * m_Size.x + rotMatrix.m[1][1] * m_Size.y + rotMatrix.m[1][2] * m_Size.z;
+		m_BoundingVolumeHalfExtents.z = rotMatrix.m[2][0] * m_Size.x + rotMatrix.m[2][1] * m_Size.y + rotMatrix.m[2][2] * m_Size.z;
+
+		m_BoundingVolumeHalfExtents.x = rotMatrix.m[0][0] * m_Size.x + rotMatrix.m[1][0] * m_Size.y + rotMatrix.m[2][0] * m_Size.z;
+		m_BoundingVolumeHalfExtents.y = rotMatrix.m[0][1] * m_Size.x + rotMatrix.m[1][1] * m_Size.y + rotMatrix.m[2][1] * m_Size.z;
+		m_BoundingVolumeHalfExtents.z = rotMatrix.m[0][2] * m_Size.x + rotMatrix.m[1][2] * m_Size.y + rotMatrix.m[2][2] * m_Size.z;
+
+	}
+		break;
+
+	case COLLIDER_TYPE_CAPSULE:
+	{
+		m_BoundingVolumeHalfExtents = m_Size;
+	}
+		break;
+
+	case COLLIDER_TYPE_CONVEX_HULL:
+	{
+		Vector3 max = m_ColliderModel->GetMeshes()[0]->GetMaxVertexLocalSpace();
+		Vector3 min = m_ColliderModel->GetMeshes()[0]->GetMinVertexLocalSpace();
+
+		m_BoundingVolumeHalfExtents.x = abs(max.x - min.x);
+		m_BoundingVolumeHalfExtents.y = abs(max.y - min.y);
+		m_BoundingVolumeHalfExtents.z = abs(max.z - min.z);
+	}
+		break;
+
+	case COLLIDER_TYPE_COUNT:
+		break;
+	default:
+		break;
+	}
+}
+
+void Collider::RenderBroadBoundingVolume(Renderer& renderer)
+{
+	if (m_Type == m_BoundingVolumeType)
+		return;
+
+	if (m_BoundingVolumeCollider == nullptr)
+	{
+		printf("Trying to draw a collider that doesn't have a model.\n");
+		throw;
+	}
+
+	Matrix4x4 matrix;
+	DirectX::XMStoreFloat4x4(&matrix,
+		DirectX::XMMatrixScaling(m_BoundingVolumeHalfExtents.x, m_BoundingVolumeHalfExtents.y, m_BoundingVolumeHalfExtents.z) *
+		DirectX::XMMatrixTranslation(m_AttachedEntity.GetPosition().x, m_AttachedEntity.GetPosition().y, m_AttachedEntity.GetPosition().z) *
+		DirectX::XMLoadFloat4x4(&m_OffsetMatrix));
+
+	renderer.SetDebugDrawMode();
+	renderer.Render(m_BoundingVolumeCollider, matrix);
 	renderer.SetDefaultDrawMode();
 }

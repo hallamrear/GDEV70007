@@ -181,6 +181,7 @@ public:
 	void PostAssetInitialisation();
 
 	void Render(const ModelRef& mesh, const Matrix4x4& worldMatrix);
+	void Render(const ConvexHull& hull, const TextureRef& texture, const Matrix4x4& worldMatrix);
 
 	void ClearFrame();
 	HRESULT FlushCommandQueue();

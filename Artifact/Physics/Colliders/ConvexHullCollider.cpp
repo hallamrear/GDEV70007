@@ -9,6 +9,11 @@ ConvexHullCollider::ConvexHullCollider(const Entity& entity, const ModelRef& mod
 	assert(modelRef);
 	m_ConvexHull = modelRef->GetMeshes()[0]->GetConvexHull();
 	m_ColliderModel = modelRef;
+
+	m_Size.x = (m_ColliderModel->GetMeshes()[0]->GetMaxVertexLocalSpace().x - m_ColliderModel->GetMeshes()[0]->GetMinVertexLocalSpace().x);
+	m_Size.y = (m_ColliderModel->GetMeshes()[0]->GetMaxVertexLocalSpace().y - m_ColliderModel->GetMeshes()[0]->GetMinVertexLocalSpace().y);
+	m_Size.z = (m_ColliderModel->GetMeshes()[0]->GetMaxVertexLocalSpace().z - m_ColliderModel->GetMeshes()[0]->GetMinVertexLocalSpace().z);
+	UpdateBoundingVolume();
 }
 
 ConvexHullCollider::~ConvexHullCollider()
@@ -42,4 +47,16 @@ void ConvexHullCollider::SetSize(const Vector3& size)
 Matrix4x4 ConvexHullCollider::GetTransformMatrix() const
 {
 	return m_AttachedEntity.GetWorldMatrix();
+}
+
+void ConvexHullCollider::RenderCollisionModel(Renderer& renderer)
+{
+    const ConvexHull* hull = m_ColliderModel->GetMeshes()[0]->GetConvexHull();
+	
+	if(hull != nullptr)
+	{
+		renderer.SetDebugDrawMode();
+		renderer.Render(*hull, m_ColliderTexture, GetTransformMatrix());
+		renderer.SetDefaultDrawMode();
+	}
 }
