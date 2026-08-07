@@ -372,10 +372,13 @@
     <Image Include="Content\DebugTexture.png">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="Content\ColliderTexture.png">
+    <Image Include="Content\Textures\colormap.png">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="Content\Textures\colormap.png">
+    <Image Include="Content\Colliders\BroadPhaseCollider.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Content\Colliders\NarrowPhaseCollider.png">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "DX12Renderer.h"
-#include <Rendering/ConstantBuffer.h>
 #include <Rendering/Geometry/Mesh.h>
 #include <Rendering/Vertex.h>
 #include <Rendering/IndexBuffer.h>
@@ -61,7 +60,7 @@ DX12Renderer::DX12Renderer() : Renderer()
     m_DebugDrawPipeline = nullptr;
     m_LineDrawPipeline = nullptr;
     m_RootSignature = nullptr;
-    m_PushConstants = nullptr;
+    //m_PushConstants = nullptr;
     m_CBVHeaps = new ID3D12DescriptorHeap * [m_SwapChainBufferCount];
     m_ConstantBufferAddressArray = new char* [m_SwapChainBufferCount];
     m_ConstantBufferGPUUploaderArray = new ID3D12Resource * [m_SwapChainBufferCount];
@@ -114,11 +113,12 @@ DX12Renderer::~DX12Renderer()
         m_CBVHeaps = nullptr;
     }
 
-    if (m_PushConstants != nullptr)
-    {
-        delete m_PushConstants;
-        m_PushConstants = nullptr;
-    }
+    memset(&m_PushConstants, 0x0, sizeof(PushConstants));
+    //if (m_PushConstants != nullptr)
+    //{
+    //    delete m_PushConstants;
+    //    m_PushConstants = nullptr;
+    //}
 }
 
 ID3D12CommandQueue* DX12Renderer::GetCommandQueue()
@@ -261,7 +261,8 @@ bool DX12Renderer::Initialise(HWND windowHandle)
     m_IsInitialised &= SUCCEEDED(hr);
     FAILED_RETURN(hr)
 
-    m_PushConstants = new PushConstants();
+    //m_PushConstants = new PushConstants();
+    memset(&m_PushConstants, 0x0, sizeof(PushConstants));
 
     m_IsInitialised &= InitialiseIMGUI();
     
@@ -379,11 +380,12 @@ bool DX12Renderer::Shutdown()
 
     ShutdownIMGUI();
 
-    if (m_PushConstants != nullptr)
-    {
-        delete m_PushConstants;
-        m_PushConstants = nullptr;
-    }
+    memset(&m_PushConstants, 0x0, sizeof(PushConstants));
+    //if (m_PushConstants != nullptr)
+    //{
+    //    delete m_PushConstants;
+    //    m_PushConstants = nullptr;
+    //}
 
     DestroyNullDescriptors();
     DestroyGraphicsPipelines();
@@ -447,11 +449,11 @@ bool DX12Renderer::AssignTextureToTextureSlot(const TEXTURE_TYPE_SLOT& textureSl
     CD3DX12_CPU_DESCRIPTOR_HANDLE destDescriptor(m_DrawCopySRVHeap->GetCPUDescriptorHandleForHeapStart());
     destDescriptor.Offset(slotIndex * GetSRVDescriptorHeapSize());
 
-    if (m_PushConstants == nullptr)
-    {
-        printf("Trying to use an invalid push constant buffer.\n");
-        return false;
-    }
+    //if (m_PushConstants == nullptr)
+    //{
+    //    printf("Trying to use an invalid push constant buffer.\n");
+    //    return false;
+    //}
 
     D3D12_CPU_DESCRIPTOR_HANDLE handle = GetNullTextureDescriptorCPUHandle();
 
@@ -639,7 +641,7 @@ void DX12Renderer::Render(const ModelRef& model, const Matrix4x4& worldMatrix)
     {
         Matrix4x4 finalWorld{};
         DirectX::XMStoreFloat4x4(&finalWorld, DirectX::XMMatrixMultiply(DirectX::XMLoadFloat4x4(&worldMatrix), DirectX::XMLoadFloat4x4(&mesh->GetOffsetMatrix())));
-        DirectX::XMStoreFloat4x4(&m_PushConstants->World, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&finalWorld)));
+        DirectX::XMStoreFloat4x4(&m_PushConstants.World, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&finalWorld)));
         UploadPushConstants();
 
         for (auto& texture : mesh->GetTextures())
@@ -694,33 +696,16 @@ void DX12Renderer::Render(const ConvexHull& hull, const TextureRef& texture, con
 
     Matrix4x4 finalWorld{};
     DirectX::XMStoreFloat4x4(&finalWorld, DirectX::XMLoadFloat4x4(&worldMatrix));
-    DirectX::XMStoreFloat4x4(&m_PushConstants->World, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&finalWorld)));
+    DirectX::XMStoreFloat4x4(&m_PushConstants.World, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&finalWorld)));
     UploadPushConstants();
 
-    if(texture->IsLoaded())
+    if(texture != nullptr && texture->IsLoaded())
     {
         AssignTextureToTextureSlot(TEXTURE_TYPE_DIFFUSE, texture);
     }
 
-    static Vector4 colours[4] =
-    {
-        { 1.0f, 0.0f, 0.0f, 1.0f},
-        { 1.0f, 1.0f, 0.0f, 1.0f},
-        { 1.0f, 0.0f, 1.0f, 1.0f},
-        { 1.0f, 1.0f, 1.0f, 1.0f},
-    };
-
-    int index = 0;
-    SetDebugDrawMode();
-    m_PushConstants->Padding.m[0][0] = colours[index].x;
-    m_PushConstants->Padding.m[0][1] = colours[index].y;
-    m_PushConstants->Padding.m[0][2] = colours[index].z;
-    m_PushConstants->Padding.m[0][3] = colours[index].w;
-
     GetCommandList()->IASetVertexBuffers(0, 1, &hull.GetDrawVertexBuffer().GetBufferView());
     GetCommandList()->DrawInstanced(hull.GetDrawVertexBuffer().GetElementCount(), 1, 0, 0);
-
-    index = index + 1 % 4;
 }
 
 void DX12Renderer::RenderIMGUIFrame()
@@ -1536,7 +1521,7 @@ HRESULT DX12Renderer::CreateRootSignatureAndDescriptorTable()
     //SRV Table
     D3D12_DESCRIPTOR_RANGE descriptorTableRange[1]{};
     descriptorTableRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-    descriptorTableRange[0].NumDescriptors = 1;
+    descriptorTableRange[0].NumDescriptors = 2;
     descriptorTableRange[0].BaseShaderRegister = 0;
     descriptorTableRange[0].RegisterSpace = 0;
     descriptorTableRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -2018,13 +2003,13 @@ void DX12Renderer::DestroyInputLayout()
 
 void DX12Renderer::UploadPushConstants()
 {
-    m_CommandList->SetGraphicsRoot32BitConstants(1, sizeof(PushConstants) / sizeof(UINT32), m_PushConstants, 0);
+    m_CommandList->SetGraphicsRoot32BitConstants(1, sizeof(PushConstants) / sizeof(UINT32), &m_PushConstants, 0);
 }
 
 bool DX12Renderer::UpdateWorldMatrix(const Matrix4x4& worldMatrix)
 {
     assert(m_IsInitialised);
-    m_PushConstants->World = worldMatrix;
+    m_PushConstants.World = worldMatrix;
     UploadPushConstants();
     return true;
 }

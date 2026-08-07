@@ -111,6 +111,33 @@ bool World::Initialise()
 		entity->SetPosition(position);
 	}
 
+
+
+	int count = 7;
+	position = Vector3(-gap * trunc(count / 2.0f), 3.0f, 0.0f);
+	float rotStep = 360.0f / count;
+	float angle = 0.0f;
+
+	for (size_t i = 0; i < count; i++)
+	{
+		std::string str = "Rotation : " + std::to_string(angle);
+		entity = CreateEntity(str);
+		ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("TestCar.glb");
+		entity->SetModel(suzaane);
+
+		entity->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_OBB);
+		entity->Rotate(Vector3(0.0f, angle, 0.0f));
+
+		position.x += gap;
+		angle += rotStep;
+
+		entity->SetPosition(position);
+	}
+
+
+
+
+
 	m_IsInitialised = true;
 	return true;
 }

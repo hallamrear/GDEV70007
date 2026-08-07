@@ -323,7 +323,10 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="Artifact.ico" />
-    <Image Include="Content\ColliderTexture.png">
+    <Image Include="Content\Colliders\BroadPhaseCollider.png">
+      <DeploymentContent>true</DeploymentContent>
+    </Image>
+    <Image Include="Content\Colliders\NarrowPhaseCollider.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
     <Image Include="Content\DebugTexture.png">

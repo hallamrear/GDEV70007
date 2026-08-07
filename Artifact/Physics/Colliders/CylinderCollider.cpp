@@ -18,7 +18,6 @@ Matrix4x4 CylinderCollider::GetTransformMatrix() const
 	Matrix4x4 transformMatrix = IdentityMatrix;
 	DirectX::XMStoreFloat4x4(&transformMatrix,
 		DirectX::XMMatrixScaling(m_Size.x, m_Size.y, m_Size.z) *
-		//DirectX::XMMatrixTranslation(m_AttachedEntity.GetPosition().x, m_AttachedEntity.GetPosition().y, m_AttachedEntity.GetPosition().z) *
 		DirectX::XMLoadFloat4x4(&m_AttachedEntity.GetWorldMatrix()) *
 		DirectX::XMLoadFloat4x4(&m_OffsetMatrix));
 	return transformMatrix;

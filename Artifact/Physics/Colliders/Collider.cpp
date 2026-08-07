@@ -4,7 +4,8 @@
 #include <System/AssetManagement.h>
 #include <Rendering/Geometry/Mesh.h>
 
-TextureRef Collider::m_ColliderTexture = nullptr;
+TextureRef Collider::m_NarrowPhaseTexture = nullptr;
+TextureRef Collider::m_BroadPhaseTexture = nullptr;
 
 #ifdef _DEBUG
 COLLIDER_DRAW_LEVEL Collider::g_DrawColliders = COLLIDER_DRAW_LEVEL::COLLIDER_DRAW_ALL;
@@ -31,9 +32,9 @@ Collider::~Collider()
 {
 	m_OffsetMatrix = Matrix4x4();
 	
-	if (m_ColliderTexture.use_count() == 1)
+	if (m_NarrowPhaseTexture.use_count() == 1)
 	{
-		m_ColliderTexture = nullptr;
+		m_NarrowPhaseTexture = nullptr;
 	}
 }
 
@@ -50,11 +51,6 @@ void Collider::SetColliderModel(const COLLIDER_TYPE& colliderType)
 	{
 		throw std::exception("Cannot source asset manager when setting collider models.\n");
 		return;
-	}
-
-	if (m_ColliderTexture == nullptr)
-	{
-		m_ColliderTexture = assetManager->GetTexture("ColliderTexture.png");
 	}
 
 	m_BoundingVolumeCollider = assetManager->GetModel("Colliders\\BoxCollider.glb");
@@ -85,6 +81,16 @@ void Collider::SetColliderModel(const COLLIDER_TYPE& colliderType)
 	}
 
 	m_Type = colliderType;
+
+	if (m_NarrowPhaseTexture == nullptr)
+	{
+		//m_NarrowPhaseTexture = assetManager->GetTexture("Colliders\\NarrowPhaseCollider.png");
+	}
+
+	if (m_BroadPhaseTexture == nullptr)
+	{
+		//m_BroadPhaseTexture = assetManager->GetTexture("Colliders\\BroadPhaseCollider.png");
+	}
 }
 
 const Vector3& Collider::GetSize() const
@@ -147,6 +153,7 @@ void Collider::RenderCollisionModel(Renderer& renderer)
 	}
 
 	renderer.SetDebugDrawMode();
+	renderer.GetPushConstants().Padding.m[2][2] = 0.0f;
 	renderer.Render(m_ColliderModel, GetTransformMatrix());
 	renderer.SetDefaultDrawMode();
 }
@@ -165,12 +172,9 @@ void Collider::UpdateBoundingVolume()
 		break;
 
 	case COLLIDER_TYPE_AABB:
-	{
-		m_BoundingVolumeHalfExtents = m_Size;
-	}
-		break;
-
 	case COLLIDER_TYPE_OBB:
+	case COLLIDER_TYPE_CAPSULE:
+	case COLLIDER_TYPE_CONVEX_HULL:
 	{
 		Matrix3x3 rotMatrix;
 		m_AttachedEntity.GetRotationMatrix(rotMatrix);
@@ -187,24 +191,6 @@ void Collider::UpdateBoundingVolume()
 		m_BoundingVolumeHalfExtents.x = rotMatrix.m[0][0] * m_Size.x + rotMatrix.m[1][0] * m_Size.y + rotMatrix.m[2][0] * m_Size.z;
 		m_BoundingVolumeHalfExtents.y = rotMatrix.m[0][1] * m_Size.x + rotMatrix.m[1][1] * m_Size.y + rotMatrix.m[2][1] * m_Size.z;
 		m_BoundingVolumeHalfExtents.z = rotMatrix.m[0][2] * m_Size.x + rotMatrix.m[1][2] * m_Size.y + rotMatrix.m[2][2] * m_Size.z;
-
-	}
-		break;
-
-	case COLLIDER_TYPE_CAPSULE:
-	{
-		m_BoundingVolumeHalfExtents = m_Size;
-	}
-		break;
-
-	case COLLIDER_TYPE_CONVEX_HULL:
-	{
-		Vector3 max = m_ColliderModel->GetMeshes()[0]->GetMaxVertexLocalSpace();
-		Vector3 min = m_ColliderModel->GetMeshes()[0]->GetMinVertexLocalSpace();
-
-		m_BoundingVolumeHalfExtents.x = abs(max.x - min.x);
-		m_BoundingVolumeHalfExtents.y = abs(max.y - min.y);
-		m_BoundingVolumeHalfExtents.z = abs(max.z - min.z);
 	}
 		break;
 
@@ -233,6 +219,7 @@ void Collider::RenderBroadBoundingVolume(Renderer& renderer)
 		DirectX::XMLoadFloat4x4(&m_OffsetMatrix));
 
 	renderer.SetDebugDrawMode();
+	renderer.GetPushConstants().Padding.m[2][2] = 0.0f;
 	renderer.Render(m_BoundingVolumeCollider, matrix);
 	renderer.SetDefaultDrawMode();
 }

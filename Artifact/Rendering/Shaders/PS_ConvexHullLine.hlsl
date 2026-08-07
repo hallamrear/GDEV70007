@@ -1,11 +1,16 @@
 #include "Structures.hlsli"
 
+SamplerState LinearSampler : register(s0);
+Texture2D<float4> BroadPhaseTexture : register(t0);
+Texture2D<float4> NarrowPhaseTexture : register(t1);
+
 float4 main(VS_STANDARD_VERTEX_OUTPUT input) : SV_TARGET
 {
     float4 colour = float4(0.0f, 0.0f, 0.0f, 0.0f);
-    colour.x = PCBPadding[0][0];
-    colour.y = PCBPadding[0][1];
-    colour.z = PCBPadding[0][2];
-
-    return float4(colour.xyz, 1.0f);
+    if (PCBPadding[2][2] > 0.0f)
+    {
+        return NarrowPhaseTexture.Sample(LinearSampler, float2(0.0f, 0.0f));
+    }
+    
+    return BroadPhaseTexture.Sample(LinearSampler, float2(0.0f, 0.0f));
 }

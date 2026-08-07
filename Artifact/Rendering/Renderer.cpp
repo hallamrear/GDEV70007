@@ -128,3 +128,8 @@ void Renderer::SetClearColour(const Vector4& newColour)
 {
 	m_ClearColour = newColour;
 }
+
+PushConstants& Renderer::GetPushConstants()
+{
+	return m_PushConstants;
+}

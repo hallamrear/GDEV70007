@@ -55,9 +55,31 @@ void PhysicsWorld::OnIMGUIRender()
 
 	ImGui::Checkbox("Use Dispatch Table", &CollisionDetection::Use_Dispatch_Table);
 
-	if(CollisionDetection::Use_Dispatch_Table == false)
+	if (CollisionDetection::Use_Dispatch_Table == false)
 	{
 		ImGui::Checkbox("Use GJK", &CollisionDetection::Use_GJK);
+	}
+
+	const ImGuiComboFlags flags = 0;
+
+	static COLLIDER_DRAW_LEVEL s_ColliderDrawType = Collider::g_DrawColliders;
+
+	if (ImGui::BeginCombo("Draw Colliders?", c_ColliderDrawLevelStrings[s_ColliderDrawType].c_str(), flags))
+	{
+		for (int n = 0; n < IM_COUNTOF(c_ColliderDrawLevelStrings); n++)
+		{
+			const bool is_selected = ((int)s_ColliderDrawType == n);
+			if (ImGui::Selectable(c_ColliderDrawLevelStrings[n].c_str(), is_selected))
+			{
+				s_ColliderDrawType = Collider::g_DrawColliders = (COLLIDER_DRAW_LEVEL)n;
+			}
+
+			if (is_selected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
 	}
 
 	ImGui::DragInt("Resolution Type", &m_ResolutionType, 1.0f, 0, 2);

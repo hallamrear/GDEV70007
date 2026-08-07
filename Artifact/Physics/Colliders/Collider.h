@@ -16,6 +16,15 @@ enum COLLIDER_TYPE : int
 	COLLIDER_TYPE_COUNT = 5
 };
 
+static const std::string c_ColliderTypeNames[COLLIDER_TYPE::COLLIDER_TYPE_COUNT] =
+{
+	"Sphere Collider",
+	"Axis Aligned Bounding Box",
+	"Oriented Bounding Box",
+	"Cylinder Collider",
+	"Convex Hull Collider"
+};
+
 enum COLLIDER_DRAW_LEVEL : int
 {
 	COLLIDER_DRAW_NONE = 0,
@@ -24,13 +33,11 @@ enum COLLIDER_DRAW_LEVEL : int
 	COLLIDER_DRAW_LEVEL_COUNT = 3
 };
 
-static const std::string c_ColliderTypeNames[COLLIDER_TYPE::COLLIDER_TYPE_COUNT] =
+static const std::string c_ColliderDrawLevelStrings[COLLIDER_DRAW_LEVEL_COUNT] =
 {
-	"Sphere Collider",
-	"Axis Aligned Bounding Box",
-	"Oriented Bounding Box",
-	"Cylinder Collider",
-	"Convex Hull Collider"
+	"No colliders",
+	"Narrow Phase Only",
+	"All Colliders"
 };
 
 class Collider
@@ -46,7 +53,8 @@ protected:
 	const Entity& m_AttachedEntity;
 	Matrix4x4 m_OffsetMatrix;
 	ModelRef m_ColliderModel;
-	static TextureRef m_ColliderTexture;
+	static TextureRef m_NarrowPhaseTexture;
+	static TextureRef m_BroadPhaseTexture;
 
 	void SetColliderModel(const COLLIDER_TYPE& colliderType);
 

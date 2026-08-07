@@ -56,7 +56,7 @@ void ConvexHullCollider::RenderCollisionModel(Renderer& renderer)
 	if(hull != nullptr)
 	{
 		renderer.SetDebugDrawMode();
-		renderer.Render(*hull, m_ColliderTexture, GetTransformMatrix());
+		renderer.Render(*hull, m_NarrowPhaseTexture, GetTransformMatrix());
 		renderer.SetDefaultDrawMode();
 	}
 }

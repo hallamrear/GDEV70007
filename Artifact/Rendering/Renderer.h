@@ -20,6 +20,7 @@ protected:
 	Camera m_Camera;
 	LightBuffer m_LightData;
 	ConstantBuffer m_ConstantBuffer;
+	PushConstants m_PushConstants;
 
 	static const enum TEXTURE_FORMAT m_BackbufferFormat;
 	static const enum TEXTURE_FORMAT m_DepthStencilBufferFormat;
@@ -91,6 +92,8 @@ public:
 	virtual bool UpdateWorldMatrix(const Matrix4x4& worldMatrix) = 0;
 	virtual bool UpdateLightingBuffer() = 0;
 	virtual bool UpdateConstantBuffer() = 0;
+	virtual void UploadPushConstants() = 0;
+	PushConstants& GetPushConstants();
 
 	Camera& GetCamera();
 	LightBuffer& GetLightData();

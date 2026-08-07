@@ -40,15 +40,17 @@ void AABBCollider::SetSize(const Vector3& halfWidth)
 
 Vector3 AABBCollider::GetMaxCornerWorldSpace() const
 {
-	Vector3 max = { m_AttachedEntity.GetPosition().x + m_Size.x, m_AttachedEntity.GetPosition().y + m_Size.y, m_AttachedEntity.GetPosition().z + m_Size.z};
+	Vector3 bounds = GetBoundingVolumeExtents();
+	Vector3 max = { m_AttachedEntity.GetPosition().x + bounds.x, m_AttachedEntity.GetPosition().y + bounds.y, m_AttachedEntity.GetPosition().z + bounds.z};
 	return max;
 }
 
 Matrix4x4 AABBCollider::GetTransformMatrix() const
 {
+	Vector3 bounds = GetBoundingVolumeExtents();
 	Matrix4x4 transformMatrix = IdentityMatrix;
 	DirectX::XMStoreFloat4x4(&transformMatrix,
-		DirectX::XMMatrixScaling(m_Size.x, m_Size.y, m_Size.z) *
+		DirectX::XMMatrixScaling(bounds.x, bounds.y, bounds.z) *
 		DirectX::XMMatrixTranslation(m_AttachedEntity.GetPosition().x, m_AttachedEntity.GetPosition().y, m_AttachedEntity.GetPosition().z) *
 		DirectX::XMLoadFloat4x4(&m_OffsetMatrix));
 	return transformMatrix;
@@ -56,22 +58,25 @@ Matrix4x4 AABBCollider::GetTransformMatrix() const
 
 Vector3 AABBCollider::GetMinCornerWorldSpace() const
 {
-	Vector3 min = { m_AttachedEntity.GetPosition().x - m_Size.x, m_AttachedEntity.GetPosition().y - m_Size.y, m_AttachedEntity.GetPosition().z - m_Size.z };
+	Vector3 bounds = GetBoundingVolumeExtents();
+	Vector3 min = { m_AttachedEntity.GetPosition().x - bounds.x, m_AttachedEntity.GetPosition().y - bounds.y, m_AttachedEntity.GetPosition().z - bounds.z };
 	return min;
 }
 
 Vector3 AABBCollider::GetMaxCornerLocalSpace() const
 {
-	return m_Size;
+	return GetBoundingVolumeExtents();
 }
 
 Vector3 AABBCollider::GetMinCornerLocalSpace() const
 {
-	return Vector3(m_Size.x * -1.0f, m_Size.y * -1.0f, m_Size.z * -1.0f);
+	Vector3 bounds = GetBoundingVolumeExtents();
+	return Vector3(bounds.x * -1.0f, bounds.y * -1.0f, bounds.z * -1.0f);
 }
 
 Vector3 AABBCollider::GetSupportPoint(const Vector3& direction) const
 {
+	Vector3 bounds = GetBoundingVolumeExtents();
 	Vector3 maxPoint = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
 	Vector3 corner = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
 	Vector3 scaledPoint = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
@@ -81,7 +86,7 @@ Vector3 AABBCollider::GetSupportPoint(const Vector3& direction) const
 
 	for (int i = 0; i < 8; i++)
 	{
-		scaledPoint = Vector3(Points[i].x * m_Size.x, Points[i].y * m_Size.y, Points[i].z * m_Size.z);
+		scaledPoint = Vector3(Points[i].x * bounds.x, Points[i].y * bounds.y, Points[i].z * bounds.z);
 
 		corner.x = scaledPoint.x + m_AttachedEntity.GetPosition().x;
 		corner.y = scaledPoint.y + m_AttachedEntity.GetPosition().y;

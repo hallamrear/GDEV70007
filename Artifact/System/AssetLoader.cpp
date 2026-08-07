@@ -185,62 +185,67 @@ bool AssetLoader::LoadTexturesFromGLTFPrimitive(Mesh& mesh, const tinygltf::Mode
 		return true;
 	}
 
-	const tinygltf::Texture& gltfTexture = gltfModel.textures[textureIndex];
-	int textureImageIndex = gltfTexture.source;
+	//const tinygltf::Texture& gltfTexture = gltfModel.textures[textureIndex];
+	//int textureImageIndex = gltfTexture.source;
 
-	const tinygltf::Image textureImage = gltfModel.images[textureImageIndex];
-	std::string textureName = textureImage.name;
-
-	if (textureImage.uri == "" && textureImage.bufferView < 0)
+	for(const tinygltf::Image& textureImage : gltfModel.images)
 	{
-		printf("Error fetching texture from gltf file.\n");
-		return false;
-	}
-
-	TextureRef texture = nullptr;
-
-	AssetManager* assetManager = ServiceLocator::Locate<AssetManager>();
-
-	if (assetManager != nullptr)
-	{
-		texture = assetManager->GetTexture(textureName);
-	}
-
-	if (texture == nullptr)
-	{
-		if (textureImage.uri != "")
+		//const tinygltf::Image textureImage = gltfModel.images[textureImageIndex];
+		std::string textureName = textureImage.name;
+	
+		if (textureImage.uri == "" && textureImage.bufferView < 0)
 		{
-			texture = LoadTexture(textureImage.uri);
+			printf("Error fetching texture from gltf file.\n");
+			return false;
 		}
-		else
+	
+		TextureRef texture = nullptr;
+	
+		AssetManager* assetManager = ServiceLocator::Locate<AssetManager>();
+	
+		if (assetManager != nullptr)
 		{
-			int textureBufferViewIndex = textureImage.bufferView;
-			const tinygltf::BufferView textureBufferView = gltfModel.bufferViews[textureBufferViewIndex];
-			const tinygltf::Buffer& textureImageBuffer = gltfModel.buffers[textureBufferView.buffer];
-
-			if (textureImage.mimeType == "image/jpeg")
+			texture = assetManager->GetTexture(textureName);
+		}
+	
+		if (texture == nullptr)
+		{
+			if (textureImage.uri != "")
 			{
-				const byte* data = &textureImageBuffer.data[textureBufferView.byteOffset];
-				texture = LoadTexture(data, textureBufferView.byteLength);
-			}
-			else if (textureImage.mimeType == "image/png")
-			{
-				const byte* data = &textureImageBuffer.data[textureBufferView.byteOffset];
-				texture = LoadTexture(data, textureBufferView.byteLength);
+				texture = LoadTexture(textureImage.uri);
 			}
 			else
 			{
-				printf("Error fetching texture from gltf file. Invalid MIME type.\n");
-				return false;
+				int textureBufferViewIndex = textureImage.bufferView;
+				const tinygltf::BufferView textureBufferView = gltfModel.bufferViews[textureBufferViewIndex];
+				const tinygltf::Buffer& textureImageBuffer = gltfModel.buffers[textureBufferView.buffer];
+	
+				if (textureImage.mimeType == "image/jpeg")
+				{
+					const byte* data = &textureImageBuffer.data[textureBufferView.byteOffset];
+					texture = LoadTexture(data, textureBufferView.byteLength);
+				}
+				else if (textureImage.mimeType == "image/png")
+				{
+					const byte* data = &textureImageBuffer.data[textureBufferView.byteOffset];
+					texture = LoadTexture(data, textureBufferView.byteLength);
+				}
+				else
+				{
+					printf("Error fetching texture from gltf file. Invalid MIME type.\n");
+					return false;
+				}
 			}
+		}
+	
+	
+		if (texture != nullptr)
+		{
+			texture->m_DisplayName = textureName;
+			mesh.m_Textures.push_back(texture);
 		}
 	}
 
-	if (texture != nullptr)
-	{
-		texture->m_DisplayName = textureName;
-		mesh.m_Textures.push_back(texture);
-	}
 
 	return true;
 }

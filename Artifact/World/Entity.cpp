@@ -232,7 +232,7 @@ void Entity::Translate(const Vector3& translation)
 void Entity::Rotate(const Vector3& rotation)
 {
 	glm::vec3 angles = { rotation.x, rotation.y, rotation.z };
-	m_Rigidbody->Rotation *= glm::toQuat(glm::orientate3(angles));
+	m_Rigidbody->Rotation *= glm::quat(glm::vec3(angles));
 	m_Rigidbody->Rotation = glm::normalize(m_Rigidbody->Rotation);
 	UpdateWorldMatrix();
 }
@@ -323,8 +323,8 @@ void Entity::Update(const float& deltaTime)
 		return;
 	}
 
-	static float rotSpeed = 1.0f;
-	Rotate({ deltaTime * m_RotationDir.x * rotSpeed, deltaTime * m_RotationDir.y * rotSpeed, deltaTime * m_RotationDir.z * rotSpeed });
+	//static float rotSpeed = 1.0f;
+	//Rotate({ deltaTime * m_RotationDir.x * rotSpeed, deltaTime * m_RotationDir.y * rotSpeed, deltaTime * m_RotationDir.z * rotSpeed });
 }
 
 void Entity::FixedUpdate()
