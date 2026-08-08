@@ -153,7 +153,7 @@ void Collider::RenderCollisionModel(Renderer& renderer)
 	}
 
 	renderer.SetDebugDrawMode();
-	renderer.GetPushConstants().Padding.m[2][2] = 0.0f;
+	renderer.GetPushConstants().Padding.m[2][2] = 1.0f;
 	renderer.Render(m_ColliderModel, GetTransformMatrix());
 	renderer.SetDefaultDrawMode();
 }

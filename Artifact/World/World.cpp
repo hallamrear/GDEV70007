@@ -101,7 +101,7 @@ bool World::Initialise()
 	{
 		std::string str = "Collider Type : " + c_ColliderTypeNames[i];
 		entity = CreateEntity(str);
-		ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("TestCar.glb");
+		ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("Suzanne.glb");
 		entity->SetModel(suzaane);
 		
 		entity->AddColliderFromModel((COLLIDER_TYPE)i);

@@ -190,6 +190,8 @@ bool AssetLoader::LoadTexturesFromGLTFPrimitive(Mesh& mesh, const tinygltf::Mode
 
 	for(const tinygltf::Image& textureImage : gltfModel.images)
 	{
+
+		printf("%i images in the gltf file : %s.\n", (int)gltfModel.images.size(), gltfMesh.name.c_str());
 		//const tinygltf::Image textureImage = gltfModel.images[textureImageIndex];
 		std::string textureName = textureImage.name;
 	

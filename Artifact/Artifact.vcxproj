@@ -200,9 +200,25 @@
     </ClInclude>
     <ClInclude Include="Physics\EPA\EPA.h">
       <DeploymentContent>true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </DeploymentContent>
     </ClInclude>
     <ClInclude Include="Physics\GJK\GJK.h">
       <DeploymentContent>true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </DeploymentContent>
     </ClInclude>
     <ClInclude Include="Physics\PhysicsWorld.h" />
     <ClInclude Include="Physics\Quickhull\Quickhull.h" />
@@ -266,9 +282,25 @@
     <ClCompile Include="Physics\Colliders\OBBCollider.cpp" />
     <ClCompile Include="Physics\EPA\EPA.cpp">
       <DeploymentContent>true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </DeploymentContent>
     </ClCompile>
     <ClCompile Include="Physics\GJK\GJK.cpp">
       <DeploymentContent>true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </DeploymentContent>
     </ClCompile>
     <ClCompile Include="Physics\PhysicsWorld.cpp" />
     <ClCompile Include="Physics\Quickhull\Quickhull.cpp" />
@@ -323,16 +355,19 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="Artifact.ico" />
-    <Image Include="Content\Colliders\BroadPhaseCollider.png">
+    <Image Include="Content\BroadPhaseCollider.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
-    <Image Include="Content\Colliders\NarrowPhaseCollider.png">
+    <Image Include="Content\NarrowPhaseCollider.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
     <Image Include="Content\DebugTexture.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
-    <Image Include="Content\Textures\colormap.png">
+    <Image Include="Content\Example.png">
+      <DeploymentContent>true</DeploymentContent>
+    </Image>
+    <Image Include="Content\colormap.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
     <Image Include="small.ico" />
@@ -424,6 +459,9 @@
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Content\TestConvexHull.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="Content\TinyCube.glb">
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Rendering\Shaders\Lighting.hlsli">

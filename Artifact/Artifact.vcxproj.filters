@@ -372,13 +372,16 @@
     <Image Include="Content\DebugTexture.png">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="Content\Textures\colormap.png">
+    <Image Include="Content\colormap.png">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="Content\Colliders\BroadPhaseCollider.png">
+    <Image Include="Content\BroadPhaseCollider.png">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="Content\Colliders\NarrowPhaseCollider.png">
+    <Image Include="Content\NarrowPhaseCollider.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Content\Example.png">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
@@ -411,5 +414,6 @@
     <None Include="Content\Axe.glb" />
     <None Include="Content\Colliders\CylinderCollider.glb" />
     <None Include="Content\TestCar.glb" />
+    <None Include="Content\TinyCube.glb" />
   </ItemGroup>
 </Project>

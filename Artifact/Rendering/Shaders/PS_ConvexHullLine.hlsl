@@ -1,8 +1,8 @@
 #include "Structures.hlsli"
 
 SamplerState LinearSampler : register(s0);
-Texture2D<float4> BroadPhaseTexture : register(t0);
-Texture2D<float4> NarrowPhaseTexture : register(t1);
+Texture2D<float4> BroadPhaseTexture : register(t1);
+Texture2D<float4> NarrowPhaseTexture : register(t0);
 
 float4 main(VS_STANDARD_VERTEX_OUTPUT input) : SV_TARGET
 {

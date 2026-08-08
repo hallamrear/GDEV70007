@@ -644,9 +644,11 @@ void DX12Renderer::Render(const ModelRef& model, const Matrix4x4& worldMatrix)
         DirectX::XMStoreFloat4x4(&m_PushConstants.World, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&finalWorld)));
         UploadPushConstants();
 
-        for (auto& texture : mesh->GetTextures())
+        int textureCount = std::min((int)TEXTURE_TYPE_SLOT::TEXTURE_TYPE_COUNT, (int)mesh->GetTextures().size());
+        for (int t = 0; t < textureCount; t++)
         {
-            AssignTextureToTextureSlot(TEXTURE_TYPE_DIFFUSE, texture);
+            TextureRef texture = mesh->GetTextures()[t];
+            AssignTextureToTextureSlot((TEXTURE_TYPE_SLOT)t, texture);
         }
 
         GetCommandList()->IASetVertexBuffers(0, 1, &mesh->GetVertexBuffer().GetBufferView());
