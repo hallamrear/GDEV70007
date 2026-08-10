@@ -20,6 +20,7 @@ public:
 	const bool IsLoaded() const;
 
 	const std::vector<Mesh*>& GetMeshes() const;
+	std::vector<Mesh*>& GetMeshes();
 	const std::string& GetDisplayName() const;
 };
 

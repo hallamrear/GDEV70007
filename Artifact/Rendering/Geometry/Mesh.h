@@ -33,7 +33,8 @@ public:
 	const Matrix4x4& GetOffsetMatrix() const;
 	const IndexBuffer& GetIndexBuffer() const;
 	const VertexBuffer& GetVertexBuffer() const;
-	const std::vector<TextureRef> GetTextures() const;
+	const std::vector<TextureRef>& GetTextures() const;
+	std::vector<TextureRef>& GetTextures();
 	const MESH_TOPOLOGY& GetTopologyType() const;
 
 	const Vector3& GetMaxVertexLocalSpace() const;

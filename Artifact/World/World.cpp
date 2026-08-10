@@ -25,6 +25,7 @@ World::World()
 	m_IsInitialised = false;
 	m_OctreeRoot = nullptr;
 	m_Camera = &ServiceLocator::Locate<Renderer>()->GetCamera();
+	m_FrameTime = 0.0f;
 }
 
 World::~World()
@@ -231,6 +232,8 @@ void World::FixedUpdate()
 
 void World::Update(const float& deltaTime)
 {
+	m_FrameTime = deltaTime;
+
 	m_PhysicsWorld.Update(deltaTime);
 
 	for (auto& entity : m_EntityMap)
@@ -244,21 +247,28 @@ void World::Update(const float& deltaTime)
 
 void World::OnIMGUIRender()
 {
+	ImGui::Begin("Data");
+	ImGui::Text("Frame Time : %f\n", m_FrameTime);
+	ImGui::End();
+
 	ImGui::Begin("World");
 
-	if (ImGui::Button("Create New Entity"))
+	if (ImGui::Button("Create New Entity", ImVec2(-FLT_MIN, 0)))
 	{
 		CreateEntity();
 	}
 
-	for (auto& entity : m_EntityMap)
+	if (ImGui::CollapsingHeader("Entities"))
 	{
-		if (entity.second != nullptr)
+		for (auto& entity : m_EntityMap)
 		{
-			RenderEntityDetails(*entity.second);
+			if (entity.second != nullptr)
+			{
+				RenderEntityDetails(*entity.second);
+			}
 		}
-
 	}
+
 	ImGui::End();
 }
 
@@ -538,6 +548,6 @@ void World::Render(Renderer& renderer)
 
 	if (m_OctreeRoot != nullptr)
 	{
-		//OctreeNode::Render(renderer, m_OctreeRoot);
+		OctreeNode::Render(renderer, m_OctreeRoot);
 	}
 }

@@ -66,6 +66,7 @@ DX12Renderer::DX12Renderer() : Renderer()
     m_ConstantBufferGPUUploaderArray = new ID3D12Resource * [m_SwapChainBufferCount];
     m_LightBufferAddressArray = new char* [m_SwapChainBufferCount];
     m_LightBufferGPUUploaderArray = new ID3D12Resource * [m_SwapChainBufferCount];
+    m_ConvexHullPixelShaderBlob = nullptr;
 
     for (size_t i = 0; i < m_SwapChainBufferCount; i++)
     {
@@ -675,7 +676,7 @@ void DX12Renderer::Render(const ModelRef& model, const Matrix4x4& worldMatrix)
     }
 }
 
-void DX12Renderer::Render(const ConvexHull& hull, const TextureRef& texture, const Matrix4x4& worldMatrix)
+void DX12Renderer::Render(const ConvexHull& hull, const ModelRef& model, const Matrix4x4& worldMatrix)
 {
     if (hull.FaceCount <= 0)
     {
@@ -699,12 +700,14 @@ void DX12Renderer::Render(const ConvexHull& hull, const TextureRef& texture, con
     Matrix4x4 finalWorld{};
     DirectX::XMStoreFloat4x4(&finalWorld, DirectX::XMLoadFloat4x4(&worldMatrix));
     DirectX::XMStoreFloat4x4(&m_PushConstants.World, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&finalWorld)));
-    UploadPushConstants();
-
-    if(texture != nullptr && texture->IsLoaded())
+    
+    for (int t = 0; t < (int)TEXTURE_TYPE_SLOT::TEXTURE_TYPE_COUNT; t++)
     {
-        AssignTextureToTextureSlot(TEXTURE_TYPE_DIFFUSE, texture);
+        TextureRef texture = model->GetMeshes()[0]->GetTextures()[t];
+        AssignTextureToTextureSlot((TEXTURE_TYPE_SLOT)t, texture);
     }
+
+    UploadPushConstants();
 
     GetCommandList()->IASetVertexBuffers(0, 1, &hull.GetDrawVertexBuffer().GetBufferView());
     GetCommandList()->DrawInstanced(hull.GetDrawVertexBuffer().GetElementCount(), 1, 0, 0);
@@ -1523,7 +1526,7 @@ HRESULT DX12Renderer::CreateRootSignatureAndDescriptorTable()
     //SRV Table
     D3D12_DESCRIPTOR_RANGE descriptorTableRange[1]{};
     descriptorTableRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-    descriptorTableRange[0].NumDescriptors = 2;
+    descriptorTableRange[0].NumDescriptors = 3;
     descriptorTableRange[0].BaseShaderRegister = 0;
     descriptorTableRange[0].RegisterSpace = 0;
     descriptorTableRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -2333,108 +2336,111 @@ void DX12Renderer::PresentFrame()
 
 void DX12Renderer::RenderIMGUIForLighting()
 {
-    ImGui::Begin("Lighting");
+    ImGui::Begin("World");
 
-    std::string id = "###";
-    for (size_t i = 0; i < MAX_LIGHT_COUNT; i++)
+    if(ImGui::CollapsingHeader("Lighting"))
     {
-        Light& light = m_LightData.Lights[i];
-
-        std::string name = "Light " + std::to_string(i);
-        
-        id = "###" + name;
-        ImGui::PushID(id.c_str());
-
-        ImGui::Spacing();
-
-        if (ImGui::CollapsingHeader(name.c_str()))
+        std::string id = "###";
+        for (size_t i = 0; i < MAX_LIGHT_COUNT; i++)
         {
-            bool enabled = (bool)light.IsEnabled;
-            if (ImGui::Checkbox("Enabled?", &enabled))
+            Light& light = m_LightData.Lights[i];
+
+            std::string name = "Light " + std::to_string(i);
+            
+            id = "###" + name;
+            ImGui::PushID(id.c_str());
+
+            ImGui::Spacing();
+
+            if (ImGui::CollapsingHeader(name.c_str()))
             {
-                light.IsEnabled = (int)enabled;
-            }
-
-            const ImGuiComboFlags flags = 0;
-
-            if (light.IsEnabled)
-            {
-                ImGui::ColorPicker3("Light Colour", &light.Colour.x, ImGuiColorEditFlags_::ImGuiColorEditFlags_Float);
-
-                LIGHT_TYPE selectedCollider = light.Type;
-
-                if (ImGui::BeginCombo("Light Type", c_LightTypeNames[selectedCollider].c_str(), flags))
+                bool enabled = (bool)light.IsEnabled;
+                if (ImGui::Checkbox("Enabled?", &enabled))
                 {
-                    for (int n = 0; n < IM_COUNTOF(c_LightTypeNames); n++)
+                    light.IsEnabled = (int)enabled;
+                }
+
+                const ImGuiComboFlags flags = 0;
+
+                if (light.IsEnabled)
+                {
+                    ImGui::ColorPicker3("Light Colour", &light.Colour.x, ImGuiColorEditFlags_::ImGuiColorEditFlags_Float);
+
+                    LIGHT_TYPE selectedCollider = light.Type;
+
+                    if (ImGui::BeginCombo("Light Type", c_LightTypeNames[selectedCollider].c_str(), flags))
                     {
-                        const bool is_selected = ((int)selectedCollider == n);
-                        if (ImGui::Selectable(c_LightTypeNames[n].c_str(), is_selected))
+                        for (int n = 0; n < IM_COUNTOF(c_LightTypeNames); n++)
                         {
-                            selectedCollider = (LIGHT_TYPE)n;
-                            light.Type = (LIGHT_TYPE)n;
+                            const bool is_selected = ((int)selectedCollider == n);
+                            if (ImGui::Selectable(c_LightTypeNames[n].c_str(), is_selected))
+                            {
+                                selectedCollider = (LIGHT_TYPE)n;
+                                light.Type = (LIGHT_TYPE)n;
+                            }
+
+                            if (is_selected)
+                            {
+                                ImGui::SetItemDefaultFocus();
+                            }
                         }
-
-                        if (is_selected)
-                        {
-                            ImGui::SetItemDefaultFocus();
-                        }
+                        ImGui::EndCombo();
                     }
-                    ImGui::EndCombo();
-                }
 
-                switch (light.Type)
-                {
-                case LIGHT_TYPE::AMBIENT_LIGHT:
-                {
-                    ImGui::DragFloat("Ambient light strength", &light.AmbientStrength, 0.05f, 0.0f, 1.0f);
-                }
-                break;
-
-                case LIGHT_TYPE::DIRECTIONAL_LIGHT:
-                {
-                    ImGui::InputFloat3("Direction", &light.Direction.x); ImGui::SameLine();
-                    if (ImGui::Button("Set direction to Camera look direction"))
+                    switch (light.Type)
                     {
-                        light.Direction = Vector4(m_Camera.GetForwardVector().x, m_Camera.GetForwardVector().y, m_Camera.GetForwardVector().z, VECTOR_W_DIRECTION);
-                    }
-
-                    ImGui::DragFloat("Specular Strength", &light.SpecularStrength, 0.05f, 0.0f, 1.0f);
-
-                    if (ImGui::DragInt("Specular Power (will round to nearest base 2)", &light.SpecularPower, 1, 2, 128))
+                    case LIGHT_TYPE::AMBIENT_LIGHT:
                     {
-                        light.SpecularPower = Maths::RoundToNearestBaseTwo(light.SpecularPower);
+                        ImGui::DragFloat("Ambient light strength", &light.AmbientStrength, 0.05f, 0.0f, 1.0f);
                     }
-                }
-                break;
-
-                case LIGHT_TYPE::POINT_LIGHT:
-                {
-                    ImGui::InputFloat3("Position", &light.Position.x); ImGui::SameLine();
-                    if (ImGui::Button("Set position to camera position"))
-                    {
-                        light.Position = Vector4(m_Camera.GetPosition().x, m_Camera.GetPosition().y, m_Camera.GetPosition().z, VECTOR_W_POSITION);
-                    }
-
-                    ImGui::DragFloat("Specular Strength", &light.SpecularStrength, 0.05f, 0.0f, 1.0f);
-
-                    if (ImGui::DragInt("Specular Power (will round to nearest base 2)", &light.SpecularPower, 1, 2, 128))
-                    {
-                        light.SpecularPower = Maths::RoundToNearestBaseTwo(light.SpecularPower);
-                    }
-                    ImGui::DragFloat("Attenuation (C, L, Q)", &light.Attenuation.x, 0.05f, 0.0f, 1.0f);
-                }
-                break;
-
-                default:
                     break;
+
+                    case LIGHT_TYPE::DIRECTIONAL_LIGHT:
+                    {
+                        ImGui::InputFloat3("Direction", &light.Direction.x); ImGui::SameLine();
+                        if (ImGui::Button("Set direction to Camera look direction"))
+                        {
+                            light.Direction = Vector4(m_Camera.GetForwardVector().x, m_Camera.GetForwardVector().y, m_Camera.GetForwardVector().z, VECTOR_W_DIRECTION);
+                        }
+
+                        ImGui::DragFloat("Specular Strength", &light.SpecularStrength, 0.05f, 0.0f, 1.0f);
+
+                        if (ImGui::DragInt("Specular Power (will round to nearest base 2)", &light.SpecularPower, 1, 2, 128))
+                        {
+                            light.SpecularPower = Maths::RoundToNearestBaseTwo(light.SpecularPower);
+                        }
+                    }
+                    break;
+
+                    case LIGHT_TYPE::POINT_LIGHT:
+                    {
+                        ImGui::InputFloat3("Position", &light.Position.x); ImGui::SameLine();
+                        if (ImGui::Button("Set position to camera position"))
+                        {
+                            light.Position = Vector4(m_Camera.GetPosition().x, m_Camera.GetPosition().y, m_Camera.GetPosition().z, VECTOR_W_POSITION);
+                        }
+
+                        ImGui::DragFloat("Specular Strength", &light.SpecularStrength, 0.05f, 0.0f, 1.0f);
+
+                        if (ImGui::DragInt("Specular Power (will round to nearest base 2)", &light.SpecularPower, 1, 2, 128))
+                        {
+                            light.SpecularPower = Maths::RoundToNearestBaseTwo(light.SpecularPower);
+                        }
+                        ImGui::DragFloat("Attenuation (C, L, Q)", &light.Attenuation.x, 0.05f, 0.0f, 1.0f);
+                    }
+                    break;
+
+                    default:
+                        break;
+                    }
+
+                    ImGui::Spacing();
                 }
 
-                ImGui::Spacing();
             }
 
+            ImGui::PopID();
         }
-
-        ImGui::PopID();
     }
 
     ImGui::End();

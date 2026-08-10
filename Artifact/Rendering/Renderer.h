@@ -45,7 +45,8 @@ public:
 	{
 		TEXTURE_TYPE_DIFFUSE = 0,
 		TEXTURE_TYPE_NORMAL = 1,
-		TEXTURE_TYPE_COUNT = 2
+		TEXTURE_TYPE_EXTRA = 2,
+		TEXTURE_TYPE_COUNT = 3
 	};
 
 	const HWND& GetWindowHandle() const;
@@ -83,7 +84,7 @@ public:
 	virtual void ClearFrame() = 0;
 	virtual void PresentFrame() = 0;
 	virtual void Render(const ModelRef& model, const Matrix4x4& worldMatrix) = 0;
-	virtual void Render(const ConvexHull& hull, const TextureRef& texture, const Matrix4x4& worldMatrix) = 0;
+	virtual void Render(const ConvexHull& hull, const ModelRef& texture, const Matrix4x4& worldMatrix) = 0;
 	virtual void RenderIMGUIFrame() = 0;
 
 	virtual bool SetDebugDrawMode() = 0;

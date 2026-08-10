@@ -7,7 +7,6 @@
 ConvexHullCollider::ConvexHullCollider(const Entity& entity, const ModelRef& modelRef) : Collider(COLLIDER_TYPE_CONVEX_HULL, entity)
 {
 	assert(modelRef);
-	m_ConvexHull = modelRef->GetMeshes()[0]->GetConvexHull();
 	m_ColliderModel = modelRef;
 
 	m_Size.x = (m_ColliderModel->GetMeshes()[0]->GetMaxVertexLocalSpace().x - m_ColliderModel->GetMeshes()[0]->GetMinVertexLocalSpace().x);
@@ -57,7 +56,7 @@ void ConvexHullCollider::RenderCollisionModel(Renderer& renderer)
 	{
 		renderer.SetDebugDrawMode();
 		renderer.GetPushConstants().Padding.m[2][2] = 1.0f;
-		renderer.Render(*hull, m_NarrowPhaseTexture, GetTransformMatrix());
+		renderer.Render(*hull, m_ColliderModel, GetTransformMatrix());
 		renderer.SetDefaultDrawMode();
 	}
 }

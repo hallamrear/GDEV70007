@@ -68,7 +68,12 @@ const VertexBuffer& Mesh::GetVertexBuffer() const
 	return m_VertexBuffer;
 }
 
-const std::vector<TextureRef> Mesh::GetTextures() const
+const std::vector<TextureRef>& Mesh::GetTextures() const
+{
+	return m_Textures;
+}
+
+std::vector<TextureRef>& Mesh::GetTextures()
 {
 	return m_Textures;
 }

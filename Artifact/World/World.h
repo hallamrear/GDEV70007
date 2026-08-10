@@ -20,6 +20,7 @@ class World : public IIMGUIRenderable
 {
 private:
 	typedef std::unordered_map<EntityID, Entity*, GUIDHasher> EntityMap;
+	float m_FrameTime;
 
 	PhysicsWorld m_PhysicsWorld;
 

@@ -213,7 +213,6 @@ void Engine::Update(const float& deltaTime)
 	//ScreenToClient(m_Renderer->GetWindowHandle(), &centre);
 	//InputListener::SetMousePosition(m_Renderer->GetWindowCentre());
 
-
 	static float timeElapsed = 0.0f;
 	timeElapsed += deltaTime;
 

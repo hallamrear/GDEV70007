@@ -65,10 +65,8 @@ void PrintConflictList(ConvexHull& convexHull)
 	SetConsoleTextAttribute(hConsole, 15);
 }
 
-static int runs = 0;
 ConvexHull* Quickhull::GenerateConvexHull(std::vector<Vector3>& pointCloudIn)
 {
-	runs = 0;
 	ConvexHull* convexHull = new ConvexHull((int)pointCloudIn.size());
 
 	PointCloud pointCloud;
@@ -516,9 +514,6 @@ void Quickhull::ResolveOrphanPoints(ConvexHull& convexHull, std::vector<ConvexHu
 
 void Quickhull::AddAndResolveNewVertexInHull(ConvexHull& convexHull, ConvexHullFace*& conflictFace, ConvexHullVertex*& conflictVertex, const float& scaledEpsilon)
 {
-	runs++;
-	printf("\n\nAddAndResolveNewVertexInHull %i\n", runs);
-
 	convexHull.AddVertexToHull(conflictVertex);
 
 	//Build new horizon
@@ -786,11 +781,6 @@ const ConvexHullSimplex Quickhull::BuildInitialSimplex(const PointCloud& pointCl
 		furthestPointFromLineDirection.z,
 		simplex3Dist
 	};
-
-	for (int i = 0; i < 4; i++)
-	{
-		printf("Simplex %i - %f %f %f\n", i, initialSimplex.Points[i].x, initialSimplex.Points[i].y, initialSimplex.Points[i].z);
-	}
 
 	return initialSimplex;
 }

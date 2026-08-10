@@ -64,7 +64,9 @@ void Collider::SetColliderModel(const COLLIDER_TYPE& colliderType)
 
 	case COLLIDER_TYPE_SPHERE: m_ColliderModel = assetManager->GetModel("Colliders\\SphereCollider.glb"); break;
 
-	case COLLIDER_TYPE_CONVEX_HULL: m_ColliderModel = m_AttachedEntity.GetModel(); break;
+	case COLLIDER_TYPE_CONVEX_HULL:
+		m_ColliderModel = m_AttachedEntity.GetModel(); 
+		break;
 
 	case COLLIDER_TYPE_CAPSULE: m_ColliderModel = assetManager->GetModel("Colliders\\CylinderCollider.glb"); break;
 
@@ -84,12 +86,24 @@ void Collider::SetColliderModel(const COLLIDER_TYPE& colliderType)
 
 	if (m_NarrowPhaseTexture == nullptr)
 	{
-		//m_NarrowPhaseTexture = assetManager->GetTexture("Colliders\\NarrowPhaseCollider.png");
+		m_NarrowPhaseTexture = assetManager->GetTexture("NarrowPhaseCollider");
 	}
 
 	if (m_BroadPhaseTexture == nullptr)
 	{
-		//m_BroadPhaseTexture = assetManager->GetTexture("Colliders\\BroadPhaseCollider.png");
+		m_BroadPhaseTexture = assetManager->GetTexture("BroadPhaseCollider");
+	}
+
+	m_ColliderModel->GetMeshes()[0]->GetTextures().resize(3);
+
+	if (m_BroadPhaseTexture)
+	{
+		m_ColliderModel->GetMeshes()[0]->GetTextures()[1] = m_BroadPhaseTexture;
+	}
+	
+	if (m_NarrowPhaseTexture)
+	{
+		m_ColliderModel->GetMeshes()[0]->GetTextures()[2] = m_NarrowPhaseTexture;
 	}
 }
 
