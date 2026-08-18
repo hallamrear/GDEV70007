@@ -315,7 +315,18 @@ bool CollisionDetection::BroadPhaseCollision(const Collider* colliderA, const Co
 	return true;
 }
 
-bool CollisionDetection::CheckCollision(const Collider* colliderA, const Collider* colliderB, CollisionManifold* manifold)
+bool CollisionDetection::AABBAABBCollision(const glm::vec3& minA, const glm::vec3& maxA, const glm::vec3& minB, const glm::vec3& maxB)
+{
+	// Exit with no intersection if separated along an axis
+	if (maxA[0] < minB[0] || minA[0] > maxB[0]) return false;
+	if (maxA[1] < minB[1] || minA[1] > maxB[1]) return false;
+	if (maxA[2] < minB[2] || minA[2] > maxB[2]) return false;
+
+	// Overlapping on all axes means AABBs are intersecting
+	return true;
+}
+
+bool CollisionDetection::CheckNarrowPhaseCollision(const Collider* colliderA, const Collider* colliderB, CollisionManifold* manifold)
 {
 	assert(colliderA);
 	assert(colliderB);

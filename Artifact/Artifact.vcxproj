@@ -188,6 +188,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Artifact.h" />
+    <ClInclude Include="Physics\Optimisations\BroadPhase.h" />
     <ClInclude Include="Physics\Colliders\CylinderCollider.h" />
     <ClInclude Include="Physics\Resolution\Constraint.h" />
     <ClInclude Include="Physics\Resolution\CollisionResolver.h" />
@@ -223,6 +224,8 @@
     <ClInclude Include="Physics\PhysicsWorld.h" />
     <ClInclude Include="Physics\Quickhull\Quickhull.h" />
     <ClInclude Include="Physics\SAT\SeparatingAxisTheorem.h" />
+    <ClInclude Include="Physics\Optimisations\SweepAndPrune.h" />
+    <ClInclude Include="Physics\Optimisations\SpatialGrid.h" />
     <ClInclude Include="System\Maths\Plane.h" />
     <ClInclude Include="System\Maths.h" />
     <ClInclude Include="Physics\Colliders\ConvexHullCollider.h" />
@@ -273,6 +276,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Artifact.cpp" />
+    <ClCompile Include="Physics\Optimisations\BroadPhase.cpp" />
     <ClCompile Include="Physics\Colliders\CylinderCollider.cpp" />
     <ClCompile Include="Physics\Resolution\Constraint.cpp" />
     <ClCompile Include="Physics\Resolution\CollisionResolver.cpp" />
@@ -305,6 +309,8 @@
     <ClCompile Include="Physics\PhysicsWorld.cpp" />
     <ClCompile Include="Physics\Quickhull\Quickhull.cpp" />
     <ClCompile Include="Physics\SAT\SeparatingAxisTheorem.cpp" />
+    <ClCompile Include="Physics\Optimisations\SweepAndPrune.cpp" />
+    <ClCompile Include="Physics\Optimisations\SpatialGrid.cpp" />
     <ClCompile Include="System\Maths\Plane.cpp" />
     <ClCompile Include="System\Maths.cpp" />
     <ClCompile Include="Physics\Colliders\ConvexHullCollider.cpp" />

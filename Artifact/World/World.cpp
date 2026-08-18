@@ -21,11 +21,14 @@ const bool& World::IsInitialised() const
 
 World::World()
 {
+	srand((unsigned int)time(nullptr));
 	m_EntityMap = EntityMap();
+	m_EntityMap.reserve(10000);
 	m_IsInitialised = false;
-	m_OctreeRoot = nullptr;
 	m_Camera = &ServiceLocator::Locate<Renderer>()->GetCamera();
 	m_FrameTime = 0.0f;
+	m_CurrentScene = WORLD_EXAMPLE_SCENE::WORLD_EMPTY_SCENE;
+	m_PendingSceneChange = true;
 }
 
 World::~World()
@@ -33,10 +36,24 @@ World::~World()
 	assert(m_IsInitialised);
 }
 
+void World::ChangeExampleScene(const WORLD_EXAMPLE_SCENE& newScene)
+{
+	UNREFERENCED_PARAMETER(newScene);
+	//for (auto& entity : m_EntityMap)
+	//{
+	//	entity.second->Kill();
+	//}
+	//
+	//m_CurrentScene = newScene;
+	//m_PendingSceneChange = true;
+}
+
 bool World::Initialise()
 {
+	m_CurrentScene = WORLD_EXAMPLE_SCENE::WORLD_SPATIAL_GRID;
+	m_PhysicsWorld.Initialise(m_CurrentScene);
+
 	Vector3 position = Vector3(0.0f, 0.0f, 0.0f);
-	//m_OctreeRoot = OctreeNode::BuildOctree(nullptr, Vector3(0.0f, 0.0f, 0.0f), 8192.0f, 0);
 
 	//Entity* testRoom = CreateEntity("Test Room");
 	//ModelRef ref = ServiceLocator::Locate<AssetManager>()->GetModel("Demo_Level.glb");
@@ -54,12 +71,12 @@ bool World::Initialise()
 	//c->SetModel(cone);
 	//c->SetPosition(Vector3(-40.0f, 0.0f, 0.0f));
 	
-	TestBoxA = CreateEntity("Test Entity A");
+	//TestBoxA = CreateEntity("Test Entity A");
 	////TestBoxA->GetCollider()->SetSize(Vector3(10.0f, 10.0f, 10.0f));
 	//TestBoxA->SetPosition(Vector3(0.0f, 5.0f, 0.0f));
-	////ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("TestCone.glb");
-	//ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("Colliders/BoxCollider.glb");
-	//TestBoxA->SetModel(suzaane);
+	////ModelRef suzanne = ServiceLocator::Locate<AssetManager>()->GetModel("TestCone.glb");
+	//ModelRef suzanne = ServiceLocator::Locate<AssetManager>()->GetModel("Colliders/BoxCollider.glb");
+	//TestBoxA->SetModel(suzanne);
 	//TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
 
 	//TestBoxA = CreateEntity("Barrel");
@@ -77,11 +94,11 @@ bool World::Initialise()
 	//float r_z = (rand() % 100) / 100.0f;
 	////TestBoxA->Rotate(Vector3(r_x * 360.0f, r_y * 360.0f, r_z * 360.0f));
 	//
-	TestBoxB = CreateEntity("Test Entity B");
-	TestBoxB->SetPosition({ 0.0f, 3.0f, 0.0f });
-	////ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("TestConvexHull.glb");
-	ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("Suzanne.glb");
-	TestBoxB->SetModel(test);
+	//TestBoxB = CreateEntity("Test Entity B");
+	//TestBoxB->SetPosition({ 0.0f, 3.0f, 0.0f });
+	//////ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("TestConvexHull.glb");
+	//ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("Suzanne.glb");
+	//TestBoxB->SetModel(test);
 	//////TestBoxB->GetCollider()->SetSize(Vector3(7.0f, 3.0f, 5.0f));
 	////TestBoxB->SetPosition(Vector3(0.0f, 0.0f, 0.0f));
 	////TestBoxB->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
@@ -94,51 +111,129 @@ bool World::Initialise()
 	//r_z = (rand() % 100) / 100.0f;
 	//TestBoxB->Rotate(Vector3(r_x * 360.0f, r_y * 360.0f, r_z * 360.0f));
 
-	float gap = 7.0f;
-	position = Vector3(-gap * trunc((float)COLLIDER_TYPE::COLLIDER_TYPE_COUNT / 2.0f), -3.0f, 0.0f);
+	static ModelRef suzanne = ServiceLocator::Locate<AssetManager>()->GetModel("Suzanne.glb");
+	static ModelRef car = ServiceLocator::Locate<AssetManager>()->GetModel("TestCar.glb");
 
-	Entity* entity = nullptr;
-	for (size_t i = 0; i < COLLIDER_TYPE::COLLIDER_TYPE_COUNT; i++)
+	switch (m_CurrentScene)
 	{
-		std::string str = "Collider Type : " + c_ColliderTypeNames[i];
-		entity = CreateEntity(str);
-		ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("Suzanne.glb");
-		entity->SetModel(suzaane);
-		
-		entity->AddColliderFromModel((COLLIDER_TYPE)i);
-		
-		position.x += gap;
-		
-		entity->SetPosition(position);
+	case WORLD_EMPTY_SCENE:
+		break;
+	case WORLD_COLLIDER_EXAMPLE:
+	{
+		float gap = 7.0f;
+		position = Vector3(-gap * trunc((float)COLLIDER_TYPE::COLLIDER_TYPE_COUNT / 2.0f), -3.0f, 0.0f);
+
+		Entity* entity = nullptr;
+		for (size_t i = 0; i < COLLIDER_TYPE::COLLIDER_TYPE_COUNT; i++)
+		{
+			std::string str = "Collider Type : " + c_ColliderTypeNames[i];
+			entity = CreateEntity(str);
+			entity->SetModel(suzanne);
+
+			entity->AddColliderFromModel((COLLIDER_TYPE)i);
+			position.x += gap;
+			entity->SetPosition(position);
+		}
+
+		int count = 7;
+		position = Vector3(-gap * trunc(count / 2.0f), 3.0f, 0.0f);
+		float rotStep = 360.0f / count;
+		float angle = 0.0f;
+
+		for (size_t i = 0; i < count; i++)
+		{
+			std::string str = "Rotation : " + std::to_string(angle);
+			entity = CreateEntity(str);
+			entity->SetModel(car);
+
+			entity->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_OBB);
+			entity->Rotate(Vector3(0.0f, angle, 0.0f));
+
+			position.x += gap;
+			angle += rotStep;
+
+			entity->SetPosition(position);
+		}
+	}
+	break;
+	case WORLD_SAT_EXAMPLE:
+	{
+
+	}
+		break;
+	case WORLD_GJK_EXAMPLE:
+	{
+
+	}
+		break;
+	case WORLD_SPATIAL_GRID:
+	{
+		float x = 0.0f;
+		float y = 0.0f;
+		float z = 0.0f;
+
+		int extents = 1024;
+
+		for (int i = 0; i < 1000; i++)
+		{
+			x = (float)((rand() % extents) - (extents / 2));
+			y = (float)((rand() % extents) - (extents / 2));
+			z = (float)((rand() % extents) - (extents / 2));
+
+
+			std::string name = "SG Object" + std::to_string(i);
+			Entity* entity = CreateEntity(name);
+			entity->SetPosition({ (float)x, y, (float)z });
+			entity->SetModel(suzanne);
+			entity->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_OBB);
+			entity->GetRigidbody().SetMass(0.0f);
+			m_PhysicsWorld.AddToBroadPhase(m_CurrentScene, entity);
+		}
+	}
+		break;
+
+	case WORLD_SWEEP_AND_PRUNE:
+	{
+		float x = 0.0f;
+		float y = 0.0f;
+		float z = 0.0f;
+
+		for (int i = 0; i < 1000; i++)
+		{
+			x = (float)((rand() % 1000) - 500);
+			y = (float)((rand() % 1000) - 500);
+			z = (float)((rand() % 1000) - 500);
+
+			std::string name = "SAP Object" + std::to_string(i);
+			Entity* entity = CreateEntity(name);
+			entity->SetPosition({ (float)x, 0.0f, (float)z });
+			entity->SetModel(suzanne);
+			entity->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_AABB);
+			entity->GetRigidbody().SetMass(0.0f);
+			m_PhysicsWorld.AddToBroadPhase(m_CurrentScene, entity);
+		}
+	}
+		break;
+
+	case WORLD_OCTREE:
+	{
+
+		//m_PhysicsWorld.AddToBroadPhase(m_CurrentScene, entity);
+	}
+		break;
+	case WORLD_EXAMPLE_SCENE_COUNT:
+	{
+
+	}
+		break;
+	default:
+	{
+
+	}
+		break;
 	}
 
-
-
-	int count = 7;
-	position = Vector3(-gap * trunc(count / 2.0f), 3.0f, 0.0f);
-	float rotStep = 360.0f / count;
-	float angle = 0.0f;
-
-	for (size_t i = 0; i < count; i++)
-	{
-		std::string str = "Rotation : " + std::to_string(angle);
-		entity = CreateEntity(str);
-		ModelRef suzaane = ServiceLocator::Locate<AssetManager>()->GetModel("TestCar.glb");
-		entity->SetModel(suzaane);
-
-		entity->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_OBB);
-		entity->Rotate(Vector3(0.0f, angle, 0.0f));
-
-		position.x += gap;
-		angle += rotStep;
-
-		entity->SetPosition(position);
-	}
-
-
-
-
-
+	m_PendingSceneChange = false;
 	m_IsInitialised = true;
 	return true;
 }
@@ -196,15 +291,8 @@ bool World::DestroyWorld(World* world)
 Entity* World::CreateEntity()
 {
 	Entity* entity = new Entity();
-	m_EntityMap.insert(std::make_pair(entity->GetID(), entity));
-
-	if (m_OctreeRoot)
-	{
-		m_OctreeRoot->AddEntity({ entity });
-	}
-
+	m_EntityMap.insert({ entity->GetID(), entity });
 	entity->SetRigidbody(m_PhysicsWorld.GetFreshRigidbody());
-
 	return entity;
 }
 
@@ -217,6 +305,11 @@ Entity* World::CreateEntity(const std::string& displayName)
 
 void World::FixedUpdate()
 {
+	if (m_PendingSceneChange)
+	{
+		return;
+	}
+
 	for (auto& itr : m_EntityMap)
 	{
 		if (itr.second != nullptr)
@@ -225,13 +318,16 @@ void World::FixedUpdate()
 		}
 	}
 
-	DestroyDeadEntities();
-
 	m_PhysicsWorld.FixedUpdate();
 }
 
 void World::Update(const float& deltaTime)
 {
+	if (m_PendingSceneChange)
+	{
+		return;
+	}
+
 	m_FrameTime = deltaTime;
 
 	m_PhysicsWorld.Update(deltaTime);
@@ -252,6 +348,30 @@ void World::OnIMGUIRender()
 	ImGui::End();
 
 	ImGui::Begin("World");
+
+	const ImGuiComboFlags flags = 0;
+
+	static WORLD_EXAMPLE_SCENE exampleScene = m_CurrentScene;
+
+	if (ImGui::BeginCombo("Example Scene", c_WorldExampleSceneNames[exampleScene].c_str(), flags))
+	{
+		for (int n = 0; n < IM_COUNTOF(c_WorldExampleSceneNames); n++)
+		{
+			const bool is_selected = ((int)exampleScene == n);
+			if (ImGui::Selectable(c_WorldExampleSceneNames[n].c_str(), is_selected))
+			{
+				exampleScene = (WORLD_EXAMPLE_SCENE)n;
+				ChangeExampleScene(exampleScene);
+			}
+
+			if (is_selected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
+	}
+
 
 	if (ImGui::Button("Create New Entity", ImVec2(-FLT_MIN, 0)))
 	{
@@ -538,16 +658,13 @@ void World::DestroyDeadEntities()
 
 void World::Render(Renderer& renderer)
 {
+	m_PhysicsWorld.Render(renderer);
+
 	for (auto& entity : m_EntityMap)
 	{
 		if (entity.second != nullptr)
 		{
 			entity.second->Render(renderer);
 		}
-	}
-
-	if (m_OctreeRoot != nullptr)
-	{
-		OctreeNode::Render(renderer, m_OctreeRoot);
 	}
 }

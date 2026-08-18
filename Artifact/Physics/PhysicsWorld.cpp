@@ -2,12 +2,20 @@
 #include "PhysicsWorld.h"
 #include "Rigidbody.h"
 #include <Physics/SAT/SeparatingAxisTheorem.h>
+#include <World/World.h>
+
+#include <Physics/Optimisations/Octree.h>
+#include <Physics/Optimisations/SweepAndPrune.h>
+#include <Physics/Optimisations/SpatialGrid.h>
 
 PhysicsWorld::PhysicsWorld()
 {
 	m_RigidbodyList = new Rigidbody[c_MaxRigidbodyCount];
 	m_ActiveRigidbodyCount = 0;
 	m_ResolutionType = 1;
+	m_OctreeRoot = nullptr;
+	m_SweepAndPrune = nullptr;
+	m_SpatialGrid = nullptr;
 }
 
 PhysicsWorld::~PhysicsWorld()
@@ -16,6 +24,90 @@ PhysicsWorld::~PhysicsWorld()
 	{
 		delete[] m_RigidbodyList;
 		m_RigidbodyList = nullptr;
+	}
+
+	if (m_OctreeRoot != nullptr)
+	{
+		delete m_OctreeRoot;
+		m_OctreeRoot = nullptr;
+	}
+
+	if (m_SweepAndPrune != nullptr)
+	{
+		delete m_SweepAndPrune;
+		m_SweepAndPrune = nullptr;
+	}
+
+	if (m_SpatialGrid != nullptr)
+	{
+		delete m_SpatialGrid;
+		m_SpatialGrid = nullptr;
+	}
+}
+
+void PhysicsWorld::Initialise(const WORLD_EXAMPLE_SCENE& exampleScene)
+{
+	switch (exampleScene)
+	{
+	case WORLD_SPATIAL_GRID:
+	{
+		m_SpatialGrid = new SpatialGrid();
+	}
+	break;
+
+	case WORLD_SWEEP_AND_PRUNE:
+	{
+		m_SweepAndPrune = new SweepAndPrune();
+	}
+	break;
+
+	case WORLD_OCTREE:
+	{
+		m_OctreeRoot = OctreeNode::BuildOctree(nullptr, Vector3(0.0f, 0.0f, 0.0f), 512.0f, 0);
+	}
+	break;
+
+	case WORLD_EMPTY_SCENE:
+	case WORLD_COLLIDER_EXAMPLE:
+	case WORLD_SAT_EXAMPLE:
+	case WORLD_GJK_EXAMPLE:
+	default:
+	{
+
+	}
+	break;
+	}
+}
+
+void PhysicsWorld::AddToBroadPhase(const WORLD_EXAMPLE_SCENE& exampleScene, Entity* entity)
+{
+	if (entity->GetCollider() == nullptr)
+		return;
+
+	switch (exampleScene)
+	{
+		//m_OctreeRoot = OctreeNode::BuildOctree(nullptr, Vector3(0.0f, 0.0f, 0.0f), 8192.0f, 0);
+
+	case WORLD_SPATIAL_GRID:
+	{
+		m_SpatialGrid->AddObject(entity);
+	}
+	break;
+
+	case WORLD_SWEEP_AND_PRUNE:
+	{
+		m_SweepAndPrune->AddObject(entity);
+	}
+	break;
+
+	case WORLD_OCTREE:
+	{
+		m_OctreeRoot->AddEntity({ entity });
+	}
+	break;
+
+	default:
+		break;
 	}
 }
 
@@ -53,6 +145,21 @@ void PhysicsWorld::OnIMGUIRender()
 {
 	ImGui::Begin("Physics");
 
+	if (m_OctreeRoot)
+	{
+		m_OctreeRoot->RenderIMGUIDetails();
+	}
+	
+	if (m_SweepAndPrune)
+	{
+		m_SweepAndPrune->RenderIMGUIDetails();
+	}
+
+	if (m_SpatialGrid)
+	{
+		m_SpatialGrid->RenderIMGUIDetails();
+	}
+
 	ImGui::Checkbox("Use Dispatch Table", &CollisionDetection::Use_Dispatch_Table);
 
 	if (CollisionDetection::Use_Dispatch_Table == false)
@@ -82,11 +189,11 @@ void PhysicsWorld::OnIMGUIRender()
 		ImGui::EndCombo();
 	}
 
-	ImGui::DragInt("Resolution Type", &m_ResolutionType, 1.0f, 0, 2);
-	ImGui::DragInt("Resolver Iterations", &CollisionResolver::RESOLUTION_ITERATIONS, 1, 1, 100);
-	ImGui::DragFloat("Air Friction", &CollisionResolver::AIR_FRICTION, 0.01f, 0.0f, 1.0f);
-	ImGui::DragFloat("Baumgarte", &CollisionResolver::BAUMGARTE_STABILISATION_VALUE, 0.01f, 0.0f, 1.0f);
-	ImGui::DragFloat("Intersection allowance", &CollisionResolver::ALLOWED_INTERSECTION, 0.01f, 0.0f, 1.0f);
+	//ImGui::DragInt("Resolution Type", &m_ResolutionType, 1.0f, 0, 2);
+	//ImGui::DragInt("Resolver Iterations", &CollisionResolver::RESOLUTION_ITERATIONS, 1, 1, 100);
+	//ImGui::DragFloat("Air Friction", &CollisionResolver::AIR_FRICTION, 0.01f, 0.0f, 1.0f);
+	//ImGui::DragFloat("Baumgarte", &CollisionResolver::BAUMGARTE_STABILISATION_VALUE, 0.01f, 0.0f, 1.0f);
+	//ImGui::DragFloat("Intersection allowance", &CollisionResolver::ALLOWED_INTERSECTION, 0.01f, 0.0f, 1.0f);
 
 	if (ImGui::CollapsingHeader("Data"))
 	{
@@ -206,39 +313,45 @@ void PhysicsWorld::CollectCollisionPairs()
 	Entity* entityA = nullptr;
 	Entity* entityB = nullptr;
 
-	for (size_t x = 0; x < c_MaxRigidbodyCount; x++)
+	std::vector<std::pair<Entity*, Entity*>> broadPhaseCollisionPairs;
+
+	if (m_SpatialGrid)
 	{
-		for (size_t y = x; y < c_MaxRigidbodyCount; y++)
+		m_SpatialGrid->DetermineCollisionPairs(broadPhaseCollisionPairs);
+	}
+
+	if (m_SweepAndPrune)
+	{
+		m_SweepAndPrune->DetermineCollisionPairs(broadPhaseCollisionPairs);
+	}
+
+	//if (m_OctreeRoot)
+	//{
+	//	m_OctreeRoot->DetermineCollisionPairs(broadPhaseCollisionPairs);
+	//}
+
+	for (size_t i = 0; i < broadPhaseCollisionPairs.size(); i++)
+	{
+		std::pair<Entity*, Entity*>& pair = broadPhaseCollisionPairs[i];
+
+		entityA = pair.first;
+		entityB = pair.second;
+		
+		manifold.Reset();
+
+		bool collision = CollisionDetection::CheckNarrowPhaseCollision(entityA->GetCollider(), entityB->GetCollider(), &manifold);
+
+		if (collision)
 		{
-			if (m_RigidbodyList[x].IsActive == false ||
-				m_RigidbodyList[y].IsActive == false || 
-				x == y)
-				continue;
-
-			entityA = m_RigidbodyList[x].GetEntity();
-			entityB = m_RigidbodyList[y].GetEntity();
-
-
-			if (entityA->GetCollider() == nullptr || entityB->GetCollider() == nullptr)
-			{
-				continue;
-			}
-
-			assert(entityA != nullptr);
-			assert(entityB != nullptr);
-
-			manifold.Reset();
-
-			bool collision = CollisionDetection::CheckCollision(entityA->GetCollider(), entityB->GetCollider(), &manifold);
-
-			if (collision)
-			{
-				manifold.CollisionPair.first = entityA;
-				manifold.CollisionPair.second = entityB;
-				m_FrameCollisionManifolds.push_back(manifold);
-			}
+			manifold.CollisionPair.first = entityA;
+			manifold.CollisionPair.second = entityB;
+			m_FrameCollisionManifolds.push_back(manifold);
 		}
 	}
+
+
+
+
 }
  
 void PhysicsWorld::SolveConstaints()
@@ -309,4 +422,22 @@ void PhysicsWorld::UpdateSleepers()
 void PhysicsWorld::CleanupPhysicsObjects()
 {
 
+}
+
+void PhysicsWorld::Render(Renderer& renderer)
+{
+	if (m_OctreeRoot)
+	{
+		m_OctreeRoot->Render(renderer, m_OctreeRoot);
+	}
+
+	if (m_SweepAndPrune)
+	{
+		m_SweepAndPrune->Render(renderer);
+	}
+
+	if (m_SpatialGrid)
+	{
+		m_SpatialGrid->Render(renderer);
+	}
 }

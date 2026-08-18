@@ -16,9 +16,34 @@ struct GUIDHasher
 	}
 };
 
+enum WORLD_EXAMPLE_SCENE : int
+{
+	WORLD_EMPTY_SCENE = 0,
+	WORLD_COLLIDER_EXAMPLE = 1,
+	WORLD_SAT_EXAMPLE = 2,
+	WORLD_GJK_EXAMPLE = 3,
+	WORLD_SPATIAL_GRID = 4,
+	WORLD_SWEEP_AND_PRUNE = 5,
+	WORLD_OCTREE = 6,
+	WORLD_EXAMPLE_SCENE_COUNT = 7
+};
+
+static const std::string c_WorldExampleSceneNames[WORLD_EXAMPLE_SCENE_COUNT] =
+{
+	"Empty Scene",
+	"Collider Demo",
+	"Separating Axis Theorem",
+	"GJK + EPA",
+	"Spatial Grid",
+	"Sweep and Prune",
+	"Octree"
+};
+
 class World : public IIMGUIRenderable
 {
 private:
+	WORLD_EXAMPLE_SCENE m_CurrentScene;
+	bool m_PendingSceneChange;
 	typedef std::unordered_map<EntityID, Entity*, GUIDHasher> EntityMap;
 	float m_FrameTime;
 
@@ -27,10 +52,11 @@ private:
 	World();
 	~World();
 
+	void ChangeExampleScene(const WORLD_EXAMPLE_SCENE& newScene);
+
 	bool m_IsInitialised;
 	EntityMap m_EntityMap;
-	OctreeNode* m_OctreeRoot;
-
+	
 	bool Initialise();
 	bool Shutdown();
 

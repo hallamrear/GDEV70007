@@ -40,11 +40,13 @@ private:
 	/* Hull    vs Hull	  */ static bool ConvexHullConvexHullCollision(const Collider* convexHullColliderA, const Collider* convexHullColliderB, CollisionManifold* manifold = nullptr);
 
 	static bool BroadPhaseCollision(const Collider* colliderA, const Collider* colliderB);
-	
+
 public:
 
 	static bool Use_GJK;
 	static bool Use_Dispatch_Table;
-	static bool CheckCollision(const Collider* colliderA, const Collider* colliderB, CollisionManifold* manifold = nullptr);
+	static bool CheckNarrowPhaseCollision(const Collider* colliderA, const Collider* colliderB, CollisionManifold* manifold = nullptr);
+
+	static bool AABBAABBCollision(const glm::vec3& minA, const glm::vec3& maxA, const glm::vec3& minB, const glm::vec3& maxB);
 };
 

@@ -31,7 +31,7 @@ public:
 	const bool& HasSplit() const;
 	void AddEntity(const std::vector<Entity*>& entitiesToAdd);
 	static void Render(Renderer& renderer, OctreeNode* root);
-
+	void RenderIMGUIDetails();
 	static OctreeNode* BuildOctree(OctreeNode* parent, const Vector3& centre, const float& halfWidth, const int& depth);
 	static void DestroyOctree(OctreeNode* root);
 };

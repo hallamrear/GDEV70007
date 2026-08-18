@@ -76,19 +76,7 @@ const bool& OctreeNode::HasSplit() const
 
 void OctreeNode::AddEntity(const std::vector<Entity*>& entitiesToAdd)
 {
-	if ((m_Depth + 1) >= c_MaxOctreeNodeDepth)
-	{
-		m_Bucket.insert(m_Bucket.end(), entitiesToAdd.begin(), entitiesToAdd.end());
-		return;
-	}
-
-	if (m_Bucket.size() >= c_MaxBucketCapacity)
-	{
-		if (SplitNode(m_Bucket))
-		{
-			m_Bucket.clear();
-		}
-	}
+	UNREFERENCED_PARAMETER(entitiesToAdd);
 }
 
 bool OctreeNode::SplitNode(const std::vector<Entity*>& entitiesToSort)
@@ -139,4 +127,9 @@ void OctreeNode::Render(Renderer& renderer, OctreeNode* root)
 	{
 		renderer.Render(m_Model, root->m_CentreMatrix);
 	}
+}
+
+void OctreeNode::RenderIMGUIDetails()
+{
+
 }

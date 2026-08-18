@@ -7,6 +7,8 @@
 
 class Rigidbody;
 
+enum WORLD_EXAMPLE_SCENE : int;
+
 class PhysicsWorld : public IIMGUIRenderable
 {
 private:
@@ -34,14 +36,24 @@ private:
 
 	int m_ResolutionType;
 
+	class OctreeNode* m_OctreeRoot;
+	class SweepAndPrune* m_SweepAndPrune;
+	class SpatialGrid* m_SpatialGrid;
+
 public:
 	PhysicsWorld();
 	~PhysicsWorld();
+
+	void Initialise(const WORLD_EXAMPLE_SCENE& exampleScene);
 
 	void FixedUpdate();
 	void Update(const float& deltaTime);
 
 	Rigidbody& GetFreshRigidbody();
+
+	void AddToBroadPhase(const WORLD_EXAMPLE_SCENE& exampleScene, Entity* entity);
+
+	void Render(Renderer& renderer);
 
 	// Inherited via IIMGUIRenderable
 	void OnIMGUIRender() override;
