@@ -341,14 +341,14 @@ void Entity::Render(Renderer& renderer)
 {
 	renderer.SetDefaultDrawMode();
 
-	if (m_Model != nullptr)
-	{
-		renderer.Render(m_Model, m_WorldMatrix);
-	}
-
 	if (m_Collider != nullptr)
 	{
 		m_Collider->Render(renderer);
+	}
+
+	if (m_Model != nullptr)
+	{
+		renderer.Render(m_Model, m_WorldMatrix);
 	}
 }
 

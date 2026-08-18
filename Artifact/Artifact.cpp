@@ -91,10 +91,10 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance,
         clockDelta = std::chrono::duration_cast<std::chrono::milliseconds>(cTime - lTime);
         deltaTime = (float)clockDelta.count();
 
-        if (deltaTime > CAPPED_TIMESTEP)
-        {
-            deltaTime = CAPPED_TIMESTEP;
-        }
+        //if (deltaTime > CAPPED_TIMESTEP)
+        //{
+        //    deltaTime = CAPPED_TIMESTEP;
+        //}
 
         accumulator += deltaTime;
 

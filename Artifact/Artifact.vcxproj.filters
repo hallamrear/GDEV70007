@@ -433,5 +433,7 @@
     <None Include="Content\Colliders\CylinderCollider.glb" />
     <None Include="Content\TestCar.glb" />
     <None Include="Content\TinyCube.glb" />
+    <None Include="Content\LongTrain.glb" />
+    <None Include="Content\Ambulance.glb" />
   </ItemGroup>
 </Project>

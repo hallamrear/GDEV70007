@@ -7,6 +7,7 @@
 #include <System/AssetLoader.h>
 
 ModelRef SpatialGrid::m_GridCellModel = nullptr;
+SPATIAL_GRID_DRAW_MODE SpatialGrid::m_DrawMode = SPATIAL_GRID_DRAW_MODE::SPATIAL_GRID_DRAW_ALL;
 
 SpatialGrid::SpatialGrid()
 {
@@ -119,6 +120,26 @@ GridIndex SpatialGrid::GetIndexFromPosition(const glm::vec3& position)
 
 void SpatialGrid::RenderIMGUIDetails()
 {
+    const ImGuiComboFlags flags = 0;
+
+    if (ImGui::BeginCombo("Spatial Grid Draw Mode", c_SpatialGridDrawModeNames[m_DrawMode].c_str(), flags))
+    {
+        for (int n = 0; n < IM_COUNTOF(c_SpatialGridDrawModeNames); n++)
+        {
+            const bool is_selected = ((int)m_DrawMode == n);
+            if (ImGui::Selectable(c_SpatialGridDrawModeNames[n].c_str(), is_selected))
+            {
+                m_DrawMode = (SPATIAL_GRID_DRAW_MODE)n;
+            }
+
+            if (is_selected)
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+
     ImGui::Text("%f units per grid cell.\n", c_GridCellSize);
     ImGui::Text("%i grid cells in use.\n", m_GridMap.size());
     ImGui::Text("%i broadphase collision pairs found vs. bruteforce's 499500\n", m_CollisionPairsThisFrame);
@@ -126,15 +147,22 @@ void SpatialGrid::RenderIMGUIDetails()
 
 void SpatialGrid::Render(Renderer& renderer)
 {
+    if (m_DrawMode == SPATIAL_GRID_DRAW_MODE::SPATIAL_GRID_DRAW_NONE)
+    {
+        return;
+    }
+
     Matrix4x4 cellMatrix = IdentityMatrix;
     float offset = (c_GridCellSize * 0.5f);
     renderer.SetDebugDrawMode();
 
     for (auto& cell : m_GridMap)
     {
-        if (cell.second.size() <= 1)
+        if (m_DrawMode == SPATIAL_GRID_DRAW_MODE::SPATIAL_GRID_DRAW_PAIRS && cell.second.size() <= 1)
+        {
             continue;
-
+        }
+        
         Vector3 position = {};
         position.x = (cell.first.X * c_GridCellSize) + offset;
         position.y = (cell.first.Y * c_GridCellSize) + offset;

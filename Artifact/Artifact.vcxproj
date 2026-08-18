@@ -409,6 +409,9 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Content\Ambulance.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="Content\Axe.glb">
       <DeploymentContent>true</DeploymentContent>
     </None>
@@ -446,6 +449,9 @@
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Content\LongBox.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="Content\LongTrain.glb">
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Content\police.glb">
