@@ -33,7 +33,6 @@ void AssetManager::OnIMGUIRender()
 	{
 		if (textureItr->second.expired())
 		{
-			printf("Invalid texture reference in the map.\n");
 			textureItr++;
 			continue;
 		}

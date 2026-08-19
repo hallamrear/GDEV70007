@@ -70,11 +70,11 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance,
 
     auto lTime = std::chrono::steady_clock::now();
     auto cTime = lTime;
-    std::chrono::duration<double> clockDelta = { };
-    float deltaTime = 0.0f;
-    float accumulator = 0.0f;
-    int fixedUpdates = 0;
-    int variableUpdates = 0;
+    std::chrono::duration<long double> clockDelta = { };
+    double deltaTime = 0.0;
+    //float accumulator = 0.0f;
+    //int fixedUpdates = 0;
+    //int variableUpdates = 0;
 
     while (g_Engine->IsRunning())
     {
@@ -89,32 +89,33 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance,
 
         cTime = std::chrono::steady_clock::now();
         clockDelta = std::chrono::duration_cast<std::chrono::milliseconds>(cTime - lTime);
-        deltaTime = (float)clockDelta.count();
+        deltaTime = (double)clockDelta.count();
 
         //if (deltaTime > CAPPED_TIMESTEP)
         //{
         //    deltaTime = CAPPED_TIMESTEP;
         //}
 
-        accumulator += deltaTime;
+        //accumulator += deltaTime;
 
-        while (accumulator >= FIXED_TIMESTEP)
-        {
-            g_Engine->FixedUpdate();
-            fixedUpdates++;
-            accumulator -= deltaTime;
-        }
+        //while (accumulator >= FIXED_TIMESTEP)
+        //{
+        //    fixedUpdates++;
+        //    accumulator -= deltaTime;
+        //}
 
+        g_Engine->FixedUpdate();
         g_Engine->Update(deltaTime);
-        variableUpdates++;
+        //variableUpdates++;
 
         g_Engine->Render();
 
         lTime = cTime;
 
-        printf("Fixed Updates: %i - Variable Updates: %i\n", fixedUpdates, variableUpdates);
-        fixedUpdates = 0;
-        variableUpdates = 0;
+        g_Engine->CalculateTimings();
+
+        //fixedUpdates = 0;
+        //variableUpdates = 0;
     }
  
     if (Engine::DestroyEngine(g_Engine) == true)

@@ -15,12 +15,17 @@ struct Contact
 
 struct CollisionManifold
 {
+	bool IsBroadPhaseColliding = false;
+	bool IsNarrowPhaseColliding = false;
+
 	std::pair<Entity*, Entity*> CollisionPair;
 	Vector3 Normal = Vector3(0.0f, 0.0f, 0.0f);
 	std::vector<Contact> ContactPoints;
 
 	void Reset()
 	{
+		IsBroadPhaseColliding = false;
+		IsNarrowPhaseColliding = false;
 		ContactPoints.clear();
 		CollisionPair = { nullptr, nullptr };
 	}

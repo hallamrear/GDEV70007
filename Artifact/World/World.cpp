@@ -11,8 +11,8 @@
 #include <System/Maths.h>
 
 //Temporary stuff.
-Entity* World::TestBoxA = nullptr;
-Entity* World::TestBoxB = nullptr;
+Entity* World::ControlledEntity = nullptr;
+const int c_TestCount = 8000;
 
 const bool& World::IsInitialised() const
 {
@@ -23,10 +23,9 @@ World::World()
 {
 	srand((unsigned int)time(nullptr));
 	m_EntityMap = EntityMap();
-	m_EntityMap.reserve(10000);
+	m_EntityMap.reserve(c_TestCount);
 	m_IsInitialised = false;
 	m_Camera = &ServiceLocator::Locate<Renderer>()->GetCamera();
-	m_FrameTime = 0.0f;
 	m_CurrentScene = WORLD_EXAMPLE_SCENE::WORLD_EMPTY_SCENE;
 	m_PendingSceneChange = true;
 }
@@ -50,56 +49,10 @@ void World::ChangeExampleScene(const WORLD_EXAMPLE_SCENE& newScene)
 
 bool World::Initialise()
 {
-	m_CurrentScene = WORLD_EXAMPLE_SCENE::WORLD_COLLIDER_EXAMPLE;
+	m_CurrentScene = WORLD_EXAMPLE_SCENE::WORLD_GJK_EXAMPLE_SPATIAL_GRID;
 	m_PhysicsWorld.Initialise(m_CurrentScene);
 
 	Vector3 position = Vector3(0.0f, 0.0f, 0.0f);
-
-	//auto c = CreateEntity("Cone");
-	//c->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_AABB);
-	//ModelRef cone = ServiceLocator::Locate<AssetManager>()->GetModel("Barrel.glb");
-	//c->SetModel(cone);
-	//c->SetPosition(Vector3(-40.0f, 0.0f, 0.0f));
-	
-	//TestBoxA = CreateEntity("Test Entity A");
-	////TestBoxA->GetCollider()->SetSize(Vector3(10.0f, 10.0f, 10.0f));
-	//TestBoxA->SetPosition(Vector3(0.0f, 5.0f, 0.0f));
-	////ModelRef suzanne = ServiceLocator::Locate<AssetManager>()->GetModel("TestCone.glb");
-	//ModelRef suzanne = ServiceLocator::Locate<AssetManager>()->GetModel("Colliders/BoxCollider.glb");
-	//TestBoxA->SetModel(suzanne);
-	//TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
-
-	//TestBoxA = CreateEntity("Barrel");
-	////TestBoxA->SetPosition(Vector3(0.0f, 2.0f, 0.0f));
-	//ModelRef barrel = ServiceLocator::Locate<AssetManager>()->GetModel("Barrel.glb");
-	////TestBoxA->SetModel(barrel);
-	////TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
-	////TestBoxA->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_AABB);
-	////TestBoxA->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_OBB);
-	//TestBoxA->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CAPSULE);
-	////TestBoxA->GetRigidbody().IsGravityEnabled = true;
-	//
-	//float r_x = (rand() % 100) / 100.0f;
-	//float r_y = (rand() % 100) / 100.0f;
-	//float r_z = (rand() % 100) / 100.0f;
-	////TestBoxA->Rotate(Vector3(r_x * 360.0f, r_y * 360.0f, r_z * 360.0f));
-	//
-	//TestBoxB = CreateEntity("Test Entity B");
-	//TestBoxB->SetPosition({ 0.0f, 3.0f, 0.0f });
-	//////ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("TestConvexHull.glb");
-	//ModelRef test = ServiceLocator::Locate<AssetManager>()->GetModel("Suzanne.glb");
-	//TestBoxB->SetModel(test);
-	//////TestBoxB->GetCollider()->SetSize(Vector3(7.0f, 3.0f, 5.0f));
-	////TestBoxB->SetPosition(Vector3(0.0f, 0.0f, 0.0f));
-	////TestBoxB->AddCollider(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
-	////TestBoxB->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_AABB);
-	//TestBoxB->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_AABB);
-	//TestBoxB->GetRigidbody().SetMass(0.0f);
-
-	//r_x = (rand() % 100) / 100.0f;
-	//r_y = (rand() % 100) / 100.0f;
-	//r_z = (rand() % 100) / 100.0f;
-	//TestBoxB->Rotate(Vector3(r_x * 360.0f, r_y * 360.0f, r_z * 360.0f));
 
 	ModelRef modelList[] =
 	{
@@ -162,13 +115,13 @@ bool World::Initialise()
 		float ra = (float)(rand() % 360);
 		float rb = (float)(rand() % 360);
 
-		TestBoxA = CreateEntity("Test Box A");
+		Entity* TestBoxA = CreateEntity("Test Box A");
 		TestBoxA->SetPosition({ -10.0f, 0.0f, 0.0f });
-		TestBoxA->SetModel(modelList[1]);
+		TestBoxA->SetModel(modelList[2]);
 		TestBoxA->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_OBB);
 		TestBoxA->Rotate(Vector3(0.0f, ra, 0.0f));
 
-		TestBoxB = CreateEntity("Test Box B");
+		Entity* TestBoxB = CreateEntity("Test Box B");
 		TestBoxB->SetPosition({ 10.0f, 0.0f, 0.0f });
 		TestBoxB->SetModel(modelList[2]);
 		TestBoxB->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_OBB);
@@ -176,11 +129,72 @@ bool World::Initialise()
 
 	}
 		break;
+
+	case WORLD_GJK_EXAMPLE_SPATIAL_GRID:
+	{
+		m_CurrentScene = WORLD_SPATIAL_GRID;
+		int extents = 2048;
+
+		std::string name = "";
+		ModelRef sea = ServiceLocator::Locate<AssetManager>()->GetModel("Sea.glb");
+
+		Entity* Sea = CreateEntity("Sea");
+		Sea->SetPosition({ 0.0f, -5.0f, 0.0f });
+		Sea->SetModel(sea);
+
+		for (int i = 0; i < c_TestCount; i++)
+		{
+			float x = (float)((rand() % extents) - (extents / 2));
+			float y = (float)((rand() % 10) / 10.0f);
+			float z = (float)((rand() % extents) - (extents / 2));
+			float r = (float)(rand() % 360);
+			
+			ModelRef ship = ServiceLocator::Locate<AssetManager>()->GetModel("PirateShip.glb");
+			name = "Ship " + std::to_string(i);
+			Entity* boat = CreateEntity(name);
+			boat->SetPosition({ x, y, z});
+			boat->SetModel(ship);
+			boat->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
+			boat->Rotate(Vector3(0.0f, r, 0.0f));	
+			m_PhysicsWorld.AddToBroadPhase(m_CurrentScene, boat);
+		}
+
+		m_PhysicsWorld.ResolutionType = 0;
+
+		m_CurrentScene = WORLD_GJK_EXAMPLE_SPATIAL_GRID;
+	}
+	break;
+
+
 	case WORLD_GJK_EXAMPLE:
 	{
+		float ra = (float)(rand() % 360);
+		float rb = (float)(rand() % 360);
 
+		ModelRef ship = ServiceLocator::Locate<AssetManager>()->GetModel("PirateShip.glb");
+		ModelRef sea = ServiceLocator::Locate<AssetManager>()->GetModel("Sea.glb");
+
+		Entity* Sea = CreateEntity("Sea");
+		Sea->SetPosition({ 0.0f, 3.0f, 0.0f });
+		Sea->SetModel(sea);
+		Sea->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
+
+		Entity* TestBoxA = CreateEntity("Ship A");
+		TestBoxA->SetPosition({ -10.0f, 0.0f, -3.0f });
+		TestBoxA->SetModel(ship);
+		TestBoxA->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
+		TestBoxA->Rotate(Vector3(0.0f, ra, 0.0f));
+
+		Entity* TestBoxB = CreateEntity("Ship B");
+		TestBoxB->SetPosition({ 10.0f, 0.0f, 6.0f });
+		TestBoxB->SetModel(ship);
+		TestBoxB->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
+		TestBoxB->Rotate(Vector3(0.0f, rb, 0.0f));
+
+		m_PhysicsWorld.ResolutionType = 0;
 	}
 		break;
+
 	case WORLD_SPATIAL_GRID:
 	{
 		float x = 0.0f;
@@ -193,7 +207,7 @@ bool World::Initialise()
 		int m = 0;
 		int extents = 1024;
 
-		for (int i = 0; i < 1000; i++)
+		for (int i = 0; i < c_TestCount; i++)
 		{
 			m = rand() % _countof(modelList);
 			x = (float)((rand() % extents) - (extents / 2));
@@ -353,14 +367,12 @@ void World::FixedUpdate()
 	m_PhysicsWorld.FixedUpdate();
 }
 
-void World::Update(const float& deltaTime)
+void World::Update(const double& deltaTime)
 {
 	if (m_PendingSceneChange)
 	{
 		return;
 	}
-
-	m_FrameTime = deltaTime;
 
 	m_PhysicsWorld.Update(deltaTime);
 
@@ -375,10 +387,6 @@ void World::Update(const float& deltaTime)
 
 void World::OnIMGUIRender()
 {
-	ImGui::Begin("Data");
-	ImGui::Text("Frame Time : %f\n", m_FrameTime);
-	ImGui::End();
-
 	ImGui::Begin("World");
 
 	//bool perspective = ServiceLocator::Locate<Renderer>()->IsCameraPerpsective();
@@ -421,6 +429,12 @@ void World::RenderEntityDetails(Entity& entity)
 	if(ImGui::Button("Edit Entity"))
 	{
 		ImGui::OpenPopup(entityEditModalStr.c_str());
+	}
+	
+	std::string controlStr = "Take Control of Entity Entity" + imguiHash;
+	if (ImGui::Button(controlStr.c_str()))
+	{
+		ControlledEntity = &entity;
 	}
 
 	std::string EntityEditRigidbodyModalStr = "EntityEditRigidbody#" + imguiHash;

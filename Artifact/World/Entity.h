@@ -64,7 +64,7 @@ public:
 	const ModelRef& GetModel() const;
 
 	void FixedUpdate();
-	void Update(const float& deltaTime);
+	void Update(const double& deltaTime);
 	void Render(Renderer& renderer);
 
 	void SetAlive(const bool& state);

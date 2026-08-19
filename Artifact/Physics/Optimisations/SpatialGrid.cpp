@@ -11,6 +11,7 @@ SPATIAL_GRID_DRAW_MODE SpatialGrid::m_DrawMode = SPATIAL_GRID_DRAW_MODE::SPATIAL
 
 SpatialGrid::SpatialGrid()
 {
+    m_EntityCount = 0;
     m_GridMap = GridStorageType();
     m_CollisionPairsThisFrame = 0;
     
@@ -56,6 +57,14 @@ bool SpatialGrid::DetermineCollisionPairs(std::vector<std::pair<Entity*, Entity*
         }
     }
 
+    std::sort(collisionPairs.begin(), collisionPairs.end());
+
+    // 2. Move unique elements to the front and get the new logical end
+    auto last = std::unique(collisionPairs.begin(), collisionPairs.end());
+
+    // 3. Erase the duplicate elements from the physical container
+    collisionPairs.erase(last, collisionPairs.end());
+
     m_CollisionPairsThisFrame = (int)collisionPairs.size();
 
     return true;
@@ -63,6 +72,8 @@ bool SpatialGrid::DetermineCollisionPairs(std::vector<std::pair<Entity*, Entity*
 
 bool SpatialGrid::AddObject(Entity* entity)
 {
+    m_EntityCount++;
+
     if (entity->GetCollider() == nullptr)
     {
         return false;
@@ -71,8 +82,8 @@ bool SpatialGrid::AddObject(Entity* entity)
     glm::vec3 origin = { entity->GetPosition().x, entity->GetPosition().y, entity->GetPosition().z };
     glm::vec3 extents = { entity->GetCollider()->GetBoundingVolumeExtents().x, entity->GetCollider()->GetBoundingVolumeExtents().y, entity->GetCollider()->GetBoundingVolumeExtents().z };
 
-    glm::vec3 max = { origin + extents };
-    glm::vec3 min = { origin - extents };
+    glm::vec3 max = { origin + (extents / 2.0f) };
+    glm::vec3 min = { origin - (extents / 2.0f) };
 
     GridIndex maxIndex = GetIndexFromPosition(max);
     GridIndex minIndex = GetIndexFromPosition(min);
@@ -142,7 +153,7 @@ void SpatialGrid::RenderIMGUIDetails()
 
     ImGui::Text("%f units per grid cell.\n", c_GridCellSize);
     ImGui::Text("%i grid cells in use.\n", m_GridMap.size());
-    ImGui::Text("%i broadphase collision pairs found vs. bruteforce's 499500\n", m_CollisionPairsThisFrame);
+    ImGui::Text("%i broadphase collision pairs found vs. bruteforce's %i\n", m_CollisionPairsThisFrame, ((m_EntityCount * (m_EntityCount - 1) / 2)));
 }
 
 void SpatialGrid::Render(Renderer& renderer)

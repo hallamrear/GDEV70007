@@ -8,6 +8,8 @@
 
 std::filesystem::path Engine::m_ContentFolderLocation = std::filesystem::path();
 std::filesystem::path Engine::m_ExecutableLocation = std::filesystem::path();
+std::chrono::duration<long double> Engine::UpdateDelta = {};
+std::chrono::duration<long double> Engine::RenderDelta = {};
 
 Engine::Engine()
 {
@@ -18,6 +20,7 @@ Engine::Engine()
 	m_World = nullptr;
 	m_AssetManager = nullptr;
 	m_IsRunning = false;
+	m_FrameTime = 0.0f;
 }
 
 Engine::~Engine()
@@ -196,30 +199,35 @@ LRESULT Engine::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 void Engine::FixedUpdate()
 {
+	m_UpdateStart = std::chrono::steady_clock::now();
+
 	InputListener::UpdateInputStates();
 
 	if (!m_IsInitialised || !m_IsRunning)
 		return;
 
+	if (m_InputListener.GetKeyDown(VK_BACK)) { IIMGUIRenderable::DrawIMGUI = !IIMGUIRenderable::DrawIMGUI; }
+		
 	if (m_World != nullptr)
 	{
 		m_World->FixedUpdate();
 	}
 }
 
-void Engine::Update(const float& deltaTime)
+static double timeElapsed = 0.0;
+void Engine::Update(const double& deltaTime)
 {
 	//POINT windowCentre{ m_Renderer->GetWindowCentre().x, m_Renderer->GetWindowCentre().y };
 	//ScreenToClient(m_Renderer->GetWindowHandle(), &centre);
 	//InputListener::SetMousePosition(m_Renderer->GetWindowCentre());
 
-	static float timeElapsed = 0.0f;
+	m_FrameTime = deltaTime;
 	timeElapsed += deltaTime;
 
 	Vector4 clearColour = m_Renderer->GetClearColour();
-	clearColour.x = (sin(timeElapsed + 0) * 127 + 127) / 255.0f;
-	clearColour.y = (sin(timeElapsed + 2) * 127 + 127) / 255.0f;
-	clearColour.z = (sin(timeElapsed + 4) * 127 + 127) / 255.0f;
+	clearColour.x = (sin((float)timeElapsed + 0) * 127 + 127) / 255.0f;
+	clearColour.y = (sin((float)timeElapsed + 2) * 127 + 127) / 255.0f;
+	clearColour.z = (sin((float)timeElapsed + 4) * 127 + 127) / 255.0f;
 	clearColour.w = 1.0f;
 	clearColour = { 1.0f, 1.0f, 1.0f, 1.0f };
 	clearColour = { 210.0f / 255.0f, 210.0f / 255.0f, 210.0f / 255.0f, 1.0f };
@@ -230,8 +238,8 @@ void Engine::Update(const float& deltaTime)
 		m_World->Update(deltaTime);
 	}
 
-	float moveSpeed = +180.0f * deltaTime;
-	float rotationSpeed = 5.0f * deltaTime;
+	float moveSpeed = +180.0f * (float)deltaTime;
+	float rotationSpeed = 5.0f * (float)deltaTime;
 	Vector3 forward = m_Renderer->GetCamera().GetForwardVector();
 	Vector3 right = m_Renderer->GetCamera().GetRightVector();
 	Vector3 up = m_Renderer->GetCamera().GetUpVector();
@@ -259,49 +267,49 @@ void Engine::Update(const float& deltaTime)
 			m_Renderer->GetCamera().RotateEulerDegrees(Vector3(rotationSpeed * -thumbstickRight.y, rotationSpeed * thumbstickRight.x, 0.0f));
 		}
 	
-		if (m_World->TestBoxA != nullptr)
+		if (m_World->ControlledEntity != nullptr)
 		{
 			float leftTrigger = m_InputListener.GetControllerAnalogValue(0, CONTROLLER_ANALOG_LEFT_TRIGGER);
 			float rightTrigger = m_InputListener.GetControllerAnalogValue(0, CONTROLLER_ANALOG_RIGHT_TRIGGER);
 	
 			if (leftTrigger > 0)
-				m_World->TestBoxA->Rotate(Vector3(rotationSpeed * leftTrigger, 0.0f, 0.0f));
+				m_World->ControlledEntity->Rotate(Vector3(rotationSpeed * leftTrigger, 0.0f, 0.0f));
 	
 			if (rightTrigger > 0)
-				m_World->TestBoxA->Rotate(Vector3(0.0f, rotationSpeed * rightTrigger, 0.0f));
+				m_World->ControlledEntity->Rotate(Vector3(0.0f, rotationSpeed * rightTrigger, 0.0f));
 	
-			Vector3 localForward = m_World->TestBoxB->GetForwardVector();
-			Vector3 localRight = m_World->TestBoxB->GetRightVector();
-			Vector3 localUp = m_World->TestBoxB->GetUpVector();
+			Vector3 localForward = m_World->ControlledEntity->GetForwardVector();
+			Vector3 localRight = m_World->ControlledEntity->GetRightVector();
+			Vector3 localUp = m_World->ControlledEntity->GetUpVector();
 	
 			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_DPAD_UP) || m_InputListener.GetKeyDown(VK_KEY_I))
 			{
-				m_World->TestBoxB->Translate(Vector3(localForward.x * moveSpeed * 5 * FIXED_TIMESTEP, localForward.y * moveSpeed * 5 * FIXED_TIMESTEP, localForward.z * moveSpeed * 5 * FIXED_TIMESTEP));
+				m_World->ControlledEntity->Translate(Vector3(localForward.x * moveSpeed * 5 * FIXED_TIMESTEP, localForward.y * moveSpeed * 5 * FIXED_TIMESTEP, localForward.z * moveSpeed * 5 * FIXED_TIMESTEP));
 			}
 	
 			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_DPAD_RIGHT) || m_InputListener.GetKeyDown(VK_KEY_L))
 			{
-				m_World->TestBoxB->Translate(Vector3(localRight.x * moveSpeed * 5 * FIXED_TIMESTEP, localRight.y * moveSpeed * 5 * FIXED_TIMESTEP, localRight.z * moveSpeed * 5 * FIXED_TIMESTEP));
+				m_World->ControlledEntity->Translate(Vector3(localRight.x * moveSpeed * 5 * FIXED_TIMESTEP, localRight.y * moveSpeed * 5 * FIXED_TIMESTEP, localRight.z * moveSpeed * 5 * FIXED_TIMESTEP));
 			}
 	
 			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_DPAD_DOWN) || m_InputListener.GetKeyDown(VK_KEY_K))
 			{
-				m_World->TestBoxB->Translate(Vector3(-localForward.x * moveSpeed * 5 * FIXED_TIMESTEP, -localForward.y * moveSpeed * 5 * FIXED_TIMESTEP, -localForward.z * moveSpeed * 5 * FIXED_TIMESTEP));
+				m_World->ControlledEntity->Translate(Vector3(-localForward.x * moveSpeed * 5 * FIXED_TIMESTEP, -localForward.y * moveSpeed * 5 * FIXED_TIMESTEP, -localForward.z * moveSpeed * 5 * FIXED_TIMESTEP));
 			}
 	
 			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_DPAD_LEFT) || m_InputListener.GetKeyDown(VK_KEY_J))
 			{
-				m_World->TestBoxB->Translate(Vector3(-localRight.x * moveSpeed * 5 * FIXED_TIMESTEP, -localRight.y * moveSpeed * 5 * FIXED_TIMESTEP, -localRight.z * moveSpeed * 5 * FIXED_TIMESTEP));
+				m_World->ControlledEntity->Translate(Vector3(-localRight.x * moveSpeed * 5 * FIXED_TIMESTEP, -localRight.y * moveSpeed * 5 * FIXED_TIMESTEP, -localRight.z * moveSpeed * 5 * FIXED_TIMESTEP));
 			}
 	
 			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_LEFT_SHOULDER) || m_InputListener.GetKeyDown(VK_KEY_U))
 			{
-				m_World->TestBoxB->Translate(Vector3(-localUp.x * moveSpeed * 5 * FIXED_TIMESTEP, -localUp.y * moveSpeed * 5 * FIXED_TIMESTEP, -localUp.z * moveSpeed * 5 * FIXED_TIMESTEP));
+				m_World->ControlledEntity->Translate(Vector3(-localUp.x * moveSpeed * 5 * FIXED_TIMESTEP, -localUp.y * moveSpeed * 5 * FIXED_TIMESTEP, -localUp.z * moveSpeed * 5 * FIXED_TIMESTEP));
 			}
 	
 			if (m_InputListener.GetControllerButtonDown(0, CONTROLLER_BUTTON_RIGHT_SHOULDER) || m_InputListener.GetKeyDown(VK_KEY_O))
 			{
-				m_World->TestBoxB->Translate(Vector3(localUp.x * moveSpeed * 5 * FIXED_TIMESTEP, localUp.y * moveSpeed * 5 * FIXED_TIMESTEP, localUp.z * moveSpeed * 5 * FIXED_TIMESTEP));
+				m_World->ControlledEntity->Translate(Vector3(localUp.x * moveSpeed * 5 * FIXED_TIMESTEP, localUp.y * moveSpeed * 5 * FIXED_TIMESTEP, localUp.z * moveSpeed * 5 * FIXED_TIMESTEP));
 			}
 		}
 	}
@@ -327,12 +335,15 @@ void Engine::Update(const float& deltaTime)
 		m_Renderer->GetCamera().RotateEulerDegrees(Vector3(rotationSpeed * -delta.y * sensitivity, rotationSpeed * delta.x * sensitivity, 0.0f));
 	}
 
+	m_UpdateEnd = std::chrono::steady_clock::now();
 }
 
 void Engine::Render()
 {
 	if (!m_IsInitialised || !m_IsRunning)
 		return;
+
+	m_RenderStart = std::chrono::steady_clock::now();
 
 	m_Renderer->ClearFrame();
 
@@ -341,4 +352,23 @@ void Engine::Render()
 	m_Renderer->RenderIMGUIFrame();
 
 	m_Renderer->PresentFrame();
+
+	m_RenderEnd = std::chrono::steady_clock::now();
+}
+
+void Engine::CalculateTimings()
+{
+	RenderDelta = std::chrono::duration_cast<std::chrono::milliseconds>(m_RenderEnd - m_RenderStart);
+	UpdateDelta = std::chrono::duration_cast<std::chrono::milliseconds>(m_UpdateEnd - m_UpdateStart);
+}
+
+void Engine::OnIMGUIRender()
+{
+	ImGui::Begin("Data");
+	ImGui::Text("Total Elapsed Time : %lf\n", timeElapsed);
+	ImGui::Text("Frame Time : %lf\n", m_FrameTime);
+	ImGui::Text("FPS: %lf", (1.0 / m_FrameTime));
+	ImGui::Text("Render Time (ms): %lf", (RenderDelta.count()));
+	ImGui::Text("Update Time (ms): %lf", (UpdateDelta.count()));
+	ImGui::End();
 }

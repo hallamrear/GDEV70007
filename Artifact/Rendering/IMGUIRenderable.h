@@ -7,6 +7,8 @@ private:
 	static std::vector<IIMGUIRenderable*> m_Instances;
 
 public:
+	static bool DrawIMGUI;
+
 	IIMGUIRenderable();
 	virtual ~IIMGUIRenderable() = 0;
 	virtual void OnIMGUIRender() = 0;

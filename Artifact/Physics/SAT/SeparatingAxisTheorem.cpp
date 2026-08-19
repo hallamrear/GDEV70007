@@ -235,7 +235,7 @@ EdgeQuery SeparatingAxisTheorem::QueryEdge(const ConvexHull& hullA, const glm::m
 	return edgeQuery;
 }
 
-bool SeparatingAxisTheorem::CheckCollision(const Collider& colliderA, const Collider& colliderB, CollisionManifold* manifold)
+bool SeparatingAxisTheorem::CheckCollisionConvexHulls(const Collider& colliderA, const Collider& colliderB, CollisionManifold* manifold)
 {
 	SAT_Result result;
 
@@ -286,7 +286,7 @@ bool SeparatingAxisTheorem::CheckCollision(const Collider& colliderA, const Coll
 	}
 
 	result.EdgeTest = QueryEdge(*hullA, hullAMatrix, *hullB, hullBMatrix);
-	
+
 	if (result.EdgeTest.Distance > SAT_EPSILON)
 	{
 		return false;
@@ -297,6 +297,19 @@ bool SeparatingAxisTheorem::CheckCollision(const Collider& colliderA, const Coll
 		ConstructContactManifold(*manifold, result, *hullA, hullAMatrix, *hullB, hullBMatrix);
 		manifold->Normal = Normalised(manifold->Normal);
 	}
+
+	return true;
+}
+
+bool SeparatingAxisTheorem::CheckCollision(const Collider& colliderA, const Collider& colliderB, CollisionManifold* manifold)
+{
+	if (colliderA.GetType() == COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL || colliderB.GetType() == COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL)
+	{
+		return CheckCollisionConvexHulls(colliderA, colliderB, manifold);
+	}
+
+	//Run standard sat.
+
 
 	return true;
 }

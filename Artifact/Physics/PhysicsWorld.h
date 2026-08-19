@@ -16,7 +16,7 @@ private:
 	static constexpr Vector3 c_Gravity = Vector3(0.0f, -9.81f, 0.0f);
 	static constexpr float c_LinearDamping = 0.98f;
 	static constexpr float c_AngularDamping = 0.98f;
-	static constexpr int c_MaxRigidbodyCount = 1000;
+	static constexpr int c_MaxRigidbodyCount = 10000;
 
 	std::vector<CollisionManifold> m_FrameCollisionManifolds;
 	std::vector<ConstrainedContact> m_FrameConstraintPoints;
@@ -34,20 +34,20 @@ private:
 	void UpdateSleepers();
 	void CleanupPhysicsObjects();
 
-	int m_ResolutionType;
-
 	class OctreeNode* m_OctreeRoot;
 	class SweepAndPrune* m_SweepAndPrune;
 	class SpatialGrid* m_SpatialGrid;
 
 public:
+	int ResolutionType;
+
 	PhysicsWorld();
 	~PhysicsWorld();
 
 	void Initialise(const WORLD_EXAMPLE_SCENE& exampleScene);
 
 	void FixedUpdate();
-	void Update(const float& deltaTime);
+	void Update(const double& deltaTime);
 
 	Rigidbody& GetFreshRigidbody();
 

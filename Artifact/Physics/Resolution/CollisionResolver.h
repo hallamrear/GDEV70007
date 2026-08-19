@@ -36,8 +36,8 @@ public:
 	static void PrepareConstrainedContacts(std::vector<ConstrainedContact>& constrainedContacts);
 
 	static std::vector<Constraint> CalculateConstraints(const std::vector<Jacobian>& jacobians, const std::vector<ConstrainedContact>& contacts);
-	static void ResolveVelocityConstraint(const float& deltaTime, const std::vector<Jacobian>& jacobians, const InverseMassMatrix& inverseMassMatrix, std::vector<Constraint>& constraints, std::vector<ConstrainedContact>& contacts);
-	static void ResolvePositionConstraint(const float& deltaTime, const std::vector<Jacobian>& jacobians, const InverseMassMatrix& inverseMassMatrix, std::vector<Constraint>& constraints, std::vector<ConstrainedContact>& contacts);
+	static void ResolveVelocityConstraint(const double& deltaTime, const std::vector<Jacobian>& jacobians, const InverseMassMatrix& inverseMassMatrix, std::vector<Constraint>& constraints, std::vector<ConstrainedContact>& contacts);
+	static void ResolvePositionConstraint(const double& deltaTime, const std::vector<Jacobian>& jacobians, const InverseMassMatrix& inverseMassMatrix, std::vector<Constraint>& constraints, std::vector<ConstrainedContact>& contacts);
 
 	static void SoftResolveCollision(const CollisionManifold& manifold);
 

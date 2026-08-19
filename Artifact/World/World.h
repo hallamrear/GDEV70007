@@ -25,7 +25,8 @@ enum WORLD_EXAMPLE_SCENE : int
 	WORLD_SPATIAL_GRID = 4,
 	WORLD_SWEEP_AND_PRUNE = 5,
 	WORLD_OCTREE = 6,
-	WORLD_EXAMPLE_SCENE_COUNT = 7
+	WORLD_GJK_EXAMPLE_SPATIAL_GRID = 7,
+	WORLD_EXAMPLE_SCENE_COUNT = 8
 };
 
 static const std::string c_WorldExampleSceneNames[WORLD_EXAMPLE_SCENE_COUNT] =
@@ -45,7 +46,6 @@ private:
 	WORLD_EXAMPLE_SCENE m_CurrentScene;
 	bool m_PendingSceneChange;
 	typedef std::unordered_map<EntityID, Entity*, GUIDHasher> EntityMap;
-	float m_FrameTime;
 
 	PhysicsWorld m_PhysicsWorld;
 
@@ -65,8 +65,7 @@ private:
 	Camera* m_Camera;
 
 public:
-	static Entity* TestBoxA;
-	static Entity* TestBoxB;
+	static Entity* ControlledEntity;
 
 	const bool& IsInitialised() const;
 
@@ -78,7 +77,7 @@ public:
 	Entity* GetEntity(const EntityID& entityID);
 
 	void FixedUpdate();
-	void Update(const float& deltaTime);
+	void Update(const double& deltaTime);
 	void Render(Renderer& renderer);
 
 	// Inherited via IIMGUIRenderable

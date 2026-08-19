@@ -16,11 +16,11 @@ bool CollisionDetection::Use_Dispatch_Table = true;
 CollisionDetection::CollisionFunction CollisionDetection::s_CollisionFunctionArray[COLLIDER_TYPE::COLLIDER_TYPE_COUNT][COLLIDER_TYPE::COLLIDER_TYPE_COUNT] = 
 {
 	/*				Sphere											AABB										 OBB										 Cylinder										 Convex												*/
-	/* Sphere  */ { CollisionDetection::SphereSphereCollision,		CollisionDetection::AABBSphereCollision,	 CollisionDetection::OBBSphereCollision,	 CollisionDetection::CylinderSphereCollision,	 CollisionDetection::ConvexHullSphereCollision		},
-	/* AABB    */ { CollisionDetection::AABBSphereCollision,		CollisionDetection::AABBAABBCollision,		 CollisionDetection::OBBAABBCollision,		 CollisionDetection::CylinderAABBCollision,		 CollisionDetection::ConvexHullAABBCollision		},
-	/* OBB     */ { CollisionDetection::OBBSphereCollision,			CollisionDetection::OBBAABBCollision,		 CollisionDetection::OBBOBBCollision,		 CollisionDetection::CylinderOBBCollision,		 CollisionDetection::ConvexHullOBBCollision			},
-	/* Cylinder */ { CollisionDetection::CylinderSphereCollision,		CollisionDetection::CylinderAABBCollision,	 CollisionDetection::CylinderOBBCollision,	 CollisionDetection::CylinderCylinderCollision,	 CollisionDetection::ConvexHullCylinderCollision		},
-	/* Convex  */ { CollisionDetection::ConvexHullSphereCollision,	CollisionDetection::ConvexHullAABBCollision, CollisionDetection::ConvexHullOBBCollision, CollisionDetection::ConvexHullCylinderCollision, CollisionDetection::ConvexHullConvexHullCollision	}
+	/* Sphere  */  { CollisionDetection::SphereSphereCollision,		CollisionDetection::AABBSphereCollision,	 CollisionDetection::OBBSphereCollision,	 CollisionDetection::CylinderSphereCollision,	 CollisionDetection::ConvexHullSphereCollision		},
+	/* AABB    */  { CollisionDetection::AABBSphereCollision,		CollisionDetection::AABBAABBCollision,		 CollisionDetection::OBBAABBCollision,		 CollisionDetection::CylinderAABBCollision,		 CollisionDetection::ConvexHullAABBCollision		},
+	/* OBB     */  { CollisionDetection::OBBSphereCollision,		CollisionDetection::OBBAABBCollision,		 CollisionDetection::OBBOBBCollision,		 CollisionDetection::CylinderOBBCollision,		 CollisionDetection::ConvexHullOBBCollision			},
+	/* Cylinder */ { CollisionDetection::CylinderSphereCollision,	CollisionDetection::CylinderAABBCollision,	 CollisionDetection::CylinderOBBCollision,	 CollisionDetection::CylinderCylinderCollision,	 CollisionDetection::ConvexHullCylinderCollision		},
+	/* Convex  */  { CollisionDetection::ConvexHullSphereCollision,	CollisionDetection::ConvexHullAABBCollision, CollisionDetection::ConvexHullOBBCollision, CollisionDetection::ConvexHullCylinderCollision, CollisionDetection::ConvexHullConvexHullCollision	}
 };
 
 bool CollisionDetection::DispatchSeperatingAxisTheorem(const Collider* colliderA, const Collider* colliderB, CollisionManifold* manifold)
@@ -191,7 +191,7 @@ bool CollisionDetection::OBBOBBCollision(const Collider* obbColliderA, const Col
 		printf("Collision manifold is valid but not being constructed.\n");
 	}
 
-	return false;
+	return GJK::CheckCollision(*obbColliderA, *obbColliderB, manifold);
 }
 
 bool CollisionDetection::CylinderSphereCollision(const Collider* capsuleCollider, const Collider* sphereCollider, CollisionManifold* manifold)
@@ -248,6 +248,8 @@ bool CollisionDetection::CylinderCylinderCollision(const Collider* capsuleCollid
 
 bool CollisionDetection::ConvexHullSphereCollision(const Collider* convexHullCollider, const Collider* sphereCollider, CollisionManifold* manifold)
 {
+	UNREFERENCED_PARAMETER(convexHullCollider);
+	UNREFERENCED_PARAMETER(sphereCollider);
 	assert(convexHullCollider);
 	assert(sphereCollider);
 
@@ -295,35 +297,36 @@ bool CollisionDetection::ConvexHullConvexHullCollision(const Collider* convexHul
 
 bool CollisionDetection::BroadPhaseCollision(const Collider* colliderA, const Collider* colliderB)
 {
-	Vector3 colliderAPos = colliderA->GetAttachedEntity().GetPosition();
-	Vector3 colliderAExtents = colliderA->GetBoundingVolumeExtents();
-	Vector3 colliderBPos = colliderB->GetAttachedEntity().GetPosition();
-	Vector3 colliderBExtents = colliderB->GetBoundingVolumeExtents();
+	glm::vec3 originA =  { colliderA->GetAttachedEntity().GetPosition().x, colliderA->GetAttachedEntity().GetPosition().y, colliderA->GetAttachedEntity().GetPosition().z };
+	glm::vec3 extentsA = { 
+		colliderA->GetAttachedEntity().GetCollider()->GetBoundingVolumeExtents().x / 2.0f,
+		colliderA->GetAttachedEntity().GetCollider()->GetBoundingVolumeExtents().y / 2.0f,
+		colliderA->GetAttachedEntity().GetCollider()->GetBoundingVolumeExtents().z / 2.0f };
 
-	glm::vec3 max_a = { colliderAPos.x + colliderAExtents.x, colliderAPos.y + colliderAExtents.y, colliderAPos.z + colliderAExtents.z };
-	glm::vec3 min_a = { colliderAPos.x - colliderAExtents.x, colliderAPos.y - colliderAExtents.y, colliderAPos.z - colliderAExtents.z };
+	glm::vec3 maxA = { originA + extentsA };
+	glm::vec3 minA = { originA - extentsA };
 
-	glm::vec3 max_b = { colliderBPos.x + colliderBExtents.x, colliderBPos.y + colliderBExtents.y, colliderBPos.z + colliderBExtents.z };
-	glm::vec3 min_b = { colliderBPos.x - colliderBExtents.x, colliderBPos.y - colliderBExtents.y, colliderBPos.z - colliderBExtents.z };
+	glm::vec3 originB = { colliderB->GetAttachedEntity().GetPosition().x, colliderB->GetAttachedEntity().GetPosition().y, colliderB->GetAttachedEntity().GetPosition().z };
+	glm::vec3 extentsB = {
+		colliderB->GetAttachedEntity().GetCollider()->GetBoundingVolumeExtents().x / 2.0f,
+		colliderB->GetAttachedEntity().GetCollider()->GetBoundingVolumeExtents().y / 2.0f,
+		colliderB->GetAttachedEntity().GetCollider()->GetBoundingVolumeExtents().z / 2.0f };
 
-	// Exit with no intersection if separated along an axis
-	if (max_a[0] < min_b[0] || min_a[0] > max_b[0]) return false;
-	if (max_a[1] < min_b[1] || min_a[1] > max_b[1]) return false;
-	if (max_a[2] < min_b[2] || min_a[2] > max_b[2]) return false;
-	
-	// Overlapping on all axes means AABBs are intersecting
-	return true;
+	glm::vec3 maxB = { originB + extentsB };
+	glm::vec3 minB = { originB - extentsB };
+
+	bool collision = AABBAABBCollision(minA, maxA, minB, maxB);
+
+ 	return collision;
 }
 
 bool CollisionDetection::AABBAABBCollision(const glm::vec3& minA, const glm::vec3& maxA, const glm::vec3& minB, const glm::vec3& maxB)
 {
 	// Exit with no intersection if separated along an axis
-	if (maxA[0] < minB[0] || minA[0] > maxB[0]) return false;
-	if (maxA[1] < minB[1] || minA[1] > maxB[1]) return false;
-	if (maxA[2] < minB[2] || minA[2] > maxB[2]) return false;
-
-	// Overlapping on all axes means AABBs are intersecting
-	return true;
+	return (
+		maxA[0] >= minB[0] && minA[0] <= maxB[0] &&
+		maxA[1] >= minB[1] && minA[1] <= maxB[1] &&
+		maxA[2] >= minB[2] && minA[2] <= maxB[2]);
 }
 
 bool CollisionDetection::CheckNarrowPhaseCollision(const Collider* colliderA, const Collider* colliderB, CollisionManifold* manifold)
@@ -334,22 +337,31 @@ bool CollisionDetection::CheckNarrowPhaseCollision(const Collider* colliderA, co
 
 	if (BroadPhaseCollision(colliderA, colliderB) == false)
 	{
+		if (manifold)
+		{
+			manifold->IsBroadPhaseColliding = false;
+			manifold->IsNarrowPhaseColliding = false;
+		}
+
 		return false;
 	}
 
-	if (Use_Dispatch_Table)
+	bool isNarrowPhaseColliding = false;
+
+	if (colliderB->GetType() <= colliderA->GetType())
 	{
-		if (colliderB->GetType() <= colliderA->GetType())
-		{
-			return s_CollisionFunctionArray[colliderA->GetType()][colliderB->GetType()](colliderA, colliderB, manifold);
-		}
-		else
-		{
-			return s_CollisionFunctionArray[colliderA->GetType()][colliderB->GetType()](colliderB, colliderA, manifold);
-		}
+		isNarrowPhaseColliding = s_CollisionFunctionArray[colliderA->GetType()][colliderB->GetType()](colliderA, colliderB, manifold);
 	}
 	else
 	{
-	return (Use_GJK ? GJK::CheckCollision(*colliderA, *colliderB, manifold) : DispatchSeperatingAxisTheorem(colliderA, colliderB, manifold));
+		isNarrowPhaseColliding = s_CollisionFunctionArray[colliderA->GetType()][colliderB->GetType()](colliderB, colliderA, manifold);
 	}
+
+	if (manifold)
+	{
+		manifold->IsBroadPhaseColliding = true;
+		manifold->IsNarrowPhaseColliding = isNarrowPhaseColliding;
+	}
+
+	return isNarrowPhaseColliding;
 }

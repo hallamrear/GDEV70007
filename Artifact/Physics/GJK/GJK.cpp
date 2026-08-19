@@ -269,15 +269,14 @@ bool GJK::CheckCollision(const Collider& colliderA, const Collider& colliderB, C
 			if (manifold != nullptr)
 			{
 				//Develop collision details using EPA.
-				EPA::ConstructManifold(colliderA, colliderB, simplex, *manifold);
-				printf("1 %f %f %f - %f\n", manifold->Normal.x, manifold->Normal.y, manifold->Normal.z, manifold->ContactPoints[0].Depth);
+				//EPA::ConstructManifold(colliderA, colliderB, simplex, *manifold);
+				//printf("1 %f %f %f - %f\n", manifold->Normal.x, manifold->Normal.y, manifold->Normal.z, manifold->ContactPoints[0].Depth);
 
 				//std::vector<SupportVertex> s = { simplex[0], simplex[1], simplex[2], simplex[3] };
 				
 				manifold->Reset();
 
 				EPA_Result result = EPA::GetCollisionDetails(simplex, colliderA, colliderB, manifold);
-				printf("2 %f %f %f - %f\n", manifold->Normal.x, manifold->Normal.y, manifold->Normal.z, manifold->ContactPoints[0].Depth);
 			}
 
 			return true;

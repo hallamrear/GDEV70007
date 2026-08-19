@@ -12,7 +12,7 @@ PhysicsWorld::PhysicsWorld()
 {
 	m_RigidbodyList = new Rigidbody[c_MaxRigidbodyCount];
 	m_ActiveRigidbodyCount = 0;
-	m_ResolutionType = 1;
+	ResolutionType = 1;
 	m_OctreeRoot = nullptr;
 	m_SweepAndPrune = nullptr;
 	m_SpatialGrid = nullptr;
@@ -49,6 +49,7 @@ void PhysicsWorld::Initialise(const WORLD_EXAMPLE_SCENE& exampleScene)
 {
 	switch (exampleScene)
 	{
+	case WORLD_GJK_EXAMPLE_SPATIAL_GRID:
 	case WORLD_SPATIAL_GRID:
 	{
 		m_SpatialGrid = new SpatialGrid();
@@ -120,14 +121,14 @@ void PhysicsWorld::FixedUpdate()
 	UpdateSleepers();
 	CleanupPhysicsObjects();
 
-	for (size_t i = 0; i < c_MaxRigidbodyCount; i++)
+	for (size_t i = 0; i < m_ActiveRigidbodyCount; i++)
 	{
 		m_RigidbodyList[i].StopMoving();
 		m_RigidbodyList[i].ClearForces();
 	}
 }
 
-void PhysicsWorld::Update(const float& deltaTime)
+void PhysicsWorld::Update(const double& deltaTime)
 {
 	UNREFERENCED_PARAMETER(deltaTime);
 }
@@ -189,7 +190,7 @@ void PhysicsWorld::OnIMGUIRender()
 		ImGui::EndCombo();
 	}
 
-	//ImGui::DragInt("Resolution Type", &m_ResolutionType, 1.0f, 0, 2);
+	//ImGui::DragInt("Resolution Type", &ResolutionType, 1.0f, 0, 2);
 	//ImGui::DragInt("Resolver Iterations", &CollisionResolver::RESOLUTION_ITERATIONS, 1, 1, 100);
 	//ImGui::DragFloat("Air Friction", &CollisionResolver::AIR_FRICTION, 0.01f, 0.0f, 1.0f);
 	//ImGui::DragFloat("Baumgarte", &CollisionResolver::BAUMGARTE_STABILISATION_VALUE, 0.01f, 0.0f, 1.0f);
@@ -203,8 +204,20 @@ void PhysicsWorld::OnIMGUIRender()
 		{
 			for (size_t f = 0; f < m_FrameCollisionManifolds.size(); f++)
 			{
-				ImGui::Text("Body A: %s\n", m_FrameCollisionManifolds[f].CollisionPair.first->GetDisplayName().c_str());
-				ImGui::Text("Body B: %s\n", m_FrameCollisionManifolds[f].CollisionPair.second->GetDisplayName().c_str());
+				if ((m_FrameCollisionManifolds[f].IsBroadPhaseColliding || m_FrameCollisionManifolds[f].IsNarrowPhaseColliding) == false)
+				{
+					continue;
+				}
+
+				ImGui::Separator();
+
+				ImGui::Text("%s vs. %s\n", m_FrameCollisionManifolds[f].CollisionPair.first->GetDisplayName().c_str(), m_FrameCollisionManifolds[f].CollisionPair.second->GetDisplayName().c_str());
+				ImGui::Text("Broad phase collision: %s\n", (m_FrameCollisionManifolds[f].IsBroadPhaseColliding) ? "True" : "False");
+				ImGui::Text("Narrow phase collision: %s\n", (m_FrameCollisionManifolds[f].IsNarrowPhaseColliding) ? "True" : "False");
+
+				if (m_FrameCollisionManifolds[f].IsNarrowPhaseColliding == false)
+					continue;
+
 				ImGui::Text("Normal: %f %f %f", m_FrameCollisionManifolds[f].Normal.x, m_FrameCollisionManifolds[f].Normal.y, m_FrameCollisionManifolds[f].Normal.z);
 
 				if (ImGui::BeginTable("Hit Points", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
@@ -278,7 +291,7 @@ void PhysicsWorld::OnIMGUIRender()
 
 void PhysicsWorld::IntegrateAccelerationAndVelocities()
 {
-	for (size_t i = 0; i < c_MaxRigidbodyCount; i++)
+	for (size_t i = 0; i < m_ActiveRigidbodyCount; i++)
 	{
 		Rigidbody& rb = m_RigidbodyList[i];
 
@@ -315,20 +328,33 @@ void PhysicsWorld::CollectCollisionPairs()
 
 	std::vector<std::pair<Entity*, Entity*>> broadPhaseCollisionPairs;
 
-	if (m_SpatialGrid)
+	if (m_SpatialGrid || m_SweepAndPrune || m_OctreeRoot)
 	{
-		m_SpatialGrid->DetermineCollisionPairs(broadPhaseCollisionPairs);
-	}
+		if (m_SpatialGrid)
+		{
+			m_SpatialGrid->DetermineCollisionPairs(broadPhaseCollisionPairs);
+		}
 
-	if (m_SweepAndPrune)
+		if (m_SweepAndPrune)
+		{
+			m_SweepAndPrune->DetermineCollisionPairs(broadPhaseCollisionPairs);
+		}
+
+		//if (m_OctreeRoot)
+		//{
+		//	m_OctreeRoot->DetermineCollisionPairs(broadPhaseCollisionPairs);
+		//}
+	}
+	else
 	{
-		m_SweepAndPrune->DetermineCollisionPairs(broadPhaseCollisionPairs);
+		for (size_t i = 0; i < m_ActiveRigidbodyCount; i++)
+		{
+			for (size_t j = i + 1; j < m_ActiveRigidbodyCount; j++)
+			{
+				broadPhaseCollisionPairs.push_back({ m_RigidbodyList[i].GetEntity(), m_RigidbodyList[j].GetEntity() });
+			}
+		}
 	}
-
-	//if (m_OctreeRoot)
-	//{
-	//	m_OctreeRoot->DetermineCollisionPairs(broadPhaseCollisionPairs);
-	//}
 
 	for (size_t i = 0; i < broadPhaseCollisionPairs.size(); i++)
 	{
@@ -337,28 +363,26 @@ void PhysicsWorld::CollectCollisionPairs()
 		entityA = pair.first;
 		entityB = pair.second;
 		
+		if (entityA->GetCollider() == nullptr || entityB->GetCollider() == nullptr)
+		{
+			continue;
+		}
+
 		manifold.Reset();
 
-		bool collision = CollisionDetection::CheckNarrowPhaseCollision(entityA->GetCollider(), entityB->GetCollider(), &manifold);
+		CollisionDetection::CheckNarrowPhaseCollision(entityA->GetCollider(), entityB->GetCollider(), &manifold);
 
-		if (collision)
-		{
-			manifold.CollisionPair.first = entityA;
-			manifold.CollisionPair.second = entityB;
-			m_FrameCollisionManifolds.push_back(manifold);
-		}
+		manifold.CollisionPair.first = entityA;
+		manifold.CollisionPair.second = entityB;
+		m_FrameCollisionManifolds.push_back(manifold);
 	}
-
-
-
-
 }
  
 void PhysicsWorld::SolveConstaints()
 {
 	if (m_FrameCollisionManifolds.size() > 0)
 	{
-		switch (m_ResolutionType)
+		switch (ResolutionType)
 		{
 		case 1:
 		{
@@ -393,7 +417,7 @@ void PhysicsWorld::SolveConstaints()
 
 void PhysicsWorld::IntergratePositions()
 {
-	for (size_t i = 0; i < c_MaxRigidbodyCount; i++)
+	for (size_t i = 0; i < m_ActiveRigidbodyCount; i++)
 	{
 		Rigidbody& rb = m_RigidbodyList[i];
 		if (rb.GetInverseMass() <= FLT_EPSILON || rb.IsSleeping || rb.IsStatic || (rb.IsActive == false))

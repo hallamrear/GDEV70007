@@ -180,19 +180,19 @@ public:
 
 	~ConvexHull()
 	{
-		if (m_VertexBuffer)
+		if (m_VertexBuffer != nullptr)
 		{
 			delete[] m_VertexBuffer;
 			m_VertexBuffer = nullptr;
 		}
 
-		if (m_EdgeBuffer)
+		if (m_EdgeBuffer != nullptr)
 		{
 			delete[] m_EdgeBuffer;
 			m_EdgeBuffer = nullptr;
 		}
 
-		if (m_FaceBuffer)
+		if (m_FaceBuffer != nullptr)
 		{
 			delete[] m_FaceBuffer;
 			m_FaceBuffer = nullptr;

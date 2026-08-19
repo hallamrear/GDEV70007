@@ -47,8 +47,9 @@ class SpatialGrid : public BroadPhase
 {
 private:
 	static SPATIAL_GRID_DRAW_MODE  m_DrawMode;
-	static constexpr float c_GridCellSize = 16.0f;
+	static constexpr float c_GridCellSize = 32.0f;
 	static ModelRef m_GridCellModel;
+	int m_EntityCount;
 	int m_CollisionPairsThisFrame;
 	GridStorageType m_GridMap;
 	GridIndex GetIndexFromPosition(const glm::vec3& position);

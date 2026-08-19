@@ -513,7 +513,7 @@ bool DX12Renderer::ResizeSwapchain(const int& newWidth, const int& newHeight)
     DestroyDepthStencilBuffer();
 
     //Passing unknown format to retain the same format as the current buffers.
-    HRESULT result = m_SwapChain->ResizeBuffers(m_SwapChainBufferCount, newWidth, newHeight, DXGI_FORMAT::DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG::DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
+    HRESULT result = m_SwapChain->ResizeBuffers(m_SwapChainBufferCount, newWidth, newHeight, DXGI_FORMAT::DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG::DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING);
 
     if (FAILED(result))
     {
@@ -967,7 +967,8 @@ HRESULT DX12Renderer::CreateSwapChain()
     if (m_DXGIFactory == nullptr || m_CommandQueue == nullptr)
         return E_POINTER;
 
-    DXGI_SWAP_CHAIN_FLAG swapChainFlags = DXGI_SWAP_CHAIN_FLAG::DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+    //DXGI_SWAP_CHAIN_FLAG swapChainFlags = DXGI_SWAP_CHAIN_FLAG::DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+    DXGI_SWAP_CHAIN_FLAG swapChainFlags = DXGI_SWAP_CHAIN_FLAG::DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 
     RECT rect{};
     GetClientRect(m_WindowHandle, &rect);
@@ -2328,7 +2329,8 @@ void DX12Renderer::PresentFrame()
         ImGui::RenderPlatformWindowsDefault();
     }
 
-    HRESULT hr = m_SwapChain->Present(0, 0);
+    UINT presentFlags = DXGI_PRESENT_ALLOW_TEARING;
+    HRESULT hr = m_SwapChain->Present(0, presentFlags);
 
     if (FAILED(hr))
     {

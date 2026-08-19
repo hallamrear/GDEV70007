@@ -309,7 +309,7 @@ const ModelRef& Entity::GetModel() const
 	return m_Model;
 }
 
-void Entity::Update(const float& deltaTime)
+void Entity::Update(const double& deltaTime)
 {
 	UNREFERENCED_PARAMETER(deltaTime);
 

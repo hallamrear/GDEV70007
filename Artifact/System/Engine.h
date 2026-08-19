@@ -5,13 +5,19 @@ class World;
 class Renderer;
 class AssetManager;
 
-class Engine
+class Engine : IIMGUIRenderable
 {
 private:
+	std::chrono::steady_clock::time_point m_RenderStart;
+	std::chrono::steady_clock::time_point m_RenderEnd;
+	std::chrono::steady_clock::time_point m_UpdateStart;
+	std::chrono::steady_clock::time_point m_UpdateEnd;
+
 	static std::filesystem::path m_ContentFolderLocation;
 	static std::filesystem::path m_ExecutableLocation;
 	bool m_IsInitialised;
 	bool m_IsRunning;
+	double m_FrameTime;
 
 	InputListener m_InputListener;
 	AssetManager* m_AssetManager;
@@ -24,6 +30,9 @@ private:
 	bool InitialiseSubsystems(HWND windowHandle, const std::filesystem::path& contentFolderLocation);
 
 public:
+	static std::chrono::duration<long double> UpdateDelta;
+	static std::chrono::duration<long double> RenderDelta;
+
 	static Engine* CreateEngine(HWND windowHandle, const std::filesystem::path& contentFolderLocation);
 	static bool DestroyEngine(Engine* engine);
 
@@ -36,7 +45,10 @@ public:
 	LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 	void FixedUpdate();
-	void Update(const float& deltaTime);
+	void Update(const double& deltaTime);
 	void Render();
+	void CalculateTimings();
+
+	void OnIMGUIRender() override;
 };
 

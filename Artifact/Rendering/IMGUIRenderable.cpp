@@ -2,6 +2,7 @@
 #include <Rendering/IMGUIRenderable.h>
 
 std::vector<IIMGUIRenderable*> IIMGUIRenderable::m_Instances = std::vector<IIMGUIRenderable*>();
+bool IIMGUIRenderable::DrawIMGUI = true;
 
 IIMGUIRenderable::IIMGUIRenderable()
 {
@@ -15,6 +16,11 @@ IIMGUIRenderable::~IIMGUIRenderable()
 
 void IIMGUIRenderable::RenderAllIMGUIInstances()
 {
+	if (DrawIMGUI == false)
+	{
+		return;
+	}
+
 	size_t instanceCount = m_Instances.size();
 	for (size_t i = 0; i < instanceCount; i++)
 	{

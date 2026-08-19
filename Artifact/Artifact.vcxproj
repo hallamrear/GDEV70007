@@ -200,6 +200,12 @@
       <DeploymentContent>true</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       </DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </DeploymentContent>
     </ClInclude>
     <ClInclude Include="Physics\EPA\EPA.h">
       <DeploymentContent>true</DeploymentContent>
@@ -463,6 +469,9 @@
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Content\Pyramid.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="Content\Sea.glb">
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Content\Suzanne.glb">

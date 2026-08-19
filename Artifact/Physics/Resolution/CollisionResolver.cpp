@@ -258,7 +258,7 @@ std::vector<Constraint> CollisionResolver::CalculateConstraints(const std::vecto
 	return constraints;
 }
 
-void CollisionResolver::ResolveVelocityConstraint(const float& deltaTime, const std::vector<Jacobian>& jacobians, const InverseMassMatrix& inverseMassMatrix, std::vector<Constraint>& constraints, std::vector<ConstrainedContact>& contacts)
+void CollisionResolver::ResolveVelocityConstraint(const double& deltaTime, const std::vector<Jacobian>& jacobians, const InverseMassMatrix& inverseMassMatrix, std::vector<Constraint>& constraints, std::vector<ConstrainedContact>& contacts)
 {
 	UNREFERENCED_PARAMETER(deltaTime);
 
@@ -359,7 +359,7 @@ void CollisionResolver::ResolveVelocityConstraint(const float& deltaTime, const 
 	}
 }
 
-void CollisionResolver::ResolvePositionConstraint(const float& deltaTime, const std::vector<Jacobian>& jacobians, const InverseMassMatrix& inverseMassMatrix, std::vector<Constraint>& constraints, std::vector<ConstrainedContact>& contacts)
+void CollisionResolver::ResolvePositionConstraint(const double& deltaTime, const std::vector<Jacobian>& jacobians, const InverseMassMatrix& inverseMassMatrix, std::vector<Constraint>& constraints, std::vector<ConstrainedContact>& contacts)
 {
 	for (size_t itr = 0; itr < RESOLUTION_ITERATIONS; itr++)
 	{
@@ -390,7 +390,7 @@ void CollisionResolver::ResolvePositionConstraint(const float& deltaTime, const 
 			//Integrating angular velocity.
 			glm::quat rotation_A = { contact.BodyA->Rotation.x, contact.BodyA->Rotation.y, contact.BodyA->Rotation.z, contact.BodyA->Rotation.w };
 			glm::quat angularImpulseQuat_A = glm::quat(angularImpulse_A.x, angularImpulse_A.y, angularImpulse_A.z, 0.0f);
-			rotation_A = glm::normalize(rotation_A + (angularImpulseQuat_A * rotation_A * 0.5f * deltaTime));
+			rotation_A = glm::normalize(rotation_A + (angularImpulseQuat_A * rotation_A * 0.5f * (float)deltaTime));
 			contact.BodyA->Rotation = { rotation_A.x, rotation_A.y, rotation_A.z, rotation_A.w };
 
 			//bodyB impulses
@@ -404,7 +404,7 @@ void CollisionResolver::ResolvePositionConstraint(const float& deltaTime, const 
 			//Integrating angular velocity.
 			glm::quat rotation_B = { contact.BodyB->Rotation.x, contact.BodyB->Rotation.y, contact.BodyB->Rotation.z, contact.BodyB->Rotation.w };
 			glm::quat angularImpulseQuat_B = glm::quat(angularImpulse_B.x, angularImpulse_B.y, angularImpulse_B.z, 0.0f);
-			rotation_B = glm::normalize(rotation_B + (angularImpulseQuat_B * rotation_B * 0.5f * deltaTime));
+			rotation_B = glm::normalize(rotation_B + (angularImpulseQuat_B * rotation_B * 0.5f * (float)deltaTime));
 			contact.BodyB->Rotation = { rotation_B.x, rotation_B.y, rotation_B.z, rotation_B.w };
 
 			constraint.PositionalError = DetermineVelocityConstraint(contact, jacobian.Vector);

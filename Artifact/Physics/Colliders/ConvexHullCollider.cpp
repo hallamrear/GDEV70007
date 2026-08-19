@@ -8,6 +8,7 @@ ConvexHullCollider::ConvexHullCollider(const Entity& entity, const ModelRef& mod
 {
 	assert(modelRef);
 	m_ColliderModel = modelRef;
+	m_ConvexHull = m_ColliderModel->GetMeshes()[0]->GetConvexHull();
 
 	m_Size.x = (m_ColliderModel->GetMeshes()[0]->GetMaxVertexLocalSpace().x - m_ColliderModel->GetMeshes()[0]->GetMinVertexLocalSpace().x);
 	m_Size.y = (m_ColliderModel->GetMeshes()[0]->GetMaxVertexLocalSpace().y - m_ColliderModel->GetMeshes()[0]->GetMinVertexLocalSpace().y);

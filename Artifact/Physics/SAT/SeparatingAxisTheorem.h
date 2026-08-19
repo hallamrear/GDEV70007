@@ -77,6 +77,8 @@ private:
 	static FaceQuery QueryFace(const ConvexHull& hullA, const glm::mat4x4& hullAMatrix, const ConvexHull& hullB, const glm::mat4x4& hullBMatrix);
 	static EdgeQuery QueryEdge(const ConvexHull& hullA, const glm::mat4x4& hullAMatrix, const ConvexHull& hullB, const glm::mat4x4& hullBMatrix);
 
+	static bool CheckCollisionConvexHulls(const Collider& colliderA, const Collider& colliderB, CollisionManifold* manifold);
+
 public:
 	static bool CheckCollision(const Collider& colliderA, const Collider& colliderB, CollisionManifold* manifold = nullptr);
 };
