@@ -435,5 +435,6 @@
     <None Include="Content\TinyCube.glb" />
     <None Include="Content\LongTrain.glb" />
     <None Include="Content\Ambulance.glb" />
+    <None Include="Content\PirateShip.glb" />
   </ItemGroup>
 </Project>

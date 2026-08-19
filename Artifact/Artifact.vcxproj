@@ -198,6 +198,8 @@
     <ClInclude Include="Physics\Colliders\OBBCollider.h" />
     <ClInclude Include="Physics\Structures.h">
       <DeploymentContent>true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </DeploymentContent>
     </ClInclude>
     <ClInclude Include="Physics\EPA\EPA.h">
       <DeploymentContent>true</DeploymentContent>
@@ -452,6 +454,9 @@
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Content\LongTrain.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="Content\PirateShip.glb">
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Content\police.glb">

@@ -186,6 +186,9 @@ public:
 	void PresentFrame();
 	void RenderIMGUIFrame();
 
+	void SetIsCameraPerspective(const bool& state);
+	bool IsCameraPerpsective() const;
+
 	// Inherited via IIMGUIRenderable
 	void OnIMGUIRender() override;
 };

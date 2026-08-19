@@ -22,10 +22,12 @@ protected:
 	ConstantBuffer m_ConstantBuffer;
 	PushConstants m_PushConstants;
 
+
 	static const enum TEXTURE_FORMAT m_BackbufferFormat;
 	static const enum TEXTURE_FORMAT m_DepthStencilBufferFormat;
 	static const int m_SwapChainBufferCount;
 
+	bool m_IsPerspective;
 	bool m_IsInitialised;
 	int m_WindowWidth;
 	int m_WindowHeight;
@@ -95,6 +97,9 @@ public:
 	virtual bool UpdateConstantBuffer() = 0;
 	virtual void UploadPushConstants() = 0;
 	PushConstants& GetPushConstants();
+
+	virtual void SetIsCameraPerspective(const bool& state) = 0;
+	virtual bool IsCameraPerpsective() const = 0;
 
 	Camera& GetCamera();
 	LightBuffer& GetLightData();

@@ -31,14 +31,14 @@ void AssetManager::OnIMGUIRender()
 	TextureMap::iterator textureItr = m_TextureMap.begin();
 	while (textureItr != m_TextureMap.end())
 	{
-		TextureRef ref = GetTexture(textureItr->first);
-
 		if (textureItr->second.expired())
 		{
 			printf("Invalid texture reference in the map.\n");
 			textureItr++;
 			continue;
 		}
+
+		TextureRef ref = GetTexture(textureItr->first);
 
 		const char* name = ref->GetDisplayName().c_str();
 
@@ -66,6 +66,12 @@ void AssetManager::OnIMGUIRender()
 
 			while (modelItr != m_ModelMap.end())
 			{
+				if (modelItr->second.expired())
+				{
+					modelItr++;
+					continue;
+				}
+
 				ModelRef ref = GetModel(modelItr->first);
 				int meshCount = (int)ref->GetMeshes().size();
 

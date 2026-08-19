@@ -1,7 +1,8 @@
 #pragma once
 #include <DirectXMath.h>
+#include <Rendering/IMGUIRenderable.h>
 
-class Camera
+class Camera : public IIMGUIRenderable
 {
 private:
 	Vector3 m_Translation;
@@ -31,5 +32,8 @@ public:
 	void SetPosition(const Vector3& position);
 
 	const DirectX::XMFLOAT4X4 GetViewMatrix() const;
+
+	// Inherited via IIMGUIRenderable
+	void OnIMGUIRender() override;
 };
 

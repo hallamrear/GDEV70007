@@ -20,6 +20,7 @@ Renderer::Renderer()
 	m_WindowHeight = 0;
 	m_IsInitialised = false;
 	m_WindowHandle = NULL;
+	m_IsPerspective = true;
 }
 
 Renderer::~Renderer()

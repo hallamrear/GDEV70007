@@ -701,7 +701,7 @@ void DX12Renderer::Render(const ConvexHull& hull, const ModelRef& model, const M
     DirectX::XMStoreFloat4x4(&finalWorld, DirectX::XMLoadFloat4x4(&worldMatrix));
     DirectX::XMStoreFloat4x4(&m_PushConstants.World, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&finalWorld)));
     
-    for (int t = 0; t < (int)TEXTURE_TYPE_SLOT::TEXTURE_TYPE_COUNT; t++)
+    for (int t = 0; t < model->GetMeshes()[0]->GetTextures().size(); t++)
     {
         TextureRef texture = model->GetMeshes()[0]->GetTextures()[t];
         AssignTextureToTextureSlot((TEXTURE_TYPE_SLOT)t, texture);
@@ -1283,11 +1283,29 @@ HRESULT DX12Renderer::UpdateViewportAndScissorRect()
     m_ScissorRect.right = m_WindowWidth;
     m_ScissorRect.bottom = m_WindowHeight;
 
-    float aspectRatio = (float)m_WindowWidth / (float)m_WindowHeight;    
-    float fovRadians = m_ProjectionFOV * DEGREES_TO_RADIANS;
-    DirectX::XMStoreFloat4x4(&m_ProjectionMatrix, DirectX::XMMatrixTranspose(DirectX::XMMatrixPerspectiveFovLH(fovRadians, aspectRatio, DEFAULT_NEAR_PLANE, DEFAULT_FAR_PLANE)));
+    if (m_IsPerspective)
+    {
+        float aspectRatio = (float)m_WindowWidth / (float)m_WindowHeight;
+        float fovRadians = m_ProjectionFOV * DEGREES_TO_RADIANS;
+        DirectX::XMStoreFloat4x4(&m_ProjectionMatrix, DirectX::XMMatrixTranspose(DirectX::XMMatrixPerspectiveFovLH(fovRadians, aspectRatio, DEFAULT_NEAR_PLANE, DEFAULT_FAR_PLANE)));
+    }
+    else
+    {
+        DirectX::XMStoreFloat4x4(&m_ProjectionMatrix, DirectX::XMMatrixTranspose(DirectX::XMMatrixOrthographicLH((float)m_WindowWidth, (float)m_WindowHeight, DEFAULT_NEAR_PLANE, DEFAULT_FAR_PLANE)));
+    }
 
     return S_OK;
+}
+
+void DX12Renderer::SetIsCameraPerspective(const bool& state)
+{
+    m_IsPerspective = state;
+    UpdateViewportAndScissorRect();
+}
+
+bool DX12Renderer::IsCameraPerpsective() const
+{
+    return m_IsPerspective;
 }
 
 HRESULT DX12Renderer::FlushCommandQueue()
@@ -1754,7 +1772,7 @@ HRESULT DX12Renderer::CreateGraphicsPipelines()
     }
 
     pipelineStateDesc.RasterizerState.FillMode = D3D12_FILL_MODE::D3D12_FILL_MODE_WIREFRAME;
-    pipelineStateDesc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_BACK;
+    pipelineStateDesc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_NONE;
     result = m_Device->CreateGraphicsPipelineState(&pipelineStateDesc, IID_PPV_ARGS(&m_DebugDrawPipeline));
 
     if (FAILED(result))

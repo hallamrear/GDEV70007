@@ -94,3 +94,27 @@ const Matrix4x4 Camera::GetViewMatrix() const
 	DirectX::XMStoreFloat4x4(&view, DirectX::XMMatrixInverse(nullptr, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&m_WorldMatrix))));
 	return view;
 }
+
+void Camera::OnIMGUIRender()
+{
+	ImGui::Begin("World");
+
+	if (ImGui::CollapsingHeader("Camera"))
+	{
+		if (ImGui::Button("Reset Direction"))
+		{
+			m_Rotation = { 0.0f, 0.0f, 0.0f };
+			UpdateTransformMatrix();
+		}
+
+		if (ImGui::Button("Reset Position"))
+		{
+			SetPosition({ 0.0f, 0.0f, 0.0f });
+		}
+
+		ImGui::InputFloat3("Position", &m_Translation.x);
+		ImGui::InputFloat3("Rotation (Euler)", &m_Rotation.x);
+	}
+
+	ImGui::End();
+}

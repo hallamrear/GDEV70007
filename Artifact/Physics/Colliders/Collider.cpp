@@ -94,17 +94,17 @@ void Collider::SetColliderModel(const COLLIDER_TYPE& colliderType)
 		m_BroadPhaseTexture = assetManager->GetTexture("BroadPhaseCollider");
 	}
 
-	m_ColliderModel->GetMeshes()[0]->GetTextures().resize(3);
-
-	if (m_BroadPhaseTexture)
-	{
-		m_ColliderModel->GetMeshes()[0]->GetTextures()[1] = m_BroadPhaseTexture;
-	}
-	
-	if (m_NarrowPhaseTexture)
-	{
-		m_ColliderModel->GetMeshes()[0]->GetTextures()[2] = m_NarrowPhaseTexture;
-	}
+	//m_ColliderModel->GetMeshes()[0]->GetTextures().resize(3);
+	//
+	//if (m_BroadPhaseTexture)
+	//{
+	//	m_ColliderModel->GetMeshes()[0]->GetTextures()[1] = m_BroadPhaseTexture;
+	//}
+	//
+	//if (m_NarrowPhaseTexture)
+	//{
+	//	m_ColliderModel->GetMeshes()[0]->GetTextures()[2] = m_NarrowPhaseTexture;
+	//}
 }
 
 const Vector3& Collider::GetSize() const

@@ -101,7 +101,7 @@ bool World::Initialise()
 	//r_z = (rand() % 100) / 100.0f;
 	//TestBoxB->Rotate(Vector3(r_x * 360.0f, r_y * 360.0f, r_z * 360.0f));
 
-	static ModelRef modelList[] =
+	ModelRef modelList[] =
 	{
 		ServiceLocator::Locate<AssetManager>()->GetModel("Suzanne.glb"),
 		ServiceLocator::Locate<AssetManager>()->GetModel("TestCar.glb"),
@@ -115,15 +115,16 @@ bool World::Initialise()
 		break;
 	case WORLD_COLLIDER_EXAMPLE:
 	{
-		float gap = 7.0f;
-		position = Vector3(-gap * trunc((float)COLLIDER_TYPE::COLLIDER_TYPE_COUNT / 2.0f), -3.0f, 0.0f);
+		ModelRef ship = ServiceLocator::Locate<AssetManager>()->GetModel("PirateShip.glb");
+		float gap = 30.0f;
+		position = Vector3(-gap * trunc((float)COLLIDER_TYPE::COLLIDER_TYPE_COUNT / 2.0f), -40.0f, 100.0f);
 
 		Entity* entity = nullptr;
 		for (size_t i = 0; i < COLLIDER_TYPE::COLLIDER_TYPE_COUNT; i++)
 		{
 			std::string str = "Collider Type : " + c_ColliderTypeNames[i];
 			entity = CreateEntity(str);
-			entity->SetModel(modelList[1]);
+			entity->SetModel(ship);
 			 
 			entity->AddColliderFromModel((COLLIDER_TYPE)i);
 			position.x += gap;
@@ -136,7 +137,7 @@ bool World::Initialise()
 		}
 
 		int count = 7;
-		position = Vector3(-gap * trunc(count / 2.0f), 3.0f, 0.0f);
+		position = Vector3(-gap * trunc(count / 2.0f), 40.0f, 0.0f);
 		float rotStep = 360.0f / count;
 		float angle = 0.0f;
 
@@ -144,7 +145,7 @@ bool World::Initialise()
 		{
 			std::string str = "Rotation : " + std::to_string(angle);
 			entity = CreateEntity(str);
-			entity->SetModel(modelList[1]);
+			entity->SetModel(ship);
 
 			entity->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_OBB);
 			entity->Rotate(Vector3(0.0f, angle, 0.0f));
@@ -379,6 +380,12 @@ void World::OnIMGUIRender()
 	ImGui::End();
 
 	ImGui::Begin("World");
+
+	//bool perspective = ServiceLocator::Locate<Renderer>()->IsCameraPerpsective();
+	//if (ImGui::Checkbox("Camera Perspective", &perspective))
+	//{
+	//	ServiceLocator::Locate<Renderer>()->SetIsCameraPerspective(perspective);
+	//}
 
 	ImGui::Text("Current Demo Scene: %s\n", c_WorldExampleSceneNames[(int)m_CurrentScene].c_str());
 
