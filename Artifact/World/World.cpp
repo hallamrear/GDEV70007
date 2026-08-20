@@ -12,7 +12,7 @@
 
 //Temporary stuff.
 Entity* World::ControlledEntity = nullptr;
-const int c_TestCount = 8000;
+const int World::c_TestCount = 10000;
 
 const bool& World::IsInitialised() const
 {
@@ -697,4 +697,14 @@ void World::Render(Renderer& renderer)
 			entity.second->Render(renderer);
 		}
 	}
+}
+
+const WORLD_EXAMPLE_SCENE& World::GetCurrentScene() const
+{
+	return m_CurrentScene;
+}
+
+std::string World::GetExtraDetails()
+{
+	return m_PhysicsWorld.GetExtraDetailsString();
 }

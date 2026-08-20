@@ -1,10 +1,11 @@
 #pragma once
 #include <Physics/Colliders/AABBCollider.h>
+#include <Physics/Optimisations/BroadPhase.h>
 #include <vector>
 
 class Renderer;
 
-class OctreeNode
+class OctreeNode : public BroadPhase
 {
 private:
 	static constexpr int c_ChildCount = 8;
@@ -29,10 +30,14 @@ public:
 	~OctreeNode();
 
 	const bool& HasSplit() const;
-	void AddEntity(const std::vector<Entity*>& entitiesToAdd);
 	static void Render(Renderer& renderer, OctreeNode* root);
-	void RenderIMGUIDetails();
 	static OctreeNode* BuildOctree(OctreeNode* parent, const Vector3& centre, const float& halfWidth, const int& depth);
 	static void DestroyOctree(OctreeNode* root);
+
+	bool DetermineCollisionPairs(std::vector<std::pair<Entity*, Entity*>>& collisionPairs) override;
+	bool AddObject(Entity* entity) override;
+	void RenderIMGUIDetails() override;
+	void Render(Renderer& renderer) override;
+	virtual std::string GetBroadPhaseStatsString() override;
 };
 

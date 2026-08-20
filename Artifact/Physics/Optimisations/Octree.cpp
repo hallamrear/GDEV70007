@@ -37,6 +37,18 @@ void OctreeNode::DestroyOctree(OctreeNode* root)
 	throw new std::exception("Not Implemented");
 }
 
+bool OctreeNode::DetermineCollisionPairs(std::vector<std::pair<Entity*, Entity*>>& collisionPairs)
+{
+	UNREFERENCED_PARAMETER(collisionPairs);
+	return false;
+}
+
+bool OctreeNode::AddObject(Entity* entity)
+{
+	UNREFERENCED_PARAMETER(entity);
+	return false;
+}
+
 OctreeNode::OctreeNode(OctreeNode* parent, const Vector3& centre, const float& halfWidth, const int& depth) : m_Depth(depth), m_Parent(parent)
 {
 	m_Centre = centre;
@@ -72,11 +84,6 @@ OctreeNode::~OctreeNode()
 const bool& OctreeNode::HasSplit() const
 {
 	return m_HasSplit;
-}
-
-void OctreeNode::AddEntity(const std::vector<Entity*>& entitiesToAdd)
-{
-	UNREFERENCED_PARAMETER(entitiesToAdd);
 }
 
 bool OctreeNode::SplitNode(const std::vector<Entity*>& entitiesToSort)
@@ -132,4 +139,14 @@ void OctreeNode::Render(Renderer& renderer, OctreeNode* root)
 void OctreeNode::RenderIMGUIDetails()
 {
 
+}
+
+void OctreeNode::Render(Renderer& renderer)
+{
+	UNREFERENCED_PARAMETER(renderer);
+}
+
+std::string OctreeNode::GetBroadPhaseStatsString()
+{
+	return std::string();
 }

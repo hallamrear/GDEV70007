@@ -62,5 +62,7 @@ public:
 	bool AddObject(Entity* entity) override;
 	void RenderIMGUIDetails() override;
 	void Render(Renderer& renderer) override;
+
+	std::string GetBroadPhaseStatsString() override;
 };
 

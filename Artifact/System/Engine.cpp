@@ -5,6 +5,8 @@
 #include <World/World.h>
 #include <Physics/Rigidbody.h>
 #include <World/Entity.h>
+#include <time.h>
+#include <filesystem>
 
 std::filesystem::path Engine::m_ContentFolderLocation = std::filesystem::path();
 std::filesystem::path Engine::m_ExecutableLocation = std::filesystem::path();
@@ -21,6 +23,8 @@ Engine::Engine()
 	m_AssetManager = nullptr;
 	m_IsRunning = false;
 	m_FrameTime = 0.0f;
+	m_SampleFramesRemaining = -1;
+	m_SampleFrameData = {};
 }
 
 Engine::~Engine()
@@ -90,6 +94,8 @@ bool Engine::InitialiseSubsystems(HWND windowHandle, const std::filesystem::path
 		m_Renderer->PostAssetInitialisation();
 		InputListener::EnableControllerSupport(true);
 	}
+
+	m_SampleFrameData = {};
 
 	return m_IsInitialised;
 }
@@ -358,17 +364,107 @@ void Engine::Render()
 
 void Engine::CalculateTimings()
 {
-	RenderDelta = std::chrono::duration_cast<std::chrono::milliseconds>(m_RenderEnd - m_RenderStart);
-	UpdateDelta = std::chrono::duration_cast<std::chrono::milliseconds>(m_UpdateEnd - m_UpdateStart);
+	RenderDelta = std::chrono::duration_cast<std::chrono::nanoseconds>(m_RenderEnd - m_RenderStart);
+	UpdateDelta = std::chrono::duration_cast<std::chrono::nanoseconds>(m_UpdateEnd - m_UpdateStart);
+
+	if (m_SampleSetsRemaining > 0)
+	{
+		if (TimeBetweenSamples > 0.0f)
+		{
+			TimeBetweenSamples -= (float)m_FrameTime;
+			return;
+		}
+
+		if (m_SampleFramesRemaining > 0)
+		{
+			m_SampleFrameData.push_back(std::make_pair(m_FrameTime, std::make_pair(RenderDelta.count(), UpdateDelta.count())));
+			m_SampleFramesRemaining--;
+		}
+		else if (m_SampleFramesRemaining == 0)
+		{
+			std::time_t currentTime = std::time(nullptr);
+			std::tm localTime;
+			localtime_s(&localTime, &currentTime);
+
+			char buffer[256];
+			asctime_s(&buffer[0], 256, &localTime);
+
+			std::filesystem::create_directories(c_WorldExampleSceneNames[m_World->GetCurrentScene()]);
+			std::filesystem::create_directories(c_WorldExampleSceneNames[m_World->GetCurrentScene()] + "//Data//" + std::to_string(m_World->c_TestCount));
+
+			std::string name = c_WorldExampleSceneNames[m_World->GetCurrentScene()];
+			name += "//Details.txt";
+
+			if (std::filesystem::exists(name) == false)
+			{
+				std::fstream details(name.c_str(), std::fstream::trunc | std::fstream::out);
+
+				if (details.is_open())
+				{
+					details << m_World->GetExtraDetails();
+				}
+
+				details.close();
+			}
+
+			name = c_WorldExampleSceneNames[m_World->GetCurrentScene()];
+			name += "//Data//";
+			name += std::to_string(m_World->c_TestCount);
+			name += "//";
+			name += std::to_string(currentTime);
+			name += ".txt";
+
+			std::fstream file(name.c_str(), std::fstream::trunc | std::fstream::out);
+
+			if (file.is_open())
+			{
+				for (size_t i = 0; i < m_SampleFrameData.size(); i++)
+				{
+					file << m_SampleFrameData[i].first << ", " << m_SampleFrameData[i].second.first << ", " << m_SampleFrameData[i].second.second << "," << std::endl;
+				}
+			}
+
+			file.close();
+
+			m_SampleFrameData.clear();
+			m_SampleFramesRemaining = 100;
+			m_SampleSetsRemaining--;
+			TimeBetweenSamples = 0.5f;
+		}
+	}
 }
 
 void Engine::OnIMGUIRender()
 {
 	ImGui::Begin("Data");
+
+
+	bool disabled = m_SampleSetsRemaining > 0;
+
+	if (disabled)
+	{
+		ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+	}
+
+	if (ImGui::Button("Start Samples"))
+	{
+		m_SampleFrameData.clear();
+		m_SampleFramesRemaining = 100;
+		m_SampleSetsRemaining = 10;
+		TimeBetweenSamples = 0.5f;
+	}
+
+	if (disabled)
+	{
+		ImGui::PopItemFlag();
+		ImGui::PopStyleVar();
+	}
+
 	ImGui::Text("Total Elapsed Time : %lf\n", timeElapsed);
 	ImGui::Text("Frame Time : %lf\n", m_FrameTime);
 	ImGui::Text("FPS: %lf", (1.0 / m_FrameTime));
-	ImGui::Text("Render Time (ms): %lf", (RenderDelta.count()));
-	ImGui::Text("Update Time (ms): %lf", (UpdateDelta.count()));
+	ImGui::Text("Render Time (s): %lf", (RenderDelta.count()));
+	ImGui::Text("Update Time (s): %lf", (UpdateDelta.count()));
 	ImGui::End();
 }

@@ -55,6 +55,8 @@ public:
 
 	void Render(Renderer& renderer);
 
+	std::string GetExtraDetailsString();
+
 	// Inherited via IIMGUIRenderable
 	void OnIMGUIRender() override;
 };

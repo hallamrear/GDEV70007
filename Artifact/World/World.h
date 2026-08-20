@@ -37,7 +37,8 @@ static const std::string c_WorldExampleSceneNames[WORLD_EXAMPLE_SCENE_COUNT] =
 	"GJK + EPA",
 	"Spatial Grid",
 	"Sweep and Prune",
-	"Octree"
+	"Octree",
+	"Convex Hulls in Spatial Grid"
 };
 
 class World : public IIMGUIRenderable
@@ -65,6 +66,7 @@ private:
 	Camera* m_Camera;
 
 public:
+	static const int c_TestCount;
 	static Entity* ControlledEntity;
 
 	const bool& IsInitialised() const;
@@ -79,6 +81,10 @@ public:
 	void FixedUpdate();
 	void Update(const double& deltaTime);
 	void Render(Renderer& renderer);
+
+	const WORLD_EXAMPLE_SCENE& GetCurrentScene() const;
+
+	std::string GetExtraDetails();
 
 	// Inherited via IIMGUIRenderable
 	void OnIMGUIRender() override;

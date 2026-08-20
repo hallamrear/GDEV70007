@@ -13,5 +13,6 @@ public:
 	virtual bool AddObject(Entity* entity) = 0;
 	virtual void RenderIMGUIDetails() = 0;
 	virtual void Render(Renderer& renderer) = 0;
+	virtual std::string GetBroadPhaseStatsString() = 0;
 };
 

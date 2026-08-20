@@ -91,3 +91,11 @@ void SweepAndPrune::Render(Renderer& renderer)
 {
     UNREFERENCED_PARAMETER(renderer);
 }
+
+std::string SweepAndPrune::GetBroadPhaseStatsString()
+{
+    std::string str;
+
+
+    return str;
+}

@@ -103,7 +103,7 @@ void PhysicsWorld::AddToBroadPhase(const WORLD_EXAMPLE_SCENE& exampleScene, Enti
 
 	case WORLD_OCTREE:
 	{
-		m_OctreeRoot->AddEntity({ entity });
+		m_OctreeRoot->AddObject({ entity });
 	}
 	break;
 
@@ -464,4 +464,24 @@ void PhysicsWorld::Render(Renderer& renderer)
 	{
 		m_SpatialGrid->Render(renderer);
 	}
+}
+
+std::string PhysicsWorld::GetExtraDetailsString()
+{
+	if (m_OctreeRoot)
+	{
+		return m_OctreeRoot->GetBroadPhaseStatsString();
+	}
+
+	if (m_SweepAndPrune)
+	{
+		return m_SweepAndPrune->GetBroadPhaseStatsString();
+	}
+
+	if (m_SpatialGrid)
+	{
+		return m_SpatialGrid->GetBroadPhaseStatsString();
+	}
+
+	return "";
 }

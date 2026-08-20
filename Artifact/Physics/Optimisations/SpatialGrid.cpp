@@ -7,7 +7,7 @@
 #include <System/AssetLoader.h>
 
 ModelRef SpatialGrid::m_GridCellModel = nullptr;
-SPATIAL_GRID_DRAW_MODE SpatialGrid::m_DrawMode = SPATIAL_GRID_DRAW_MODE::SPATIAL_GRID_DRAW_ALL;
+SPATIAL_GRID_DRAW_MODE SpatialGrid::m_DrawMode = SPATIAL_GRID_DRAW_MODE::SPATIAL_GRID_DRAW_NONE;
 
 SpatialGrid::SpatialGrid()
 {
@@ -185,4 +185,13 @@ void SpatialGrid::Render(Renderer& renderer)
 
         renderer.Render(m_GridCellModel, cellMatrix);
     }
+}
+
+std::string SpatialGrid::GetBroadPhaseStatsString()
+{
+    std::string str;
+    str += std::to_string(c_GridCellSize); str += " units per grid cell.\n";
+    str += std::to_string(m_GridMap.size()); str += " grid cells in use.\n";
+    str += std::to_string(m_CollisionPairsThisFrame); str += " broadphase collision pairs found vs. bruteforce's", str += std::to_string((m_EntityCount * (m_EntityCount - 1) / 2)); str += "\n";
+    return str;
 }
