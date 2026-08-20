@@ -12,7 +12,7 @@
 
 //Temporary stuff.
 Entity* World::ControlledEntity = nullptr;
-const int World::c_TestCount = 10000;
+const int World::c_TestCount = 1000;
 
 const bool& World::IsInitialised() const
 {
@@ -49,7 +49,7 @@ void World::ChangeExampleScene(const WORLD_EXAMPLE_SCENE& newScene)
 
 bool World::Initialise()
 {
-	m_CurrentScene = WORLD_EXAMPLE_SCENE::WORLD_GJK_EXAMPLE_SPATIAL_GRID;
+	m_CurrentScene = WORLD_EXAMPLE_SCENE::WORLD_SPATIAL_GRID;
 	m_PhysicsWorld.Initialise(m_CurrentScene);
 
 	Vector3 position = Vector3(0.0f, 0.0f, 0.0f);
@@ -207,6 +207,8 @@ bool World::Initialise()
 		int m = 0;
 		int extents = 1024;
 
+		ModelRef ship = ServiceLocator::Locate<AssetManager>()->GetModel("PirateShip.glb");
+
 		for (int i = 0; i < c_TestCount; i++)
 		{
 			m = rand() % _countof(modelList);
@@ -221,7 +223,7 @@ bool World::Initialise()
 			Entity* entity = CreateEntity(name);
 			entity->SetPosition({ x, y, z });
 			entity->Rotate(Vector3(rx, ry, rz));
-			entity->SetModel(modelList[m]);
+			entity->SetModel(ship);
 			entity->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_OBB);
 			entity->GetRigidbody().SetMass(0.0f);
 			m_PhysicsWorld.AddToBroadPhase(m_CurrentScene, entity);

@@ -1,0 +1,3 @@
+32.000000 units per grid cell.
+2769 grid cells in use.
+85 broadphase collision pairs found vs. bruteforce's499500

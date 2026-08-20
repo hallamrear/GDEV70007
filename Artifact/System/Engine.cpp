@@ -25,6 +25,7 @@ Engine::Engine()
 	m_FrameTime = 0.0f;
 	m_SampleFramesRemaining = -1;
 	m_SampleFrameData = {};
+	m_SampleFramesRemaining = -1;
 }
 
 Engine::~Engine()
@@ -221,14 +222,14 @@ void Engine::FixedUpdate()
 }
 
 static double timeElapsed = 0.0;
-void Engine::Update(const double& deltaTime)
+void Engine::Update(const long double& deltaTime)
 {
 	//POINT windowCentre{ m_Renderer->GetWindowCentre().x, m_Renderer->GetWindowCentre().y };
 	//ScreenToClient(m_Renderer->GetWindowHandle(), &centre);
 	//InputListener::SetMousePosition(m_Renderer->GetWindowCentre());
 
 	m_FrameTime = deltaTime;
-	timeElapsed += deltaTime;
+	timeElapsed += (double)deltaTime;
 
 	Vector4 clearColour = m_Renderer->GetClearColour();
 	clearColour.x = (sin((float)timeElapsed + 0) * 127 + 127) / 255.0f;
@@ -241,7 +242,7 @@ void Engine::Update(const double& deltaTime)
 
 	if (m_World != nullptr)
 	{
-		m_World->Update(deltaTime);
+		m_World->Update((double)deltaTime);
 	}
 
 	float moveSpeed = +180.0f * (float)deltaTime;
@@ -391,21 +392,30 @@ void Engine::CalculateTimings()
 
 			std::filesystem::create_directories(c_WorldExampleSceneNames[m_World->GetCurrentScene()]);
 			std::filesystem::create_directories(c_WorldExampleSceneNames[m_World->GetCurrentScene()] + "//Data//" + std::to_string(m_World->c_TestCount));
+			std::filesystem::create_directories(c_WorldExampleSceneNames[m_World->GetCurrentScene()] + "//Data//Details//");
 
 			std::string name = c_WorldExampleSceneNames[m_World->GetCurrentScene()];
-			name += "//Details.txt";
+			name += "//Data//Details//";
+			name += std::to_string(m_World->c_TestCount);
+			name += ".txt";
 
 			if (std::filesystem::exists(name) == false)
 			{
 				std::fstream details(name.c_str(), std::fstream::trunc | std::fstream::out);
-
 				if (details.is_open())
 				{
-					details << m_World->GetExtraDetails();
+					details.close();
 				}
-
-				details.close();
 			}
+
+			std::fstream details(name.c_str(), std::fstream::app | std::fstream::out);
+			if (details.is_open())
+			{
+				details << "\n";
+				details << m_World->GetExtraDetails();
+			}
+
+			details.close();
 
 			name = c_WorldExampleSceneNames[m_World->GetCurrentScene()];
 			name += "//Data//";

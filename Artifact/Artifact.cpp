@@ -71,7 +71,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance,
     auto lTime = std::chrono::steady_clock::now();
     auto cTime = lTime;
     std::chrono::duration<long double> clockDelta = { };
-    double deltaTime = 0.0;
+    long double deltaTime = 0.0;
     //float accumulator = 0.0f;
     //int fixedUpdates = 0;
     //int variableUpdates = 0;
@@ -89,7 +89,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance,
 
         cTime = std::chrono::steady_clock::now();
         clockDelta = std::chrono::duration_cast<std::chrono::milliseconds>(cTime - lTime);
-        deltaTime = (double)clockDelta.count();
+        deltaTime = clockDelta.count();
 
         //if (deltaTime > CAPPED_TIMESTEP)
         //{

@@ -12,12 +12,12 @@ private:
 	std::chrono::steady_clock::time_point m_RenderEnd;
 	std::chrono::steady_clock::time_point m_UpdateStart;
 	std::chrono::steady_clock::time_point m_UpdateEnd;
-	std::vector<std::pair<double, std::pair<long double, long double>>> m_SampleFrameData;
+	std::vector<std::pair<long double, std::pair<long double, long double>>> m_SampleFrameData;
 	static std::filesystem::path m_ContentFolderLocation;
 	static std::filesystem::path m_ExecutableLocation;
 	bool m_IsInitialised;
 	bool m_IsRunning;
-	double m_FrameTime;
+	long double m_FrameTime;
 	int m_SampleFramesRemaining;
 	int m_SampleSetsRemaining;
 	float TimeBetweenSamples = 0.5f;
@@ -48,7 +48,7 @@ public:
 	LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 	void FixedUpdate();
-	void Update(const double& deltaTime);
+	void Update(const long double& deltaTime);
 	void Render();
 	void CalculateTimings();
 
