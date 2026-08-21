@@ -1,0 +1,40 @@
+
+8max bucket size before split.
+5max octree node depth.
+97886 broadphase collision pairs found vs. bruteforce's 40495500
+
+8max bucket size before split.
+5max octree node depth.
+97886 broadphase collision pairs found vs. bruteforce's 40495500
+
+8max bucket size before split.
+5max octree node depth.
+97886 broadphase collision pairs found vs. bruteforce's 40495500
+
+8max bucket size before split.
+5max octree node depth.
+97886 broadphase collision pairs found vs. bruteforce's 40495500
+
+8max bucket size before split.
+5max octree node depth.
+97886 broadphase collision pairs found vs. bruteforce's 40495500
+
+8max bucket size before split.
+5max octree node depth.
+97886 broadphase collision pairs found vs. bruteforce's 40495500
+
+8max bucket size before split.
+5max octree node depth.
+97886 broadphase collision pairs found vs. bruteforce's 40495500
+
+8max bucket size before split.
+5max octree node depth.
+97886 broadphase collision pairs found vs. bruteforce's 40495500
+
+8max bucket size before split.
+5max octree node depth.
+97886 broadphase collision pairs found vs. bruteforce's 40495500
+
+8max bucket size before split.
+5max octree node depth.
+97886 broadphase collision pairs found vs. bruteforce's 40495500

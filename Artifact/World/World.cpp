@@ -12,7 +12,7 @@
 
 //Temporary stuff.
 Entity* World::ControlledEntity = nullptr;
-const int World::c_TestCount = 1000;
+const int World::c_TestCount = 9000;
 
 const bool& World::IsInitialised() const
 {
