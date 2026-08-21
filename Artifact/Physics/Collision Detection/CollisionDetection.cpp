@@ -10,9 +10,6 @@
 #include <Physics/SAT/SeparatingAxisTheorem.h>
 #include <glm/gtx/norm.hpp>
 
-bool CollisionDetection::Use_GJK = true;
-bool CollisionDetection::Use_Dispatch_Table = true;
-
 CollisionDetection::CollisionFunction CollisionDetection::s_CollisionFunctionArray[COLLIDER_TYPE::COLLIDER_TYPE_COUNT][COLLIDER_TYPE::COLLIDER_TYPE_COUNT] = 
 {
 	/*				Sphere											AABB										 OBB										 Cylinder										 Convex												*/
@@ -26,7 +23,8 @@ CollisionDetection::CollisionFunction CollisionDetection::s_CollisionFunctionArr
 bool CollisionDetection::DispatchSeperatingAxisTheorem(const Collider* colliderA, const Collider* colliderB, CollisionManifold* manifold)
 {
 	assert(colliderA); assert(colliderB);
-	return SeparatingAxisTheorem::CheckCollision(*colliderA, *colliderB, manifold);
+	return GJK::CheckCollision(*colliderA, *colliderB, manifold);
+	//return SeparatingAxisTheorem::CheckCollision(*colliderA, *colliderB, manifold);
 }
 
 bool CollisionDetection::DispatchGilbertJohnsonKeethri(const Collider* colliderA, const Collider* colliderB, CollisionManifold* manifold)
@@ -120,32 +118,6 @@ bool CollisionDetection::AABBSphereCollision(const Collider* boxCollider, const 
 	}
 
 	return false;
-
-	//const AABBCollider* aabb = dynamic_cast<const AABBCollider*>(boxCollider);
-	//
-	//assert(aabb);
-	//
-	//glm::vec3 spherePos = { sphereCollider->GetAttachedEntity().GetPosition().x, sphereCollider->GetAttachedEntity().GetPosition().y, sphereCollider->GetAttachedEntity().GetPosition().z };
-	//
-	//float sqrDist = aabb->SqrDistanceToAABB(spherePos);
-	//float sqrRadius = sphereCollider->GetSize().x * sphereCollider->GetSize().x;
-	//
-	//bool collision = (sqrDist <= sqrRadius);
-	//
-	//if (collision && manifold != nullptr)
-	//{
-	//	//TODO : Make contact points.
-	//	printf("AABBSphere manifold generation not finished.\n");
-	//
-	//	Contact contact;
-	//	contact.Depth = (sqrRadius - sqrDist);
-	//	glm::vec3 closest = aabb->ClosestPointOnColliderToPoint(spherePos);
-	//	contact.HitPoint = { closest.x, closest.y, closest.z };
-	//
-	//	manifold->ContactPoints.push_back(contact);
-	//}
-	//
-	//return collision;
 }
 
 bool CollisionDetection::AABBAABBCollision(const Collider* boxColliderA, const Collider* boxColliderB, CollisionManifold* manifold)
@@ -157,108 +129,58 @@ bool CollisionDetection::AABBAABBCollision(const Collider* boxColliderA, const C
 
 bool CollisionDetection::OBBSphereCollision(const Collider* obbCollider, const Collider* sphereCollider, CollisionManifold* manifold)
 {
-	UNREFERENCED_PARAMETER(obbCollider);
-	UNREFERENCED_PARAMETER(sphereCollider);
-
-	if (manifold != nullptr)
-	{
-		printf("Collision manifold is valid but not being constructed.\n");
-	}
-
-	return false;
+	assert(obbCollider);
+	assert(sphereCollider);
+	return DispatchGilbertJohnsonKeethri(obbCollider, sphereCollider, manifold);
 }
 
 bool CollisionDetection::OBBAABBCollision(const Collider* obbCollider, const Collider* aabbCollider, CollisionManifold* manifold)
 {
-	UNREFERENCED_PARAMETER(obbCollider);
-	UNREFERENCED_PARAMETER(aabbCollider);
-
-	if (manifold != nullptr)
-	{
-		printf("Collision manifold is valid but not being constructed.\n");
-	}
-
-	return false;
+	assert(aabbCollider);
+	assert(obbCollider);
+	return DispatchSeperatingAxisTheorem(obbCollider, aabbCollider, manifold);
 }
 
 bool CollisionDetection::OBBOBBCollision(const Collider* obbColliderA, const Collider* obbColliderB, CollisionManifold* manifold)
 {
-	UNREFERENCED_PARAMETER(obbColliderA);
-	UNREFERENCED_PARAMETER(obbColliderB);
-
-	if (manifold != nullptr)
-	{
-		printf("Collision manifold is valid but not being constructed.\n");
-	}
-
-	return GJK::CheckCollision(*obbColliderA, *obbColliderB, manifold);
+	assert(obbColliderA);
+	assert(obbColliderB);
+	return DispatchGilbertJohnsonKeethri(obbColliderA, obbColliderB, manifold);
 }
 
 bool CollisionDetection::CylinderSphereCollision(const Collider* capsuleCollider, const Collider* sphereCollider, CollisionManifold* manifold)
 {
-	UNREFERENCED_PARAMETER(capsuleCollider);
-	UNREFERENCED_PARAMETER(sphereCollider);
-
-	if (manifold != nullptr)
-	{
-		printf("Collision manifold is valid but not being constructed.\n");
-	}
-
-	return false;
+	assert(capsuleCollider);
+	assert(sphereCollider);
+	return DispatchGilbertJohnsonKeethri(capsuleCollider, sphereCollider, manifold);
 }
 
 bool CollisionDetection::CylinderAABBCollision(const Collider* capsuleCollider, const Collider* aabbCollider, CollisionManifold* manifold)
 {
-	UNREFERENCED_PARAMETER(capsuleCollider);
-	UNREFERENCED_PARAMETER(aabbCollider);
-
-	if (manifold != nullptr)
-	{
-		printf("Collision manifold is valid but not being constructed.\n");
-	}
-
+	assert(capsuleCollider);
+	assert(aabbCollider);
 	return DispatchGilbertJohnsonKeethri(capsuleCollider, aabbCollider, manifold);
 }
 
 bool CollisionDetection::CylinderOBBCollision(const Collider* capsuleCollider, const Collider* obbCollider, CollisionManifold* manifold)
 {
-	UNREFERENCED_PARAMETER(capsuleCollider);
-	UNREFERENCED_PARAMETER(obbCollider);
-
-	if (manifold != nullptr)
-	{
-		printf("Collision manifold is valid but not being constructed.\n");
-	}
-
-	return false;
+	assert(capsuleCollider);
+	assert(obbCollider);
+	return DispatchGilbertJohnsonKeethri(capsuleCollider, obbCollider, manifold);
 }
 
 bool CollisionDetection::CylinderCylinderCollision(const Collider* capsuleColliderA, const Collider* capsuleColliderB, CollisionManifold* manifold)
 {
-	UNREFERENCED_PARAMETER(capsuleColliderA);
-	UNREFERENCED_PARAMETER(capsuleColliderB);
-
-	if (manifold != nullptr)
-	{
-		printf("Collision manifold is valid but not being constructed.\n");
-	}
-
-	return false;
+	assert(capsuleColliderA);
+	assert(capsuleColliderB);
+	return DispatchGilbertJohnsonKeethri(capsuleColliderA, capsuleColliderB, manifold);
 }
 
 bool CollisionDetection::ConvexHullSphereCollision(const Collider* convexHullCollider, const Collider* sphereCollider, CollisionManifold* manifold)
 {
-	UNREFERENCED_PARAMETER(convexHullCollider);
-	UNREFERENCED_PARAMETER(sphereCollider);
 	assert(convexHullCollider);
 	assert(sphereCollider);
-
-	if (manifold != nullptr)
-	{
-		printf("Collision manifold is valid but not being constructed.\n");
-	}
-
-	return false;
+	return DispatchGilbertJohnsonKeethri(convexHullCollider, sphereCollider, manifold);
 }
 
 bool CollisionDetection::ConvexHullAABBCollision(const Collider* convexHullCollider, const Collider* aabbCollider, CollisionManifold* manifold)
@@ -277,15 +199,9 @@ bool CollisionDetection::ConvexHullOBBCollision(const Collider* convexHullCollid
 
 bool CollisionDetection::ConvexHullCylinderCollision(const Collider* convexHullCollider, const Collider* capsuleCollider, CollisionManifold* manifold)
 {
-	UNREFERENCED_PARAMETER(capsuleCollider);
-	UNREFERENCED_PARAMETER(convexHullCollider);
-
-	if (manifold != nullptr)
-	{
-		printf("Collision manifold is valid but not being constructed.\n");
-	}
-
-	return false;
+	assert(capsuleCollider);
+	assert(convexHullCollider);
+	return DispatchGilbertJohnsonKeethri(convexHullCollider, capsuleCollider, manifold);
 }
 
 bool CollisionDetection::ConvexHullConvexHullCollision(const Collider* convexHullColliderA, const Collider* convexHullColliderB, CollisionManifold* manifold)

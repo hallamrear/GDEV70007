@@ -49,7 +49,7 @@ void World::ChangeExampleScene(const WORLD_EXAMPLE_SCENE& newScene)
 
 bool World::Initialise()
 {
-	m_CurrentScene = WORLD_EXAMPLE_SCENE::WORLD_SPATIAL_GRID;
+	m_CurrentScene = WORLD_EXAMPLE_SCENE::WORLD_COLLIDER_EXAMPLE;
 	m_PhysicsWorld.Initialise(m_CurrentScene);
 
 	Vector3 position = Vector3(0.0f, 0.0f, 0.0f);
@@ -70,7 +70,7 @@ bool World::Initialise()
 	{
 		ModelRef ship = ServiceLocator::Locate<AssetManager>()->GetModel("PirateShip.glb");
 		float gap = 30.0f;
-		position = Vector3(-gap * trunc((float)COLLIDER_TYPE::COLLIDER_TYPE_COUNT / 2.0f), -40.0f, 100.0f);
+		position = Vector3(-gap * trunc((float)COLLIDER_TYPE::COLLIDER_TYPE_COUNT / 2.0f), 0.0f, 100.0f);
 
 		Entity* entity = nullptr;
 		for (size_t i = 0; i < COLLIDER_TYPE::COLLIDER_TYPE_COUNT; i++)
@@ -90,7 +90,7 @@ bool World::Initialise()
 		}
 
 		int count = 7;
-		position = Vector3(-gap * trunc(count / 2.0f), 40.0f, 0.0f);
+		position = Vector3(-gap * trunc(count / 2.0f), 0.0f, 0.0f);
 		float rotStep = 360.0f / count;
 		float angle = 0.0f;
 
@@ -108,6 +108,21 @@ bool World::Initialise()
 
 			entity->SetPosition(position);
 		}
+
+		std::string str = "OBB Tester";
+		entity = CreateEntity(str);
+		entity->SetModel(ship);
+		entity->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_OBB);
+		position.x += gap;
+		entity->SetPosition(position);
+		str = "Hull Tester";
+		entity = CreateEntity(str);
+		entity->SetModel(ship);
+		entity->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
+		position.x += gap;
+		entity->SetPosition(position);
+
+		m_PhysicsWorld.ResolutionType = 0;
 	}
 	break;
 	case WORLD_SAT_EXAMPLE:

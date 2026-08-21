@@ -303,15 +303,46 @@ bool SeparatingAxisTheorem::CheckCollisionConvexHulls(const Collider& colliderA,
 
 bool SeparatingAxisTheorem::CheckCollision(const Collider& colliderA, const Collider& colliderB, CollisionManifold* manifold)
 {
-	if (colliderA.GetType() == COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL || colliderB.GetType() == COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL)
-	{
-		return CheckCollisionConvexHulls(colliderA, colliderB, manifold);
-	}
+	return CheckCollisionConvexHulls(colliderA, colliderB, manifold);
 
-	//Run standard sat.
-
-
-	return true;
+	//if (colliderA.GetType() == COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL || colliderB.GetType() == COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL)
+	//{
+	//	return CheckCollisionConvexHulls(colliderA, colliderB, manifold);
+	//}
+	//
+	////Run standard sat.
+	//std::vector<glm::vec3> axes =
+	//{
+	//	/* 0 */ { colliderA.GetAttachedEntity().GetForwardVector().x, colliderA.GetAttachedEntity().GetForwardVector().y, colliderA.GetAttachedEntity().GetForwardVector().z	},
+	//	/* 1 */ { colliderA.GetAttachedEntity().GetRightVector().x,	  colliderA.GetAttachedEntity().GetRightVector().y,	  colliderA.GetAttachedEntity().GetRightVector().z		},
+	//	/* 2 */ { colliderA.GetAttachedEntity().GetUpVector().x,	  colliderA.GetAttachedEntity().GetUpVector().y,	  colliderA.GetAttachedEntity().GetUpVector().z			},
+	//
+	//	/* 3 */ { colliderB.GetAttachedEntity().GetForwardVector().x, colliderB.GetAttachedEntity().GetForwardVector().y, colliderB.GetAttachedEntity().GetForwardVector().z	},
+	//	/* 4 */ { colliderB.GetAttachedEntity().GetRightVector().x,	  colliderB.GetAttachedEntity().GetRightVector().y,	  colliderB.GetAttachedEntity().GetRightVector().z		},
+	//	/* 5 */ { colliderB.GetAttachedEntity().GetUpVector().x,	  colliderB.GetAttachedEntity().GetUpVector().y,	  colliderB.GetAttachedEntity().GetUpVector().z			},
+	//
+	//	/* 6 */ { glm::cross(axes[0], axes[3]) },
+	//	/* 7 */ { glm::cross(axes[0], axes[4]) },
+	//	/* 8 */ { glm::cross(axes[0], axes[5]) },
+	//	/* 9 */ { glm::cross(axes[1], axes[3]) },
+	//	/* 0 */ { glm::cross(axes[1], axes[4]) },
+	//	/* 1 */ { glm::cross(axes[1], axes[5]) },
+	//	/* 2 */ { glm::cross(axes[2], axes[3]) },
+	//	/* 3 */ { glm::cross(axes[2], axes[4]) },
+	//	/* 4 */ { glm::cross(axes[2], axes[5]) },
+	//};
+	//
+	//size_t axisCount = axes.size();
+	//for (size_t i = 0; i < axisCount; i++)
+	//{
+	//
+	//
+	//
+	//
+	//
+	//}
+	//
+	//return true;
 }
 
 bool SeparatingAxisTheorem::ParallelTest(const glm::vec3& crossBA, const glm::vec3& crossDC)
@@ -605,7 +636,6 @@ void SeparatingAxisTheorem::ReduceContactPoints(FaceContact& faceContact)
 			refinedPointIndices[1] = i;
 		}
 	}
-
 
 	glm::vec3 faceNormal = { faceContact.Query.Face->Plane.x, faceContact.Query.Face->Plane.y, faceContact.Query.Face->Plane.z };
 

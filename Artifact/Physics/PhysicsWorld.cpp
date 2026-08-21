@@ -161,13 +161,6 @@ void PhysicsWorld::OnIMGUIRender()
 		m_SpatialGrid->RenderIMGUIDetails();
 	}
 
-	ImGui::Checkbox("Use Dispatch Table", &CollisionDetection::Use_Dispatch_Table);
-
-	if (CollisionDetection::Use_Dispatch_Table == false)
-	{
-		ImGui::Checkbox("Use GJK", &CollisionDetection::Use_GJK);
-	}
-
 	const ImGuiComboFlags flags = 0;
 
 	static COLLIDER_DRAW_LEVEL s_ColliderDrawType = Collider::g_DrawColliders;
