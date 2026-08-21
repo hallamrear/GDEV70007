@@ -7,7 +7,6 @@
 #include <System/AssetLoader.h>
 
 ModelRef SpatialGrid::m_GridCellModel = nullptr;
-SPATIAL_GRID_DRAW_MODE SpatialGrid::m_DrawMode = SPATIAL_GRID_DRAW_MODE::SPATIAL_GRID_DRAW_NONE;
 
 SpatialGrid::SpatialGrid()
 {
@@ -91,7 +90,6 @@ bool SpatialGrid::AddObject(Entity* entity)
     if (minIndex == maxIndex)
     {
         m_GridMap[minIndex].push_back(entity);
-        printf("EQEQ %i %i %i - %f %f %f\n", minIndex.X, minIndex.Y, minIndex.Z, origin.x, origin.y, origin.z);
     }
     else
     {
@@ -99,7 +97,6 @@ bool SpatialGrid::AddObject(Entity* entity)
         int diffX = maxIndex.X - minIndex.X;
         int diffY = maxIndex.Y - minIndex.Y;
         int diffZ = maxIndex.Z - minIndex.Z;
-        printf("DIFFS %i %i %i\n", diffX, diffY, diffZ);
         for (int z = 0; z < diffZ + 1; z++)
         {
             for (int y = 0; y < diffY + 1; y++)
@@ -110,7 +107,6 @@ bool SpatialGrid::AddObject(Entity* entity)
                     index.Y = minIndex.Y + y;
                     index.Z = minIndex.Z + z;
                     m_GridMap[index].push_back(entity);
-                    printf("DIFF %i %i %i - %f %f %f\n", index.X, index.Y, index.Z, origin.x, origin.y, origin.z);
                 }
             }
         }
@@ -133,14 +129,14 @@ void SpatialGrid::RenderIMGUIDetails()
 {
     const ImGuiComboFlags flags = 0;
 
-    if (ImGui::BeginCombo("Spatial Grid Draw Mode", c_SpatialGridDrawModeNames[m_DrawMode].c_str(), flags))
+    if (ImGui::BeginCombo("Spatial Grid Draw Mode", c_BroadphaseDrawModeNames[m_DrawMode].c_str(), flags))
     {
-        for (int n = 0; n < IM_COUNTOF(c_SpatialGridDrawModeNames); n++)
+        for (int n = 0; n < IM_COUNTOF(c_BroadphaseDrawModeNames); n++)
         {
             const bool is_selected = ((int)m_DrawMode == n);
-            if (ImGui::Selectable(c_SpatialGridDrawModeNames[n].c_str(), is_selected))
+            if (ImGui::Selectable(c_BroadphaseDrawModeNames[n].c_str(), is_selected))
             {
-                m_DrawMode = (SPATIAL_GRID_DRAW_MODE)n;
+                m_DrawMode = (BROADPHASE_DRAW_MODE)n;
             }
 
             if (is_selected)
@@ -158,7 +154,7 @@ void SpatialGrid::RenderIMGUIDetails()
 
 void SpatialGrid::Render(Renderer& renderer)
 {
-    if (m_DrawMode == SPATIAL_GRID_DRAW_MODE::SPATIAL_GRID_DRAW_NONE)
+    if (m_DrawMode == BROADPHASE_DRAW_MODE::BROADPHASE_DRAW_NONE)
     {
         return;
     }
@@ -169,7 +165,7 @@ void SpatialGrid::Render(Renderer& renderer)
 
     for (auto& cell : m_GridMap)
     {
-        if (m_DrawMode == SPATIAL_GRID_DRAW_MODE::SPATIAL_GRID_DRAW_PAIRS && cell.second.size() <= 1)
+        if (m_DrawMode == BROADPHASE_DRAW_MODE::BROADPHASE_DRAW_PAIRS && cell.second.size() <= 1)
         {
             continue;
         }

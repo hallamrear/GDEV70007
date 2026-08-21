@@ -9,29 +9,30 @@ class OctreeNode : public BroadPhase
 {
 private:
 	static constexpr int c_ChildCount = 8;
-	static constexpr int c_MaxBucketCapacity = 4;
-	static constexpr int c_MaxOctreeNodeDepth = 4;
+	static constexpr int c_MaxBucketCapacity = 8;
+	static constexpr int c_MaxOctreeNodeDepth = 5;
 
 	static ModelRef m_Model;
 	float m_HalfWidth;
 	Matrix4x4 m_CentreMatrix;
-	Vector3 m_Centre;
+	glm::vec3 m_Centre;
+	glm::vec3 m_AABBMin;
+	glm::vec3 m_AABBMax;
 
 	OctreeNode* m_Parent;
 	bool m_HasSplit;
 	const int m_Depth;
 	OctreeNode* m_Children[c_ChildCount];
 	std::vector<Entity*> m_Bucket;
-	bool SplitNode(const std::vector<Entity*>& entitiesToSort);
+	bool SplitNode();
 
-	OctreeNode(OctreeNode* parent, const Vector3& centre, const float& colliderSize, const int& depth);
+	OctreeNode(OctreeNode* parent, const glm::vec3& centre, const float& colliderSize, const int& depth);
 
 public:
 	~OctreeNode();
 
 	const bool& HasSplit() const;
-	static void Render(Renderer& renderer, OctreeNode* root);
-	static OctreeNode* BuildOctree(OctreeNode* parent, const Vector3& centre, const float& halfWidth, const int& depth);
+	static OctreeNode* BuildOctree(OctreeNode* parent, const glm::vec3& centre, const float& halfWidth, const int& depth);
 	static void DestroyOctree(OctreeNode* root);
 
 	bool DetermineCollisionPairs(std::vector<std::pair<Entity*, Entity*>>& collisionPairs) override;

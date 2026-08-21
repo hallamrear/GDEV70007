@@ -64,7 +64,7 @@ void PhysicsWorld::Initialise(const WORLD_EXAMPLE_SCENE& exampleScene)
 
 	case WORLD_OCTREE:
 	{
-		m_OctreeRoot = OctreeNode::BuildOctree(nullptr, Vector3(0.0f, 0.0f, 0.0f), 512.0f, 0);
+		m_OctreeRoot = OctreeNode::BuildOctree(nullptr, { 0.0f, 0.0f, 0.0f }, 4096.0f, 0);
 	}
 	break;
 
@@ -87,8 +87,6 @@ void PhysicsWorld::AddToBroadPhase(const WORLD_EXAMPLE_SCENE& exampleScene, Enti
 
 	switch (exampleScene)
 	{
-		//m_OctreeRoot = OctreeNode::BuildOctree(nullptr, Vector3(0.0f, 0.0f, 0.0f), 8192.0f, 0);
-
 	case WORLD_SPATIAL_GRID:
 	{
 		m_SpatialGrid->AddObject(entity);
@@ -234,44 +232,8 @@ void PhysicsWorld::OnIMGUIRender()
 					}
 
 					ImGui::EndTable();
-				}
-
-				/*std::string name = "Manifold " + std::to_string(f);
-				if (ImGui::CollapsingHeader(name.c_str()))
-				{
-					m_Frame
-				}*/
+				}				
 			}
-
-			/*if (ImGui::CollapsingHeader("Constraint Point Data"))
-			{
-
-				if (m_FrameConstraintPoints.size() > 0)
-				{
-					if (ImGui::BeginTable("Frame Contraint Point Datas", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
-					{
-						ImGui::TableSetupColumn("Index");
-						ImGui::TableSetupColumn("Position 0");
-						ImGui::TableSetupColumn("Position 1");
-						ImGui::TableHeadersRow();
-
-						for (size_t cp = 0; cp < m_FrameConstraintPoints.size(); cp++)
-						{
-							ImGui::TableNextRow();
-							ImGui::TableSetColumnIndex(0);
-							ImGui::Text("%i", cp);
-
-							ImGui::TableSetColumnIndex(1);
-							ImGui::Text("%f %f %f", m_FrameConstraintPoints[cp].Positions[0].x, m_FrameConstraintPoints[cp].Positions[0].y, m_FrameConstraintPoints[cp].Positions[0].z);
-
-							ImGui::TableSetColumnIndex(2);
-							ImGui::Text("%f %f %f", m_FrameConstraintPoints[cp].Positions[1].x, m_FrameConstraintPoints[cp].Positions[1].y, m_FrameConstraintPoints[cp].Positions[1].z);
-						}
-
-						ImGui::EndTable();
-					}
-				}
-			}*/
 		}
 		else
 		{
@@ -319,24 +281,25 @@ void PhysicsWorld::CollectCollisionPairs()
 	Entity* entityA = nullptr;
 	Entity* entityB = nullptr;
 
-	std::vector<std::pair<Entity*, Entity*>> broadPhaseCollisionPairs;
-
 	if (m_SpatialGrid || m_SweepAndPrune || m_OctreeRoot)
 	{
-		if (m_SpatialGrid)
+		if (m_CollisionPairs.size() == 0)
 		{
-			m_SpatialGrid->DetermineCollisionPairs(broadPhaseCollisionPairs);
-		}
+			if (m_SpatialGrid)
+			{
+				m_SpatialGrid->DetermineCollisionPairs(m_CollisionPairs);
+			}
 
-		if (m_SweepAndPrune)
-		{
-			m_SweepAndPrune->DetermineCollisionPairs(broadPhaseCollisionPairs);
-		}
+			if (m_SweepAndPrune)
+			{
+				m_SweepAndPrune->DetermineCollisionPairs(m_CollisionPairs);
+			}
 
-		//if (m_OctreeRoot)
-		//{
-		//	m_OctreeRoot->DetermineCollisionPairs(broadPhaseCollisionPairs);
-		//}
+			if (m_OctreeRoot)
+			{
+				m_OctreeRoot->DetermineCollisionPairs(m_CollisionPairs);
+			}
+		}
 	}
 	else
 	{
@@ -344,14 +307,14 @@ void PhysicsWorld::CollectCollisionPairs()
 		{
 			for (size_t j = i + 1; j < m_ActiveRigidbodyCount; j++)
 			{
-				broadPhaseCollisionPairs.push_back({ m_RigidbodyList[i].GetEntity(), m_RigidbodyList[j].GetEntity() });
+				m_CollisionPairs.push_back({ m_RigidbodyList[i].GetEntity(), m_RigidbodyList[j].GetEntity() });
 			}
 		}
 	}
 
-	for (size_t i = 0; i < broadPhaseCollisionPairs.size(); i++)
+	for (size_t i = 0; i < m_CollisionPairs.size(); i++)
 	{
-		std::pair<Entity*, Entity*>& pair = broadPhaseCollisionPairs[i];
+		std::pair<Entity*, Entity*>& pair = m_CollisionPairs[i];
 
 		entityA = pair.first;
 		entityB = pair.second;
@@ -445,7 +408,7 @@ void PhysicsWorld::Render(Renderer& renderer)
 {
 	if (m_OctreeRoot)
 	{
-		m_OctreeRoot->Render(renderer, m_OctreeRoot);
+		m_OctreeRoot->Render(renderer);
 	}
 
 	if (m_SweepAndPrune)

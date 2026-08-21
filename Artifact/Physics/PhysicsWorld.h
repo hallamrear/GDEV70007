@@ -38,6 +38,8 @@ private:
 	class SweepAndPrune* m_SweepAndPrune;
 	class SpatialGrid* m_SpatialGrid;
 
+	std::vector<std::pair<Entity*, Entity*>> m_CollisionPairs;
+
 public:
 	int ResolutionType;
 

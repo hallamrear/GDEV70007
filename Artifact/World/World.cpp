@@ -49,7 +49,7 @@ void World::ChangeExampleScene(const WORLD_EXAMPLE_SCENE& newScene)
 
 bool World::Initialise()
 {
-	m_CurrentScene = WORLD_EXAMPLE_SCENE::WORLD_COLLIDER_EXAMPLE;
+	m_CurrentScene = WORLD_EXAMPLE_SCENE::WORLD_OCTREE;
 	m_PhysicsWorld.Initialise(m_CurrentScene);
 
 	Vector3 position = Vector3(0.0f, 0.0f, 0.0f);
@@ -280,8 +280,37 @@ bool World::Initialise()
 
 	case WORLD_OCTREE:
 	{
+		float x = 0.0f;
+		float y = 0.0f;
+		float z = 0.0f;
+		float rx = 0.0f;
+		float ry = 0.0f;
+		float rz = 0.0f;
 
-		//m_PhysicsWorld.AddToBroadPhase(m_CurrentScene, entity);
+		int m = 0;
+		int extents = 4096;
+
+		ModelRef ship = ServiceLocator::Locate<AssetManager>()->GetModel("PirateShip.glb");
+
+		for (int i = 0; i < c_TestCount; i++)
+		{
+			m = rand() % _countof(modelList);
+			x = (float)((rand() % extents) - (extents / 2));
+			y = (float)((rand() % extents) - (extents / 2));
+			z = (float)((rand() % extents) - (extents / 2));
+			rx = (float)(rand() % 360);
+			ry = (float)(rand() % 360);
+			rz = (float)(rand() % 360);
+
+			std::string name = "SG Object" + std::to_string(i);
+			Entity* entity = CreateEntity(name);
+			entity->SetPosition({ x, y, z });
+			entity->Rotate(Vector3(rx, ry, rz));
+			entity->SetModel(ship);
+			entity->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
+			entity->GetRigidbody().SetMass(0.0f);
+			m_PhysicsWorld.AddToBroadPhase(m_CurrentScene, entity);
+		}
 	}
 		break;
 	case WORLD_EXAMPLE_SCENE_COUNT:

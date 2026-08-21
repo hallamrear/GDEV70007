@@ -28,29 +28,11 @@ struct IndexHasher
 
 typedef std::unordered_map<GridIndex, std::vector<Entity*>, IndexHasher> GridStorageType;
 
-enum SPATIAL_GRID_DRAW_MODE
-{
-	SPATIAL_GRID_DRAW_NONE = 0,
-	SPATIAL_GRID_DRAW_PAIRS = 1,
-	SPATIAL_GRID_DRAW_ALL = 2,
-	SPATIAL_GRID_DRAW_MODE_COUNT = 3,
-};
-
-static const std::string c_SpatialGridDrawModeNames[SPATIAL_GRID_DRAW_MODE::SPATIAL_GRID_DRAW_MODE_COUNT] =
-{
-	"Drawing no cells",
-	"Drawing only cells with pairs",
-	"Drawing all cells",
-};
-
 class SpatialGrid : public BroadPhase
 {
 private:
-	static SPATIAL_GRID_DRAW_MODE  m_DrawMode;
 	static constexpr float c_GridCellSize = 32.0f;
 	static ModelRef m_GridCellModel;
-	int m_EntityCount;
-	int m_CollisionPairsThisFrame;
 	GridStorageType m_GridMap;
 	GridIndex GetIndexFromPosition(const glm::vec3& position);
 
