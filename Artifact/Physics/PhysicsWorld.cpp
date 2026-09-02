@@ -113,7 +113,7 @@ void PhysicsWorld::AddToBroadPhase(const WORLD_EXAMPLE_SCENE& exampleScene, Enti
 void PhysicsWorld::FixedUpdate()
 {
 	IntegrateAccelerationAndVelocities();
-	//CollectCollisionPairs();
+	CollectCollisionPairs();
 	SolveConstaints();
 	IntergratePositions();
 	UpdateSleepers();
@@ -303,6 +303,8 @@ void PhysicsWorld::CollectCollisionPairs()
 	}
 	else
 	{
+		m_CollisionPairs.clear();
+
 		for (size_t i = 0; i < m_ActiveRigidbodyCount; i++)
 		{
 			for (size_t j = i + 1; j < m_ActiveRigidbodyCount; j++)

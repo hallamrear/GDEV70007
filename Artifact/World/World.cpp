@@ -12,7 +12,7 @@
 
 //Temporary stuff.
 Entity* World::ControlledEntity = nullptr;
-const int World::c_TestCount = 5000;
+const int World::c_TestCount = 2000;
 
 const bool& World::IsInitialised() const
 {
@@ -49,18 +49,10 @@ void World::ChangeExampleScene(const WORLD_EXAMPLE_SCENE& newScene)
 
 bool World::Initialise()
 {
-	m_CurrentScene = WORLD_EXAMPLE_SCENE::WORLD_GJK_EXAMPLE_SPATIAL_GRID;
+	m_CurrentScene = WORLD_EXAMPLE_SCENE::WORLD_GJK_EXAMPLE;
 	m_PhysicsWorld.Initialise(m_CurrentScene);
 
 	Vector3 position = Vector3(0.0f, 0.0f, 0.0f);
-
-	ModelRef modelList[] =
-	{
-		ServiceLocator::Locate<AssetManager>()->GetModel("Suzanne.glb"),
-		ServiceLocator::Locate<AssetManager>()->GetModel("TestCar.glb"),
-		ServiceLocator::Locate<AssetManager>()->GetModel("Ambulance.glb"),
-		ServiceLocator::Locate<AssetManager>()->GetModel("Barrel.glb"),
-	};
 
 	switch (m_CurrentScene)
 	{
@@ -176,18 +168,20 @@ bool World::Initialise()
 	break;
 	case WORLD_SAT_EXAMPLE:
 	{
+		ModelRef ambulance = ServiceLocator::Locate<AssetManager>()->GetModel("Ambulance.glb");
+
 		float ra = (float)(rand() % 360);
 		float rb = (float)(rand() % 360);
 
 		Entity* TestBoxA = CreateEntity("Test Box A");
 		TestBoxA->SetPosition({ -10.0f, 0.0f, 0.0f });
-		TestBoxA->SetModel(modelList[2]);
+		TestBoxA->SetModel(ambulance);
 		TestBoxA->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_OBB);
 		TestBoxA->Rotate(Vector3(0.0f, ra, 0.0f));
 
 		Entity* TestBoxB = CreateEntity("Test Box B");
 		TestBoxB->SetPosition({ 10.0f, 0.0f, 0.0f });
-		TestBoxB->SetModel(modelList[2]);
+		TestBoxB->SetModel(ambulance);
 		TestBoxB->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_OBB);
 		TestBoxB->Rotate(Vector3(0.0f, rb, 0.0f));
 
@@ -232,29 +226,23 @@ bool World::Initialise()
 
 	case WORLD_GJK_EXAMPLE:
 	{
-		float ra = (float)(rand() % 360);
-		float rb = (float)(rand() % 360);
+		ModelRef ship = ServiceLocator::Locate<AssetManager>()->GetModel("Ambulance.glb");
 
-		ModelRef ship = ServiceLocator::Locate<AssetManager>()->GetModel("PirateShip.glb");
-		ModelRef sea = ServiceLocator::Locate<AssetManager>()->GetModel("Sea.glb");
+		float rA = (float)(rand() % 360);
+		float rB = (float)(rand() % 360);
 
-		Entity* Sea = CreateEntity("Sea");
-		Sea->SetPosition({ 0.0f, 3.0f, 0.0f });
-		Sea->SetModel(sea);
-		Sea->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
-
-		Entity* TestBoxA = CreateEntity("Ship A");
+		Entity* TestBoxA = CreateEntity("Object A");
 		TestBoxA->SetPosition({ -10.0f, 0.0f, -3.0f });
+		TestBoxA->Rotate(Vector3(0.0f, rA, 0.0f));
 		TestBoxA->SetModel(ship);
-		TestBoxA->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
-		TestBoxA->Rotate(Vector3(0.0f, ra, 0.0f));
-
-		Entity* TestBoxB = CreateEntity("Ship B");
+		TestBoxA->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_OBB);
+	
+		Entity* TestBoxB = CreateEntity("Object B");
 		TestBoxB->SetPosition({ 10.0f, 0.0f, 6.0f });
+		TestBoxB->Rotate(Vector3(0.0f, rB, 0.0f));
 		TestBoxB->SetModel(ship);
-		TestBoxB->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
-		TestBoxB->Rotate(Vector3(0.0f, rb, 0.0f));
-
+		TestBoxB->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_OBB);
+		
 		m_PhysicsWorld.ResolutionType = 0;
 	}
 		break;
@@ -268,14 +256,12 @@ bool World::Initialise()
 		float ry = 0.0f;
 		float rz = 0.0f;
 
-		int m = 0;
 		int extents = 1024;
 
 		ModelRef ship = ServiceLocator::Locate<AssetManager>()->GetModel("PirateShip.glb");
 
 		for (int i = 0; i < c_TestCount; i++)
 		{
-			m = rand() % _countof(modelList);
 			x = (float)((rand() % extents) - (extents / 2));
 			y = (float)((rand() % extents) - (extents / 2));
 			z = (float)((rand() % extents) - (extents / 2));
@@ -297,6 +283,15 @@ bool World::Initialise()
 
 	case WORLD_SWEEP_AND_PRUNE:
 	{
+
+		ModelRef modelList[] =
+		{
+			ServiceLocator::Locate<AssetManager>()->GetModel("Suzanne.glb"),
+			ServiceLocator::Locate<AssetManager>()->GetModel("TestCar.glb"),
+			ServiceLocator::Locate<AssetManager>()->GetModel("Ambulance.glb"),
+			ServiceLocator::Locate<AssetManager>()->GetModel("Barrel.glb"),
+		};
+
 		float x = 0.0f;
 		float y = 0.0f;
 		float z = 0.0f;
@@ -336,14 +331,12 @@ bool World::Initialise()
 		float ry = 0.0f;
 		float rz = 0.0f;
 
-		int m = 0;
 		int extents = 4096;
 
 		ModelRef ship = ServiceLocator::Locate<AssetManager>()->GetModel("PirateShip.glb");
 
 		for (int i = 0; i < c_TestCount; i++)
 		{
-			m = rand() % _countof(modelList);
 			x = (float)((rand() % extents) - (extents / 2));
 			y = (float)((rand() % extents) - (extents / 2));
 			z = (float)((rand() % extents) - (extents / 2));
