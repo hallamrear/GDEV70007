@@ -213,7 +213,7 @@ void Engine::FixedUpdate()
 	if (!m_IsInitialised || !m_IsRunning)
 		return;
 
-	if (m_InputListener.GetKeyDown(VK_BACK)) { IIMGUIRenderable::DrawIMGUI = !IIMGUIRenderable::DrawIMGUI; }
+	if (m_InputListener.GetKeyDown(VK_NUMPAD5)) { IIMGUIRenderable::DrawIMGUI = !IIMGUIRenderable::DrawIMGUI; }
 		
 	if (m_World != nullptr)
 	{
@@ -245,7 +245,7 @@ void Engine::Update(const long double& deltaTime)
 		m_World->Update((double)deltaTime);
 	}
 
-	float moveSpeed = +180.0f * (float)deltaTime;
+	float moveSpeed = +40.0f * (float)deltaTime;
 	float rotationSpeed = 5.0f * (float)deltaTime;
 	Vector3 forward = m_Renderer->GetCamera().GetForwardVector();
 	Vector3 right = m_Renderer->GetCamera().GetRightVector();

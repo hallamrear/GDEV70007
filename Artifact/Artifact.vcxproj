@@ -478,6 +478,15 @@
       <FileType>Document</FileType>
       <DeploymentContent>true</DeploymentContent>
     </None>
+    <None Include="Content\Table Complete.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="Content\Table Leg.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="Content\Table Top.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="Content\TestCar.glb">
       <DeploymentContent>true</DeploymentContent>
     </None>
@@ -488,6 +497,9 @@
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Content\TinyCube.glb">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="Content\Untitled.glb">
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="Rendering\Shaders\Lighting.hlsli">

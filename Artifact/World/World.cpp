@@ -12,7 +12,7 @@
 
 //Temporary stuff.
 Entity* World::ControlledEntity = nullptr;
-const int World::c_TestCount = 9000;
+const int World::c_TestCount = 5000;
 
 const bool& World::IsInitialised() const
 {
@@ -49,7 +49,7 @@ void World::ChangeExampleScene(const WORLD_EXAMPLE_SCENE& newScene)
 
 bool World::Initialise()
 {
-	m_CurrentScene = WORLD_EXAMPLE_SCENE::WORLD_OCTREE;
+	m_CurrentScene = WORLD_EXAMPLE_SCENE::WORLD_GJK_EXAMPLE_SPATIAL_GRID;
 	m_PhysicsWorld.Initialise(m_CurrentScene);
 
 	Vector3 position = Vector3(0.0f, 0.0f, 0.0f);
@@ -65,7 +65,56 @@ bool World::Initialise()
 	switch (m_CurrentScene)
 	{
 	case WORLD_EMPTY_SCENE:
+
+	{
+		m_PhysicsWorld.ResolutionType = 0;
+		ModelRef tableFull = ServiceLocator::Locate<AssetManager>()->GetModel("Table Complete.glb");
+		ModelRef tableTop = ServiceLocator::Locate<AssetManager>()->GetModel("Table Top.glb");
+		ModelRef tableLeg = ServiceLocator::Locate<AssetManager>()->GetModel("Table Leg.glb");
+
+		Entity* entity = nullptr;
+		std::string str = "Table";
+		entity = CreateEntity(str);
+		entity->SetModel(tableFull);
+		entity->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_CONVEX_HULL);
+		entity->SetPosition(position);
+
+		entity = CreateEntity(str);
+		entity->SetModel(tableTop);
+		entity->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_OBB);
+		position = { -5.0f, 0.0f, 0.0f };
+		entity->SetPosition(position);
+
+		str = "Table Leg";
+		entity = CreateEntity(str);
+		entity->SetModel(tableLeg);
+		entity->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_OBB);
+		position = { -5.5f, -0.6f, -0.75f };
+		entity->SetPosition(position);
+
+		str = "Table Leg";
+		entity = CreateEntity(str);
+		entity->SetModel(tableLeg);
+		entity->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_OBB);
+		position = { -4.5f, -0.6f, -0.75f };
+		entity->SetPosition(position);
+
+		str = "Table Leg";
+		entity = CreateEntity(str);
+		entity->SetModel(tableLeg);
+		entity->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_OBB);
+		position = { -5.5f, -0.6f, 0.75f };
+		entity->SetPosition(position);
+
+		str = "Table Leg";
+		entity = CreateEntity(str);
+		entity->SetModel(tableLeg);
+		entity->AddColliderFromModel(COLLIDER_TYPE::COLLIDER_TYPE_OBB);
+		position = { -4.5f, -0.6f, 0.75f };
+		entity->SetPosition(position);
+	}
 		break;
+
 	case WORLD_COLLIDER_EXAMPLE:
 	{
 		ModelRef ship = ServiceLocator::Locate<AssetManager>()->GetModel("PirateShip.glb");

@@ -113,7 +113,7 @@ void PhysicsWorld::AddToBroadPhase(const WORLD_EXAMPLE_SCENE& exampleScene, Enti
 void PhysicsWorld::FixedUpdate()
 {
 	IntegrateAccelerationAndVelocities();
-	CollectCollisionPairs();
+	//CollectCollisionPairs();
 	SolveConstaints();
 	IntergratePositions();
 	UpdateSleepers();
