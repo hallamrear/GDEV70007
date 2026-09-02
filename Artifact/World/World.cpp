@@ -49,7 +49,7 @@ void World::ChangeExampleScene(const WORLD_EXAMPLE_SCENE& newScene)
 
 bool World::Initialise()
 {
-	m_CurrentScene = WORLD_EXAMPLE_SCENE::WORLD_GJK_EXAMPLE;
+	m_CurrentScene = WORLD_EXAMPLE_SCENE::WORLD_GJK_EXAMPLE_SPATIAL_GRID;
 	m_PhysicsWorld.Initialise(m_CurrentScene);
 
 	Vector3 position = Vector3(0.0f, 0.0f, 0.0f);
